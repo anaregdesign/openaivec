@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "vectorize-openai"
+version = "0.1.0"
+description = ""
+authors = ["Hiroki Mizukami <hmizukami@microsoft.com>"]
+license = "MIT License"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
