@@ -74,6 +74,8 @@ class VectorizedOpenAI:
     client: OpenAI
     model_name: str ## it would be the name of deployment for Azure
     system_message: str
+    temperature: float = 0.0
+    top_p: float = 1.0
 
     def request(self, user_messages: List[str]) -> ParsedChatCompletion[Response]:
         system_message = vectorize_system_message(self.system_message)
@@ -84,6 +86,8 @@ class VectorizedOpenAI:
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
+            temperature=self.temperature,
+            top_p=self.top_p,
             response_format=Response
         )
         return completion
