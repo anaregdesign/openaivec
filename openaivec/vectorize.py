@@ -6,7 +6,10 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
+from openaivec.util import map_with_minibatch
+
 __ALL__ = ["BatchOpenAI"]
+
 
 def vectorize_system_message(system_message: str) -> str:
     return f"""
@@ -56,7 +59,7 @@ def vectorize_system_message(system_message: str) -> str:
 def gather_user_message(user_messages: List[str]) -> str:
     return json.dumps({
         "user_messages": [
-            {"id": i, "text": message}
+            Message(id=i, text=message)
             for i, message in enumerate(user_messages)
         ]
     }, ensure_ascii=False)
@@ -64,6 +67,10 @@ def gather_user_message(user_messages: List[str]) -> str:
 class Message(BaseModel):
     id: int
     text: str
+
+
+class Request(BaseModel):
+    user_messages: List[Message]
 
 class Response(BaseModel):
     assistant_messages: List[Message]
@@ -77,14 +84,13 @@ class VectorizedOpenAI:
     temperature: float = 0.0
     top_p: float = 1.0
 
-    def request(self, user_messages: List[str]) -> ParsedChatCompletion[Response]:
+    def request(self, user_messages: List[Message]) -> ParsedChatCompletion[Response]:
         system_message = vectorize_system_message(self.system_message)
-        user_message = gather_user_message(user_messages)
         completion = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=[
                 {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message}
+                {"role": "user", "content": Request(user_messages=user_messages).model_dump_json()}
             ],
             temperature=self.temperature,
             top_p=self.top_p,
@@ -93,5 +99,14 @@ class VectorizedOpenAI:
         return completion
 
     def predict(self, user_messages: List[str]) -> List[str]:
-        completion = self.request(user_messages)
-        return [message.text for message in completion.choices[0].message.parsed.assistant_messages]
+        messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
+        completion = self.request(m)
+        response_dict = {
+            message.id: message.text
+            for message in completion.choices[0].message.parsed.assistant_messages
+        }
+        sorted_responses = [response_dict[m.id] for m in messages]
+        return sorted_responses
+
+    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
+        return map_with_minibatch(user_messages, batch_size, self.predict)
