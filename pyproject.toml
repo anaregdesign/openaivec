@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "vectorize-openai"
+name = "openaivec"
 version = "0.1.0"
 description = ""
 authors = ["Hiroki Mizukami <hmizukami@microsoft.com>"]
