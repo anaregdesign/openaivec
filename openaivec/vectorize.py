@@ -6,7 +6,6 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
-
 __ALL__ = ["BatchOpenAI"]
 
 def vectorize_system_message(system_message: str) -> str:
@@ -91,8 +90,4 @@ class VectorizedOpenAI:
 
     def predict(self, user_messages: List[str]) -> List[str]:
         completion = self.request(user_messages)
-        return [message.text for message in completion.response.assistant_messages]
-
-
-
-
+        return [message.text for message in completion.choices[0].message.parsed.assistant_messages]
