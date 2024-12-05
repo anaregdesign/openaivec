@@ -24,7 +24,7 @@ from openaivec import VectorizedOpenAI
 os.environ["AZURE_OPENAI_API_KEY"] = "<your_api_key>"
 api_version = "2024-10-21"
 azure_endpoint = "https://<your_resource_name>.openai.azure.com"
-deployment_name = "gpt-4o"
+deployment_name = "<your_deployment_name>"
 
 client = VectorizedOpenAI(
     client=AzureOpenAI(
