@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass
 from typing import List
 
@@ -56,13 +55,6 @@ def vectorize_system_message(system_message: str) -> str:
 </SystemMessage>
 """
 
-def gather_user_message(user_messages: List[str]) -> str:
-    return json.dumps({
-        "user_messages": [
-            Message(id=i, text=message)
-            for i, message in enumerate(user_messages)
-        ]
-    }, ensure_ascii=False)
 
 class Message(BaseModel):
     id: int
