@@ -92,7 +92,7 @@ class VectorizedOpenAI:
 
     def predict(self, user_messages: List[str]) -> List[str]:
         messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
-        completion = self.request(m)
+        completion = self.request(messages)
         response_dict = {
             message.id: message.text
             for message in completion.choices[0].message.parsed.assistant_messages
