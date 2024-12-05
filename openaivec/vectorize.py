@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from openaivec.util import map_with_minibatch
 
-__ALL__ = ["BatchOpenAI"]
+__ALL__ = ["VectorizedOpenAI"]
 
 
 def vectorize_system_message(system_message: str) -> str:
