@@ -34,7 +34,7 @@ client = VectorizedOpenAI(
     temperature=0.0,
     top_p=1.0,
     model_name=deployment_name,
-    system_message="何科の動物ですか？"
+    system_message="何科の動物ですか？xx科とだけ端的に答えそれ以外は何も出力しないでください"
 )
 
 client.predict(["パンダ", "うさぎ", "コアラ"])  # => ['クマ科', 'ウサギ科', 'コアラ科']
