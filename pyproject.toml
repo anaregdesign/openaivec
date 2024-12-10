@@ -11,8 +11,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pydantic = "^2.10.3"
 openai = "^1.56.2"
+pytest = "^8.3.4"
 
 
 [build-system]
