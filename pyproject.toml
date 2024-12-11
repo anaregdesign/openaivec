@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openaivec"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Hiroki Mizukami <hmizukami@microsoft.com>"]
 license = "MIT License"
@@ -13,6 +13,8 @@ packages = [
 python = "^3.10"
 openai = "^1.56.2"
 pytest = "^8.3.4"
+pyspark = "^3.5.3"
+pandas = "^2.2.3"
 
 
 [build-system]
