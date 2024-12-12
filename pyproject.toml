@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openaivec"
-version = "0.1.0"
+version = "0.1.8"
 description = ""
 authors = ["Hiroki Mizukami <hmizukami@microsoft.com>"]
 license = "MIT License"
@@ -11,7 +11,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-openai = "^1.56.2"
+pandas = "^2.2.3"
+pyspark = "^3.5.1"
+openai = "^1.57.2"
+httpx = {extras = ["http2"], version = "^0.28.1"}
 pytest = "^8.3.4"
 
 
