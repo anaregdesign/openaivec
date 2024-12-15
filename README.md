@@ -34,10 +34,10 @@ client = VectorizedOpenAI(
     temperature=0.0,
     top_p=1.0,
     model_name=deployment_name,
-    system_message="何科の動物ですか？xx科とだけ端的に答えそれ以外は何も出力しないでください"
+    system_message="Please answer simply with a simple “xx family” and do not output anything else."
 )
 
-client.predict(["パンダ", "うさぎ", "コアラ"])  # => ['クマ科', 'ウサギ科', 'コアラ科']
+client.predict(["panda", "rabit", "koala"])  # => ['bear family', 'rabbit family', 'koala family']
 ```
 
 
@@ -48,7 +48,7 @@ import pandas as pd
 
 ...
 
-df = pd.DataFrame({"name": ["パンダ", "うさぎ", "コアラ"]})
+df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
 df.assign(
     kind=lambda df: client.predict(df.name)
@@ -57,8 +57,76 @@ df.assign(
 
 the result is:
 
-| name | kind |
-|------|------|
-| パンダ | クマ科 |
-| うさぎ | ウサギ科 |
-| コアラ | コアラ科 |
+| name   | kind          |
+|--------|---------------|
+| panda  | bear family   |
+| rabbit | rabbit family |
+| koala  | koala family  |
+
+## Using Azure OpenAI with Apache Spark UDF
+
+Here's simple example of parsing product names using OpenAI with Apache Spark UDF.
+
+You can use the `openaivec` package to create a UDF function to use with Apache Spark.
+At first, you need to create a `UDFConfig` object with the configuration of your OpenAI deployment.
+
+```python
+from openaivec import openai_udf, UDFConfig
+
+conf = UDFConfig(
+    api_key="<your-api-key>",
+    api_version="2024-10-21",
+    endpoint="https://<your-resource-name>.openai.azure.com",
+    model_name="<your-deployment-name"
+)
+
+```
+
+here you can use the `openai_udf` function to create a UDF function to use with Apache Spark.
+
+```python
+spark.udf.register("parse_taste", openai_udf(conf, """
+- Extract flavor-related information included in the product name. Only output the flavor name concisely, and nothing else.  
+- Minimize unnecessary adjectives regarding the flavor as much as possible.  
+    - Example:  
+        - Hokkaido Milk → Milk  
+        - Uji Matcha → Matcha  
+
+"""))
+
+spark.udf.register("parse_product", openai_udf(conf, """
+- Extract the type of food included in the product name. Only output the food category and nothing else.  
+- Example output:  
+    - Smoothie  
+    - Milk Tea  
+    - Protein Bar  
+"""))
+```
+
+and then you can use the UDF function in your queries.
+
+```sparksql
+select id,
+       product_name,
+       parse_taste(product_name)   as taste,
+       parse_product(product_name) as product
+from product_names
+```
+
+Output:
+
+| id            | product_name                         | taste     | product     |
+|---------------|--------------------------------------|-----------|-------------|
+| 4414732714624 | Cafe Mocha Smoothie (Trial Size)     | Mocha     | Smoothie    |
+| 4200162318339 | Dark Chocolate Tea (New Product)     | Chocolate | Tea         |
+| 4920122084098 | Cafe Mocha Protein Bar (Trial Size)  | Mocha     | Protein Bar |
+| 4468864478874 | Dark Chocolate Smoothie (On Sale)    | Chocolate | Smoothie    |
+| 4036242144725 | Uji Matcha Tea (New Product)         | Matcha    | Tea         |
+| 4847798245741 | Hokkaido Milk Tea (Trial Size)       | Milk      | Milk Tea    |
+| 4449574211957 | Dark Chocolate Smoothie (Trial Size) | Chocolate | Smoothie    |
+| 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
+| ...           | ...                                  | ...       | ...         |
+
+
+
+
