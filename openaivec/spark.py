@@ -35,7 +35,6 @@ class UDFConfig:
 def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 256):
     @pandas_udf(StringType())
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-
         import httpx
         import pandas as pd
         from openai import AzureOpenAI
