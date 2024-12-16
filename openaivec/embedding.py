@@ -3,7 +3,7 @@ from typing import List
 
 from openai import OpenAI
 
-from openaivec.util import split_to_minibatch
+from openaivec.util import map_with_minibatch
 
 
 @dataclass(frozen=True)
@@ -16,4 +16,4 @@ class EmbeddingOpenAI:
         return [d["embedding"] for d in responses.data]
 
     def embed_minibatch(self, sentences: List[str], batch_size: int) -> List[List[float]]:
-        return [item for batch in split_to_minibatch(sentences, batch_size) for item in self.embed(batch)]
+        return map_with_minibatch(sentences, batch_size, self.embed)
