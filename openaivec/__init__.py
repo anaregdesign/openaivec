@@ -1,4 +1,4 @@
-from .spark import openai_udf, UDFConfig
+from .spark import completion_udf, UDFConfig
 from .vectorize import VectorizedOpenAI
 
 __ALL__ = [

@@ -71,7 +71,7 @@ You can use the `openaivec` package to create a UDF function to use with Apache 
 At first, you need to create a `UDFConfig` object with the configuration of your OpenAI deployment.
 
 ```python
-from openaivec import openai_udf, UDFConfig
+from openaivec import completion_udf, UDFConfig
 
 conf = UDFConfig(
     api_key="<your-api-key>",

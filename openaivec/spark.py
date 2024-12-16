@@ -32,7 +32,7 @@ class UDFConfig:
         assert self.model_name, "model_name must be set"
 
 
-def openai_udf(conf: UDFConfig, system_message: str, batch_size: int = 128):
+def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 128):
     @pandas_udf(StringType())
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
 
