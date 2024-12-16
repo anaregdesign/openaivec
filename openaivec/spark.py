@@ -32,7 +32,7 @@ class UDFConfig:
         assert self.model_name, "model_name must be set"
 
 
-def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 128):
+def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 256):
     @pandas_udf(StringType())
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
 
@@ -60,6 +60,34 @@ def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 128):
         for part in col:
             yield pd.Series(
                 client_vec.predict_minibatch(part.tolist(), batch_size)
+            )
+
+    return fn
+
+
+def embedding_udf(conf: UDFConfig, batch_size: int = 256):
+    @pandas_udf(StringType())
+    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+        import httpx
+        from openai import AzureOpenAI
+
+        from openaivec.embedding import EmbeddingOpenAI
+
+        client = AzureOpenAI(
+            api_version=conf.api_version,
+            azure_endpoint=conf.endpoint,
+            http_client=httpx.Client(http2=True, verify=False),
+            api_key=conf.api_key,
+        )
+
+        client_emb = EmbeddingOpenAI(
+            client=client,
+            model_name=conf.model_name,
+        )
+
+        for part in col:
+            yield pd.Series(
+                client_emb.embed_minibatch(part.tolist(), batch_size)
             )
 
     return fn
