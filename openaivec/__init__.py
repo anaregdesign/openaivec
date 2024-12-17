@@ -1,9 +1,9 @@
-from .spark import completion_udf, embedding_udf, UDFConfig
 from .vectorize import VectorizedOpenAI
+from .spark import UDFConfig, embedding_udf, completion_udf
 
 __ALL__ = [
     "VectorizedOpenAI",
-    "completion_udf",
-    "embedding_udf",
     "UDFConfig",
+    "embedding_udf",
+    "completion_udf",
 ]
