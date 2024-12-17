@@ -85,7 +85,7 @@ conf = UDFConfig(
 here you can use the `openai_udf` function to create a UDF function to use with Apache Spark.
 
 ```python
-spark.udf.register("parse_taste", openai_udf(conf, """
+spark.udf.register("parse_taste", completion_udf(conf, """
 - Extract flavor-related information included in the product name. Only output the flavor name concisely, and nothing else.  
 - Minimize unnecessary adjectives regarding the flavor as much as possible.  
     - Example:  
@@ -94,7 +94,7 @@ spark.udf.register("parse_taste", openai_udf(conf, """
 
 """))
 
-spark.udf.register("parse_product", openai_udf(conf, """
+spark.udf.register("parse_product", completion_udf(conf, """
 - Extract the type of food included in the product name. Only output the food category and nothing else.  
 - Example output:  
     - Smoothie  
