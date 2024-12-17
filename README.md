@@ -81,7 +81,7 @@ conf = UDFConfig(
 
 ```
 
-here you can use the `openai_udf` function to create a UDF function to use with Apache Spark.
+here you can use the `completion_udf` function to create a UDF function to use with Apache Spark.
 
 ```python
 spark.udf.register("parse_taste", completion_udf(conf, """
