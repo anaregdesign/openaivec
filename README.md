@@ -40,7 +40,6 @@ client = VectorizedOpenAI(
 client.predict(["panda", "rabit", "koala"])  # => ['bear family', 'rabbit family', 'koala family']
 ```
 
-
 ## Usage, process with pandas
 
 ```python
@@ -71,7 +70,7 @@ You can use the `openaivec` package to create a UDF function to use with Apache 
 At first, you need to create a `UDFConfig` object with the configuration of your OpenAI deployment.
 
 ```python
-from openaivec import openai_udf, UDFConfig
+from openaivec import completion_udf, UDFConfig
 
 conf = UDFConfig(
     api_key="<your-api-key>",
@@ -85,7 +84,7 @@ conf = UDFConfig(
 here you can use the `openai_udf` function to create a UDF function to use with Apache Spark.
 
 ```python
-spark.udf.register("parse_taste", openai_udf(conf, """
+spark.udf.register("parse_taste", completion_udf(conf, """
 - Extract flavor-related information included in the product name. Only output the flavor name concisely, and nothing else.  
 - Minimize unnecessary adjectives regarding the flavor as much as possible.  
     - Example:  
@@ -94,7 +93,7 @@ spark.udf.register("parse_taste", openai_udf(conf, """
 
 """))
 
-spark.udf.register("parse_product", openai_udf(conf, """
+spark.udf.register("parse_product", completion_udf(conf, """
 - Extract the type of food included in the product name. Only output the food category and nothing else.  
 - Example output:  
     - Smoothie  
