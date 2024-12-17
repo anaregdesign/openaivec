@@ -40,7 +40,6 @@ client = VectorizedOpenAI(
 client.predict(["panda", "rabit", "koala"])  # => ['bear family', 'rabbit family', 'koala family']
 ```
 
-
 ## Usage, process with pandas
 
 ```python
