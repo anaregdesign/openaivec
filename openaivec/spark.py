@@ -4,7 +4,7 @@ from typing import Iterator
 
 import pandas as pd
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StringType
+from pyspark.sql.types import StringType, ArrayType, FloatType
 
 __ALL__ = ["UDFConfig", "openai_udf"]
 
@@ -65,7 +65,7 @@ def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 256):
 
 
 def embedding_udf(conf: UDFConfig, batch_size: int = 256):
-    @pandas_udf(StringType())
+    @pandas_udf(ArrayType(FloatType()))
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
         import httpx
         from openai import AzureOpenAI
