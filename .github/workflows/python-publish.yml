@@ -26,11 +26,15 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: "1.8.4" # 任意のバージョンに合わせる
+
       - name: Build release distributions
         run: |
-          # NOTE: put your own distribution build steps here.
-          python -m pip install build
-          python -m build
+          poetry install --no-root
+          poetry build
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
