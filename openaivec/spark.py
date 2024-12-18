@@ -6,7 +6,7 @@ import pandas as pd
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
-__ALL__ = ["UDFConfig", "openai_udf"]
+__ALL__ = ["UDFConfig", "completion_udf", "embedding_udf"]
 
 
 @dataclass(frozen=True)
