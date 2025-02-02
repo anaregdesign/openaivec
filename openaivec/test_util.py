@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from openaivec.util import split_to_minibatch, map_with_minibatch
+from openaivec.util import split_to_minibatch, map_minibatch
 
 
 class Test(TestCase):
@@ -10,7 +10,7 @@ class Test(TestCase):
         result = split_to_minibatch(all, 3)
         self.assertEqual(result, [['0', '1', '2'], ['3', '4', '5'], ['6', '7', '8'], ['9']])
 
-    def test_map_with_minibatch(self):
+    def test_map_minibatch(self):
         all = [str(i) for i in range(10)]
-        result = map_with_minibatch(all, 3, lambda x: [int(i) for i in x])
+        result = map_minibatch(all, 3, lambda x: [int(i) for i in x])
         self.assertEqual(result, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
