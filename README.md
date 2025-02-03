@@ -5,7 +5,7 @@ Simple wrapper of OpenAI for vectorize requests with single request.
 ## Installation
 
 ```bash
-pip install git+https://github.com/anaregdesign/vectorize-openai.git
+pip install openaivec
 ```
 
 ## Uninstall

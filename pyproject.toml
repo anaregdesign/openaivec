@@ -1,10 +1,12 @@
 [tool.poetry]
 name = "openaivec"
-version = "0.2.1"
+version = "0.0.0"
 description = ""
 authors = ["Hiroki Mizukami <hmizukami@microsoft.com>"]
 license = "MIT License"
 readme = "README.md"
+homepage = "https://github.com/anaregdesign/vectorize-openai"
+repository = "https://github.com/anaregdesign/vectorize-openai"
 packages = [
     { include = "openaivec", from = "." }
 ]
@@ -15,8 +17,14 @@ pandas = "^2.2.3"
 pyspark = "^3.5.1"
 openai = "^1.57.2"
 httpx = {extras = ["http2"], version = "^0.28.1"}
+
+[tool.poetry.dev-dependencies]
 pytest = "^8.3.4"
 
+
+[tool.dynamic-versioning]
+enable = true
+version_pattern = "^v(?P<version>\d+\.\d+\.\d+)$"
 
 [build-system]
 requires = ["poetry-core"]
