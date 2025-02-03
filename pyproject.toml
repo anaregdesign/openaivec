@@ -18,7 +18,7 @@ pyspark = "^3.5.1"
 openai = "^1.57.2"
 httpx = {extras = ["http2"], version = "^0.28.1"}
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 
 
