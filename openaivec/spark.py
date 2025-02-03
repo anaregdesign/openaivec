@@ -6,18 +6,19 @@ import pandas as pd
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
-__ALL__ = ["UDFConfig", "completion_udf", "embedding_udf"]
+__ALL__ = ["UDFBuilder"]
 
 
 @dataclass(frozen=True)
-class UDFConfig:
+class UDFBuilder:
     api_key: str
     api_version: str
     endpoint: str
     model_name: str
+    batch_size: int = 256
 
     @classmethod
-    def of_environment(cls) -> "UDFConfig":
+    def of_environment(cls) -> "UDFBuilder":
         return cls(
             api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
             api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21"),
@@ -31,62 +32,60 @@ class UDFConfig:
         assert self.endpoint, "endpoint must be set"
         assert self.model_name, "model_name must be set"
 
+    def completion(self, system_message: str):
+        @pandas_udf(StringType())
+        def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+            import httpx
+            import pandas as pd
+            from openai import AzureOpenAI
 
-def completion_udf(conf: UDFConfig, system_message: str, batch_size: int = 256):
-    @pandas_udf(StringType())
-    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-        import httpx
-        import pandas as pd
-        from openai import AzureOpenAI
+            from openaivec import VectorizedOpenAI
 
-        from openaivec import VectorizedOpenAI
-
-        client = AzureOpenAI(
-            api_version=conf.api_version,
-            azure_endpoint=conf.endpoint,
-            http_client=httpx.Client(http2=True, verify=False),
-            api_key=conf.api_key,
-        )
-
-        client_vec = VectorizedOpenAI(
-            client=client,
-            model_name=conf.model_name,
-            system_message=system_message,
-            top_p=1.0,
-            temperature=0.0,
-        )
-
-        for part in col:
-            yield pd.Series(
-                client_vec.predict_minibatch(part.tolist(), batch_size)
+            client = AzureOpenAI(
+                api_version=self.api_version,
+                azure_endpoint=self.endpoint,
+                http_client=httpx.Client(http2=True, verify=False),
+                api_key=self.api_key,
             )
 
-    return fn
-
-
-def embedding_udf(conf: UDFConfig, batch_size: int = 256):
-    @pandas_udf(ArrayType(FloatType()))
-    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-        import httpx
-        from openai import AzureOpenAI
-
-        from openaivec.embedding import EmbeddingOpenAI
-
-        client = AzureOpenAI(
-            api_version=conf.api_version,
-            azure_endpoint=conf.endpoint,
-            http_client=httpx.Client(http2=True, verify=False),
-            api_key=conf.api_key,
-        )
-
-        client_emb = EmbeddingOpenAI(
-            client=client,
-            model_name=conf.model_name,
-        )
-
-        for part in col:
-            yield pd.Series(
-                client_emb.embed_minibatch(part.tolist(), batch_size)
+            client_vec = VectorizedOpenAI(
+                client=client,
+                model_name=self.model_name,
+                system_message=system_message,
+                top_p=1.0,
+                temperature=0.0,
             )
 
-    return fn
+            for part in col:
+                yield pd.Series(
+                    client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                )
+
+        return fn
+
+    def embedding(self):
+        @pandas_udf(ArrayType(FloatType()))
+        def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+            import httpx
+            from openai import AzureOpenAI
+
+            from openaivec.embedding import EmbeddingOpenAI
+
+            client = AzureOpenAI(
+                api_version=self.api_version,
+                azure_endpoint=self.endpoint,
+                http_client=httpx.Client(http2=True, verify=False),
+                api_key=self.api_key,
+            )
+
+            client_emb = EmbeddingOpenAI(
+                client=client,
+                model_name=self.model_name,
+            )
+
+            for part in col:
+                yield pd.Series(
+                    client_emb.embed_minibatch(part.tolist(), self.batch_size)
+                )
+
+        return fn

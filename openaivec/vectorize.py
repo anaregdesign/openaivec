@@ -1,11 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
-from openaivec.util import map_with_minibatch
+from openaivec.util import map_unique_minibatch
 
 __ALL__ = ["VectorizedOpenAI"]
 
@@ -76,13 +76,16 @@ class VectorizedOpenAI:
     system_message: str
     temperature: float = 0.0
     top_p: float = 1.0
+    _vectorized_system_message: str = field(init=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "_vectorized_system_message", vectorize_system_message(self.system_message))
 
     def request(self, user_messages: List[Message]) -> ParsedChatCompletion[Response]:
-        system_message = vectorize_system_message(self.system_message)
         completion = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=[
-                {"role": "system", "content": system_message},
+                {"role": "system", "content": self._vectorized_system_message},
                 {"role": "user", "content": Request(user_messages=user_messages).model_dump_json()}
             ],
             temperature=self.temperature,
@@ -102,4 +105,4 @@ class VectorizedOpenAI:
         return sorted_responses
 
     def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
-        return map_with_minibatch(user_messages, batch_size, self.predict)
+        return map_unique_minibatch(user_messages, batch_size, self.predict)
