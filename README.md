@@ -70,9 +70,9 @@ You can use the `openaivec` package to create a UDF function to use with Apache 
 At first, you need to create a `UDFConfig` object with the configuration of your OpenAI deployment.
 
 ```python
-from openaivec import completion_udf, UDFConfig
+from openaivec.spark import UDFBuilder
 
-conf = UDFConfig(
+udf = UDFBuilder(
     api_key="<your-api-key>",
     api_version="2024-10-21",
     endpoint="https://<your-resource-name>.openai.azure.com",
@@ -84,7 +84,7 @@ conf = UDFConfig(
 here you can use the `completion_udf` function to create a UDF function to use with Apache Spark.
 
 ```python
-spark.udf.register("parse_taste", completion_udf(conf, """
+spark.udf.register("parse_taste", udf.completion("""
 - Extract flavor-related information included in the product name. Only output the flavor name concisely, and nothing else.  
 - Minimize unnecessary adjectives regarding the flavor as much as possible.  
     - Example:  
@@ -93,7 +93,7 @@ spark.udf.register("parse_taste", completion_udf(conf, """
 
 """))
 
-spark.udf.register("parse_product", completion_udf(conf, """
+spark.udf.register("parse_product", udf.completion("""
 - Extract the type of food included in the product name. Only output the food category and nothing else.  
 - Example output:  
     - Smoothie  

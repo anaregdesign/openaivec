@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openaivec"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["Hiroki Mizukami <hmizukami@microsoft.com>"]
 license = "MIT License"
