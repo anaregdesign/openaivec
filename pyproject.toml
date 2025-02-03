@@ -24,7 +24,7 @@ pytest = "^8.3.4"
 
 [tool.dynamic-versioning]
 enable = true
-version_pattern = "^v(?P<version>\d+\.\d+\.\d+)$"
+version_pattern = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
 
 [build-system]
 requires = ["poetry-core"]
