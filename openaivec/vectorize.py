@@ -5,7 +5,7 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
-from openaivec.util import map_unique_minibatch
+from openaivec.util import map_unique_minibatch_parallel
 
 __ALL__ = ["VectorizedOpenAI"]
 
@@ -105,4 +105,4 @@ class VectorizedOpenAI:
         return sorted_responses
 
     def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
-        return map_unique_minibatch(user_messages, batch_size, self.predict)
+        return map_unique_minibatch_parallel(user_messages, batch_size, self.predict)
