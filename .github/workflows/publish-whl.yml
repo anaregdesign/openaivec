@@ -26,6 +26,14 @@ jobs:
           curl -sSL https://install.python-poetry.org | python -
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
+      - name: Set version from Git tag
+        shell: bash
+        run: |
+          TAG=${GITHUB_REF##*/}
+          VERSION=${TAG#v}
+          echo "Detected version: $VERSION"
+          poetry version $VERSION
+
       - name: Install dependencies
         run: poetry install --no-root
 
