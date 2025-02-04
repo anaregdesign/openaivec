@@ -155,19 +155,21 @@ steps:
     - In Microsoft Fabric, click on **New item** on your own workspace.
     - Select **Environment** to create a new environment for Apache Spark.
     - Determine the environment name, eg. `openai-environment`.
-    - ![Create Environment Screenshot](path/to/screenshot_create_environment.png)
+    - ![image](https://github.com/user-attachments/assets/bd1754ef-2f58-46b4-83ed-b335b64aaa1c)
       *Figure: Creating a new Environment in Microsoft Fabric.*
 
 3. **Upload the WHL File via Custom Library:**
     - Once your environment is set up, go to the **Custom Library** section within that environment.
     - Click on **Upload** and select the downloaded `.whl` file.
     - Save and publish to reflect the changes.
-    - ![Upload Library Screenshot](path/to/screenshot_upload_library.png)
+    - ![image](https://github.com/user-attachments/assets/57703f15-1a79-4f0f-8f90-7b64ff845e05)
       *Figure: Uploading the WHL file to the Custom Library.*
 
 4. **Use the Environment from a Notebook:**
     - Open a notebook within Microsoft Fabric.
     - Select the environment you created in the previous steps.
+    - ![image](https://github.com/user-attachments/assets/36bc2e26-87c8-4d80-bfc5-bca19300751f)
+      *Figure: Using custom environment from a notebook.*
     - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
 
       ```python
@@ -181,7 +183,6 @@ steps:
       )
       ```
 
-    - ![Notebook Import Screenshot](path/to/screenshot_notebook_import.png)
-      *Figure: Importing and using the library from a notebook.*
+
 
 Following these steps allows you to successfully integrate and use `vectorize-openai` within Microsoft Fabric.
