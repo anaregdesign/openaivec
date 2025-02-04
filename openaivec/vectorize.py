@@ -1,13 +1,17 @@
 from dataclasses import dataclass, field
+from logging import Logger, getLogger
 from typing import List
 
 from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
+from openaivec.logging import observe
 from openaivec.util import map_unique_minibatch_parallel
 
 __ALL__ = ["VectorizedOpenAI"]
+
+_logger: Logger = getLogger(__name__)
 
 
 def vectorize_system_message(system_message: str) -> str:
@@ -81,6 +85,7 @@ class VectorizedOpenAI:
     def __post_init__(self):
         object.__setattr__(self, "_vectorized_system_message", vectorize_system_message(self.system_message))
 
+    @observe(_logger)
     def request(self, user_messages: List[Message]) -> ParsedChatCompletion[Response]:
         completion = self.client.beta.chat.completions.parse(
             model=self.model_name,
@@ -94,6 +99,7 @@ class VectorizedOpenAI:
         )
         return completion
 
+    @observe(_logger)
     def predict(self, user_messages: List[str]) -> List[str]:
         messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
         completion = self.request(messages)
@@ -104,5 +110,6 @@ class VectorizedOpenAI:
         sorted_responses = [response_dict[m.id] for m in messages]
         return sorted_responses
 
+    @observe(_logger)
     def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
         return map_unique_minibatch_parallel(user_messages, batch_size, self.predict)
