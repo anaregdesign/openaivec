@@ -1,12 +1,17 @@
 import os
 from dataclasses import dataclass
+from logging import getLogger, Logger
 from typing import Iterator
 
 import pandas as pd
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
+from openaivec.logging import observe
+
 __ALL__ = ["UDFBuilder"]
+
+_logger: Logger = getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -32,6 +37,7 @@ class UDFBuilder:
         assert self.endpoint, "endpoint must be set"
         assert self.model_name, "model_name must be set"
 
+    @observe(_logger)
     def completion(self, system_message: str):
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
@@ -63,6 +69,7 @@ class UDFBuilder:
 
         return fn
 
+    @observe(_logger)
     def embedding(self):
         @pandas_udf(ArrayType(FloatType()))
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:

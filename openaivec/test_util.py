@@ -1,7 +1,8 @@
 from typing import List
 from unittest import TestCase
 
-from openaivec.util import split_to_minibatch, map_minibatch, map_unique, map_unique_minibatch
+from openaivec.util import split_to_minibatch, map_minibatch, map_unique, map_unique_minibatch, \
+    map_unique_minibatch_parallel, map_minibatch_parallel
 
 
 class TestMappingFunctions(TestCase):
@@ -28,6 +29,17 @@ class TestMappingFunctions(TestCase):
         # Batches: [1,2] -> [2,4], [3,4] -> [6,8], [5] -> [10]
         expected = [2, 4, 6, 8, 10]
         self.assertEqual(map_minibatch(b, batch_size, double_list), expected)
+
+    def test_map_minibatch_parallel(self):
+        # Function that squares each element in the batch.
+        def square_list(lst: List[int]) -> List[int]:
+            return [x * x for x in lst]
+
+        b = [1, 2, 3, 4, 5]
+        batch_size = 2
+        # Batches: [1,2] -> [1,4], [3,4] -> [9,16], [5] -> [25]
+        expected = [1, 4, 9, 16, 25]
+        self.assertEqual(map_minibatch_parallel(b, batch_size, square_list), expected)
 
     def test_map_minibatch_batch_size_one(self):
         # Identity function: returns the list as is.
@@ -74,3 +86,16 @@ class TestMappingFunctions(TestCase):
         # Mapping back for original list: [2, 4, 2, 6]
         expected = [2, 4, 2, 6]
         self.assertEqual(map_unique_minibatch(b, batch_size, double_list), expected)
+
+    def test_map_unique_minibatch_parallel(self):
+        # Function that squares each element.
+        def square_list(lst: List[int]) -> List[int]:
+            return [x * x for x in lst]
+
+        b = [3, 2, 3, 1]
+        batch_size = 2
+        # Unique order preserved using dict.fromkeys: [3, 2, 1]
+        # After applying f: [9, 4, 1]
+        # Mapping back for original list: [9, 4, 9, 1]
+        expected = [9, 4, 9, 1]
+        self.assertEqual(map_unique_minibatch_parallel(b, batch_size, square_list), expected)
