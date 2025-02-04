@@ -1,14 +1,31 @@
-# vectorize-openai
+# Overview
 
-Simple wrapper of OpenAI for vectorize requests with single request.
+This package provides a vectorized interface for the OpenAI API, enabling you to process multiple inputs with a single
+API call instead of sending requests one by one.  
+This approach reduces latency and simplifies your code.  
+Additionally, it integrates effortlessly with Pandas DataFrames and Apache Spark UDFs, making it easy to incorporate
+into your data processing pipelines.
+
+## Features
+
+- Vectorized API requests for processing multiple inputs at once.
+- Seamless integration with Pandas DataFrames.
+- A UDF builder for Apache Spark.
+- Compatibility with multiple OpenAI clients, including Azure OpenAI.
+
+## Requirements
+
+- Python 3.10 or higher
 
 ## Installation
+
+Install the package with:
 
 ```bash
 pip install openaivec
 ```
 
-## Uninstall
+If you want to uninstall the package, you can do so with:
 
 ```bash
 pip uninstall openaivec
@@ -21,11 +38,13 @@ import os
 from openai import AzureOpenAI
 from openaivec import VectorizedOpenAI
 
+# Set environment variables and configurations
 os.environ["AZURE_OPENAI_API_KEY"] = "<your_api_key>"
 api_version = "2024-10-21"
 azure_endpoint = "https://<your_resource_name>.openai.azure.com"
 deployment_name = "<your_deployment_name>"
 
+# Initialize the vectorized client with your system message and parameters
 client = VectorizedOpenAI(
     client=AzureOpenAI(
         api_version=api_version,
@@ -37,15 +56,14 @@ client = VectorizedOpenAI(
     system_message="Please answer simply with a simple “xx family” and do not output anything else."
 )
 
-client.predict(["panda", "rabit", "koala"])  # => ['bear family', 'rabbit family', 'koala family']
+result = client.predict(["panda", "rabbit", "koala"])
+print(result)  # Expected output: ['bear family', 'rabbit family', 'koala family']
 ```
 
-## Usage, process with pandas
+## Using with Pandas DataFrame
 
 ```python
 import pandas as pd
-
-...
 
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
@@ -54,7 +72,7 @@ df.assign(
 )
 ```
 
-the result is:
+Example output:
 
 | name   | kind          |
 |--------|---------------|
@@ -62,12 +80,10 @@ the result is:
 | rabbit | rabbit family |
 | koala  | koala family  |
 
-## Using Azure OpenAI with Apache Spark UDF
+## Using with Apache Spark UDF
 
-Here's simple example of parsing product names using OpenAI with Apache Spark UDF.
-
-You can use the `openaivec` package to create a UDF function to use with Apache Spark.
-At first, you need to create a `UDFConfig` object with the configuration of your OpenAI deployment.
+Below is an example of creating UDFs for Apache Spark using the provided `UDFBuilder`.  
+This configuration is intended for Azure OpenAI.
 
 ```python
 from openaivec.spark import UDFBuilder
@@ -75,44 +91,40 @@ from openaivec.spark import UDFBuilder
 udf = UDFBuilder(
     api_key="<your-api-key>",
     api_version="2024-10-21",
-    endpoint="https://<your-resource-name>.openai.azure.com",
-    model_name="<your-deployment-name"
+    endpoint="https://<your_resource_name>.openai.azure.com",
+    model_name="<your_deployment_name>"
 )
 
-```
-
-here you can use the `completion` method to create a UDF function to use with Apache Spark.
-
-```python
+# Register UDFs (e.g., to extract flavor or product type from product names)
 spark.udf.register("parse_taste", udf.completion("""
-- Extract flavor-related information included in the product name. Only output the flavor name concisely, and nothing else.  
-- Minimize unnecessary adjectives regarding the flavor as much as possible.  
-    - Example:  
-        - Hokkaido Milk → Milk  
-        - Uji Matcha → Matcha  
-
+- Extract flavor-related information from the product name. Return only the concise flavor name with no extra text.
+- Minimize unnecessary adjectives related to the flavor.
+    - Example:
+        - Hokkaido Milk → Milk
+        - Uji Matcha → Matcha
 """))
 
+# Register UDFs (e.g., to extract product type from product names)
 spark.udf.register("parse_product", udf.completion("""
-- Extract the type of food included in the product name. Only output the food category and nothing else.  
-- Example output:  
-    - Smoothie  
-    - Milk Tea  
-    - Protein Bar  
+- Extract the type of food from the product name. Return only the food category with no extra text.
+- Example output:
+    - Smoothie
+    - Milk Tea
+    - Protein Bar
 """))
 ```
 
-and then you can use the UDF function in your queries.
+You can then use the UDFs in your Spark SQL queries as follows:
 
-```sparksql
-select id,
+```sql
+SELECT id,
        product_name,
-       parse_taste(product_name)   as taste,
-       parse_product(product_name) as product
-from product_names
+       parse_taste(product_name)   AS taste,
+       parse_product(product_name) AS product
+FROM product_names;
 ```
 
-Output:
+Example Output:
 
 | id            | product_name                         | taste     | product     |
 |---------------|--------------------------------------|-----------|-------------|
@@ -126,6 +138,50 @@ Output:
 | 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
 | ...           | ...                                  | ...       | ...         |
 
+## Using with Microsoft Fabric
 
+[Microsoft Fabric](https://www.microsoft.com/en-us/microsoft-fabric/) is a unified, cloud-based analytics platform that
+seamlessly integrates data engineering, warehousing, and business intelligence to simplify the journey from raw data to
+actionable insights.
 
+This section provides instructions on how to integrate and use `vectorize-openai` within Microsoft Fabric. Follow these
+steps:
 
+1. **Download the WHL File:**
+    - Visit the [release page](https://github.com/anaregdesign/vectorize-openai/releases)
+    - Download the latest `openaivec-*.*.*-*.whl` file.
+
+2. **Create an Environment in Microsoft Fabric:**
+    - In Microsoft Fabric, click on **New item** on your own workspace.
+    - Select **Environment** to create a new environment for Apache Spark.
+    - Determine the environment name, eg. `openai-environment`.
+    - ![Create Environment Screenshot](path/to/screenshot_create_environment.png)
+      *Figure: Creating a new Environment in Microsoft Fabric.*
+
+3. **Upload the WHL File via Custom Library:**
+    - Once your environment is set up, go to the **Custom Library** section within that environment.
+    - Click on **Upload** and select the downloaded `.whl` file.
+    - Save and publish to reflect the changes.
+    - ![Upload Library Screenshot](path/to/screenshot_upload_library.png)
+      *Figure: Uploading the WHL file to the Custom Library.*
+
+4. **Use the Environment from a Notebook:**
+    - Open a notebook within Microsoft Fabric.
+    - Select the environment you created in the previous steps.
+    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
+
+      ```python
+      from openaivec.spark import UDFBuilder
+
+      udf = UDFBuilder(
+          api_key="<your-api-key>",
+          api_version="2024-10-21",
+          endpoint="https://<your-resource-name>.openai.azure.com",
+          model_name="<your-deployment-name"
+      )
+      ```
+
+    - ![Notebook Import Screenshot](path/to/screenshot_notebook_import.png)
+      *Figure: Importing and using the library from a notebook.*
+
+Following these steps allows you to successfully integrate and use `vectorize-openai` within Microsoft Fabric.
