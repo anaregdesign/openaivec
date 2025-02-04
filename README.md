@@ -138,6 +138,50 @@ Example Output:
 | 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
 | ...           | ...                                  | ...       | ...         |
 
+## Using with Microsoft Fabric
 
+[Microsoft Fabric](https://www.microsoft.com/en-us/microsoft-fabric/) is a unified, cloud-based analytics platform that
+seamlessly integrates data engineering, warehousing, and business intelligence to simplify the journey from raw data to
+actionable insights.
 
+This section provides instructions on how to integrate and use `vectorize-openai` within Microsoft Fabric. Follow these
+steps:
 
+1. **Download the WHL File:**
+    - Visit the [release page](https://github.com/anaregdesign/vectorize-openai/releases)
+    - Download the latest `openaivec-*.*.*-*.whl` file.
+
+2. **Create an Environment in Microsoft Fabric:**
+    - In Microsoft Fabric, click on **New item** on your own workspace.
+    - Select **Environment** to create a new environment for Apache Spark.
+    - Determine the environment name, eg. `openai-environment`.
+    - ![Create Environment Screenshot](path/to/screenshot_create_environment.png)
+      *Figure: Creating a new Environment in Microsoft Fabric.*
+
+3. **Upload the WHL File via Custom Library:**
+    - Once your environment is set up, go to the **Custom Library** section within that environment.
+    - Click on **Upload** and select the downloaded `.whl` file.
+    - Save and publish to reflect the changes.
+    - ![Upload Library Screenshot](path/to/screenshot_upload_library.png)
+      *Figure: Uploading the WHL file to the Custom Library.*
+
+4. **Use the Environment from a Notebook:**
+    - Open a notebook within Microsoft Fabric.
+    - Select the environment you created in the previous steps.
+    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
+
+      ```python
+      from openaivec.spark import UDFBuilder
+
+      udf = UDFBuilder(
+          api_key="<your-api-key>",
+          api_version="2024-10-21",
+          endpoint="https://<your-resource-name>.openai.azure.com",
+          model_name="<your-deployment-name"
+      )
+      ```
+
+    - ![Notebook Import Screenshot](path/to/screenshot_notebook_import.png)
+      *Figure: Importing and using the library from a notebook.*
+
+Following these steps allows you to successfully integrate and use `vectorize-openai` within Microsoft Fabric.
