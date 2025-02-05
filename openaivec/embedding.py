@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from openai import OpenAI
 
-from openaivec.logging import observe
+from openaivec.log import observe
 from openaivec.util import map_unique_minibatch_parallel
 
 __ALL__ = ["EmbeddingOpenAI"]

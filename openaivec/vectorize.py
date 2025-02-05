@@ -6,7 +6,7 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
-from openaivec.logging import observe
+from openaivec.log import observe
 from openaivec.util import map_unique_minibatch_parallel
 
 __ALL__ = ["VectorizedOpenAI"]
