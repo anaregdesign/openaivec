@@ -47,5 +47,5 @@ class TestUDFBuilder(TestCase):
         self.spark.sql(
             """
             SELECT repeat(cast(id as STRING)) as v from dummy
-        """
+            """
         ).show()
