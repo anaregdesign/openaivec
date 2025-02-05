@@ -107,7 +107,7 @@ class VectorizedOpenAI:
             message.id: message.text
             for message in completion.choices[0].message.parsed.assistant_messages
         }
-        sorted_responses = [response_dict[m.id] for m in messages]
+        sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses
 
     @observe(_logger)
