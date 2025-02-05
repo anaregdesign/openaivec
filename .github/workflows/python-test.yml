@@ -1,0 +1,33 @@
+name: Python Test on Ubuntu
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "${{ runner.tool_cache }}/poetry"  # デバッグ用出力
+
+      - name: Add Poetry to PATH
+        run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies via Poetry
+        run: poetry install --with dev --no-interaction --no-ansi
+
+      - name: Run tests
+        run: poetry run pytest
