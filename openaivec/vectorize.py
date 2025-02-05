@@ -76,7 +76,7 @@ class Response(BaseModel):
 @dataclass(frozen=True)
 class VectorizedOpenAI:
     client: OpenAI
-    model_name: str  ## it would be the name of deployment for Azure
+    model_name: str  # it would be the name of deployment for Azure
     system_message: str
     temperature: float = 0.0
     top_p: float = 1.0
