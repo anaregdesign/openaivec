@@ -1,4 +1,4 @@
-name: Python Test on Ubuntu
+name: Poetry test
 
 on:
   pull_request:
@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_MODEL_NAME: ${{ vars.AZURE_OPENAI_MODEL_NAME }}
+      AZURE_OPENAI_API_VERSION: ${{ vars.AZURE_OPENAI_API_VERSION }}
 
     steps:
       - name: Checkout repository
