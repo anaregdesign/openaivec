@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import TestCase
 
 from pyspark.sql.session import SparkSession
@@ -7,7 +8,9 @@ from openaivec.spark import UDFBuilder
 
 class TestUDFBuilder(TestCase):
     def setUp(self):
-        self.udf = UDFBuilder.of_environment(batch_size=10)
+        project_root = Path(__file__).parent.parent
+        policy_path = project_root / "spark.policy"
+        self.udf = UDFBuilder.of_environment(batch_size=8)
         self.spark: SparkSession = SparkSession.builder \
             .appName("test") \
             .master("local[*]") \
@@ -15,7 +18,7 @@ class TestUDFBuilder(TestCase):
             .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
             .config("spark.driver.extraJavaOptions",
                     "-Djava.security.manager " +
-                    "-Djava.security.policy=file:///Users/hiroki/IdeaProjects/vectorize-openai/spark.policy " +
+                    f"-Djava.security.policy=file://{policy_path} " +
                     "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED " +
                     "--add-opens=java.base/java.nio=ALL-UNNAMED " +
                     "-Darrow.enable_unsafe=true") \
@@ -33,4 +36,6 @@ class TestUDFBuilder(TestCase):
         dummy_df = self.spark.range(31)
         dummy_df.createOrReplaceTempView("dummy")
 
-        self.spark.sql('SELECT repeat(cast(id as STRING)) as v from dummy').show()
+        self.spark.sql("""
+            SELECT repeat(cast(id as STRING)) as v from dummy
+        """).show()
