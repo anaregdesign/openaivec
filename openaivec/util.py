@@ -5,9 +5,11 @@ from typing import List, TypeVar, Callable
 T = TypeVar("T")
 U = TypeVar("U")
 
+
 def split_to_minibatch(b: List[T], batch_size: int) -> List[List[T]]:
     """Splits the list into sublists of size `batch_size`."""
-    return [b[i:i + batch_size] for i in range(0, len(b), batch_size)]
+    return [b[i : i + batch_size] for i in range(0, len(b), batch_size)]
+
 
 def map_minibatch(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
     """
@@ -28,6 +30,7 @@ def map_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List[T]], L
     with ThreadPoolExecutor() as executor:
         results = executor.map(f, batches)
     return list(chain.from_iterable(results))
+
 
 def map_unique(b: List[T], f: Callable[[List[T]], List[U]]) -> List[U]:
     """

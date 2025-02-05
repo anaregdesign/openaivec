@@ -21,7 +21,9 @@ httpx = {extras = ["http2"], version = "^0.28.1"}
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pyarrow = "^19.0.0"
-
+flake8 = "^6.0.0"
+black = "^25.1.0"
+flake8-black = "^0.3.6"
 
 [tool.dynamic-versioning]
 enable = true
@@ -30,3 +32,7 @@ version_pattern = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ["py310", "py311", "py312", "py313"]

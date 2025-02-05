@@ -1,8 +1,14 @@
 from typing import List
 from unittest import TestCase
 
-from openaivec.util import split_to_minibatch, map_minibatch, map_unique, map_unique_minibatch, \
-    map_unique_minibatch_parallel, map_minibatch_parallel
+from openaivec.util import (
+    split_to_minibatch,
+    map_minibatch,
+    map_unique,
+    map_unique_minibatch,
+    map_unique_minibatch_parallel,
+    map_minibatch_parallel,
+)
 
 
 class TestMappingFunctions(TestCase):

@@ -13,6 +13,7 @@ __ALL__ = ["EmbeddingOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
+
 @dataclass(frozen=True)
 class EmbeddingOpenAI:
     client: OpenAI

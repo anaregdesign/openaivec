@@ -64,9 +64,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                yield pd.Series(
-                    client_vec.predict_minibatch(part.tolist(), self.batch_size)
-                )
+                yield pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size))
 
         return fn
 
@@ -92,8 +90,6 @@ class UDFBuilder:
             )
 
             for part in col:
-                yield pd.Series(
-                    client_emb.embed_minibatch(part.tolist(), self.batch_size)
-                )
+                yield pd.Series(client_emb.embed_minibatch(part.tolist(), self.batch_size))
 
         return fn

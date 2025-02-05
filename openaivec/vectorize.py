@@ -76,14 +76,18 @@ class Response(BaseModel):
 @dataclass(frozen=True)
 class VectorizedOpenAI:
     client: OpenAI
-    model_name: str  ## it would be the name of deployment for Azure
+    model_name: str  # it would be the name of deployment for Azure
     system_message: str
     temperature: float = 0.0
     top_p: float = 1.0
     _vectorized_system_message: str = field(init=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "_vectorized_system_message", vectorize_system_message(self.system_message))
+        object.__setattr__(
+            self,
+            "_vectorized_system_message",
+            vectorize_system_message(self.system_message),
+        )
 
     @observe(_logger)
     def request(self, user_messages: List[Message]) -> ParsedChatCompletion[Response]:
@@ -91,11 +95,14 @@ class VectorizedOpenAI:
             model=self.model_name,
             messages=[
                 {"role": "system", "content": self._vectorized_system_message},
-                {"role": "user", "content": Request(user_messages=user_messages).model_dump_json()}
+                {
+                    "role": "user",
+                    "content": Request(user_messages=user_messages).model_dump_json(),
+                },
             ],
             temperature=self.temperature,
             top_p=self.top_p,
-            response_format=Response
+            response_format=Response,
         )
         return completion
 
@@ -104,8 +111,7 @@ class VectorizedOpenAI:
         messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
         completion = self.request(messages)
         response_dict = {
-            message.id: message.text
-            for message in completion.choices[0].message.parsed.assistant_messages
+            message.id: message.text for message in completion.choices[0].message.parsed.assistant_messages
         }
         sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses

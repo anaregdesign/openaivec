@@ -11,17 +11,12 @@ from openaivec.vectorize import Message, Response
 
 _h: Handler = StreamHandler()
 
-basicConfig(
-    handlers=[_h],
-    level="DEBUG"
-)
+basicConfig(handlers=[_h], level="DEBUG")
 
 
 def create_dummy_parse(messages: List[Message]) -> ParsedChatCompletion[Response]:
     response = Response(
-        assistant_messages=[
-            Message(id=i, text=f"response_of_{m.text}") for i, m in enumerate(messages)
-        ]
+        assistant_messages=[Message(id=i, text=f"response_of_{m.text}") for i, m in enumerate(messages)]
     )
     dummy_message = SimpleNamespace(parsed=response)
     dummy_choice = SimpleNamespace(message=dummy_message)
