@@ -21,13 +21,9 @@ class EmbeddingOpenAI:
 
     @observe(_logger)
     def embed(self, sentences: List[str]) -> List[NDArray[np.float32]]:
-        responses = self.client.embeddings.create(
-            input=sentences, model=self.model_name
-        )
+        responses = self.client.embeddings.create(input=sentences, model=self.model_name)
         return [np.array(d.embedding, dtype=np.float32) for d in responses.data]
 
     @observe(_logger)
-    def embed_minibatch(
-        self, sentences: List[str], batch_size: int
-    ) -> List[NDArray[np.float32]]:
+    def embed_minibatch(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         return map_unique_minibatch_parallel(sentences, batch_size, self.embed)

@@ -16,9 +16,7 @@ basicConfig(handlers=[_h], level="DEBUG")
 
 def create_dummy_parse(messages: List[Message]) -> ParsedChatCompletion[Response]:
     response = Response(
-        assistant_messages=[
-            Message(id=i, text=f"response_of_{m.text}") for i, m in enumerate(messages)
-        ]
+        assistant_messages=[Message(id=i, text=f"response_of_{m.text}") for i, m in enumerate(messages)]
     )
     dummy_message = SimpleNamespace(parsed=response)
     dummy_choice = SimpleNamespace(message=dummy_message)
@@ -44,9 +42,7 @@ class TestVectorizedOpenAI(TestCase):
         user_messages = ["user_message_{i}" for i in range(7)]
         expected = [f"response_of_{m}" for m in user_messages]
 
-        dummy_completion = create_dummy_parse(
-            [Message(id=i, text=message) for i, message in enumerate(user_messages)]
-        )
+        dummy_completion = create_dummy_parse([Message(id=i, text=message) for i, message in enumerate(user_messages)])
         self.mock_openai.beta.chat.completions.parse.return_value = dummy_completion
 
         actual = self.client.predict(user_messages)

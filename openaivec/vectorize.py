@@ -108,13 +108,10 @@ class VectorizedOpenAI:
 
     @observe(_logger)
     def predict(self, user_messages: List[str]) -> List[str]:
-        messages = [
-            Message(id=i, text=message) for i, message in enumerate(user_messages)
-        ]
+        messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
         completion = self.request(messages)
         response_dict = {
-            message.id: message.text
-            for message in completion.choices[0].message.parsed.assistant_messages
+            message.id: message.text for message in completion.choices[0].message.parsed.assistant_messages
         }
         sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses

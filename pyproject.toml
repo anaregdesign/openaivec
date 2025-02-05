@@ -32,3 +32,7 @@ version_pattern = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ["py310", "py311", "py312", "py313"]
