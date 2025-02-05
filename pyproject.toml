@@ -21,7 +21,7 @@ httpx = {extras = ["http2"], version = "^0.28.1"}
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pyarrow = "^19.0.0"
-
+flake8 = "^6.0.0"
 
 [tool.dynamic-versioning]
 enable = true
