@@ -1,8 +1,14 @@
 from typing import List
 from unittest import TestCase
 
-from openaivec.util import split_to_minibatch, map_minibatch, map_unique, map_unique_minibatch, \
-    map_unique_minibatch_parallel, map_minibatch_parallel
+from openaivec.util import (
+    split_to_minibatch,
+    map_minibatch,
+    map_unique,
+    map_unique_minibatch,
+    map_unique_minibatch_parallel,
+    map_minibatch_parallel,
+)
 
 
 class TestMappingFunctions(TestCase):
@@ -98,4 +104,6 @@ class TestMappingFunctions(TestCase):
         # After applying f: [9, 4, 1]
         # Mapping back for original list: [9, 4, 9, 1]
         expected = [9, 4, 9, 1]
-        self.assertEqual(map_unique_minibatch_parallel(b, batch_size, square_list), expected)
+        self.assertEqual(
+            map_unique_minibatch_parallel(b, batch_size, square_list), expected
+        )

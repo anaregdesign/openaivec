@@ -11,10 +11,7 @@ from openaivec.vectorize import Message, Response
 
 _h: Handler = StreamHandler()
 
-basicConfig(
-    handlers=[_h],
-    level="DEBUG"
-)
+basicConfig(handlers=[_h], level="DEBUG")
 
 
 def create_dummy_parse(messages: List[Message]) -> ParsedChatCompletion[Response]:
@@ -47,7 +44,9 @@ class TestVectorizedOpenAI(TestCase):
         user_messages = ["user_message_{i}" for i in range(7)]
         expected = [f"response_of_{m}" for m in user_messages]
 
-        dummy_completion = create_dummy_parse([Message(id=i, text=message) for i, message in enumerate(user_messages)])
+        dummy_completion = create_dummy_parse(
+            [Message(id=i, text=message) for i, message in enumerate(user_messages)]
+        )
         self.mock_openai.beta.chat.completions.parse.return_value = dummy_completion
 
         actual = self.client.predict(user_messages)

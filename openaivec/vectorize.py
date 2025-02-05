@@ -83,7 +83,11 @@ class VectorizedOpenAI:
     _vectorized_system_message: str = field(init=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "_vectorized_system_message", vectorize_system_message(self.system_message))
+        object.__setattr__(
+            self,
+            "_vectorized_system_message",
+            vectorize_system_message(self.system_message),
+        )
 
     @observe(_logger)
     def request(self, user_messages: List[Message]) -> ParsedChatCompletion[Response]:
@@ -91,17 +95,22 @@ class VectorizedOpenAI:
             model=self.model_name,
             messages=[
                 {"role": "system", "content": self._vectorized_system_message},
-                {"role": "user", "content": Request(user_messages=user_messages).model_dump_json()}
+                {
+                    "role": "user",
+                    "content": Request(user_messages=user_messages).model_dump_json(),
+                },
             ],
             temperature=self.temperature,
             top_p=self.top_p,
-            response_format=Response
+            response_format=Response,
         )
         return completion
 
     @observe(_logger)
     def predict(self, user_messages: List[str]) -> List[str]:
-        messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
+        messages = [
+            Message(id=i, text=message) for i, message in enumerate(user_messages)
+        ]
         completion = self.request(messages)
         response_dict = {
             message.id: message.text
