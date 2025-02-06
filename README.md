@@ -220,6 +220,6 @@ To check for linting issues, use the following command:
 poetry run flake8 ./openaivec
 ```
 
-## Contribution
+## Community
 
 Join our Discord community for developers: https://discord.gg/vbb83Pgn
