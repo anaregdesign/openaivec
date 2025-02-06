@@ -165,7 +165,7 @@ steps:
 3. **Use the Environment from a Notebook:**
    - Open a notebook within Microsoft Fabric.
    - Select the environment you created in the previous steps.
-   - ![image](https://github.com/user-attachments/assets/36bc2e26-87c8-4d80-bfc5-bca19300751f)
+   - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
      *Figure: Using custom environment from a notebook.*
    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
 
