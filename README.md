@@ -159,13 +159,13 @@ steps:
    - Once your environment is set up, go to the **Custom Library** section within that environment.
    - Click on **Add from PyPI** and search for `openaivec` of latest version.
    - Save and publish to reflect the changes.
-   - ![image](https://github.com/user-attachments/assets/57703f15-1a79-4f0f-8f90-7b64ff845e05)
+   - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
      *Figure: Add `openaivec` from PyPI to Public Library*
 
 3. **Use the Environment from a Notebook:**
    - Open a notebook within Microsoft Fabric.
    - Select the environment you created in the previous steps.
-   - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
+   - ![image](https://github.com/user-attachments/assets/2457c078-1691-461b-b66e-accc3989e419)
      *Figure: Using custom environment from a notebook.*
    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
 
