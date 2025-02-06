@@ -217,5 +217,5 @@ poetry run black ./openaivec
 To check for linting issues, use the following command:
 
 ```bash
-poetry run flake8
+poetry run flake8 ./openaivec
 ```
