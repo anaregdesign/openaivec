@@ -157,7 +157,7 @@ steps:
 
 2. **Add `openaivec` to the Environment from Public Library**
    - Once your environment is set up, go to the **Custom Library** section within that environment.
-   - Click on **Add from PyPI** and search for `openaivec` of latest version.
+   - Click on **Add from PyPI** and search for latest version of `openaivec`.
    - Save and publish to reflect the changes.
    - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
      *Figure: Add `openaivec` from PyPI to Public Library*
