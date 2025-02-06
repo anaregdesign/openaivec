@@ -186,3 +186,36 @@ steps:
 
 
 Following these steps allows you to successfully integrate and use `vectorize-openai` within Microsoft Fabric.
+
+## Contributing
+
+We welcome contributions to this project! If you would like to contribute, please follow these guidelines:
+
+1. Fork the repository and create your branch from `main`.
+2. If you've added code that should be tested, add tests.
+3. Ensure the test suite passes.
+4. Make sure your code lints.
+
+### Installing Dependencies
+
+To install the necessary dependencies for development, run:
+
+```bash
+poetry install --dev
+```
+
+### Code Formatting
+
+To reformat the code, use the following command:
+
+```bash
+poetry run black ./openaivec
+```
+
+### Linting
+
+To check for linting issues, use the following command:
+
+```bash
+poetry run flake8
+```
