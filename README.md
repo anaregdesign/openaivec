@@ -219,3 +219,7 @@ To check for linting issues, use the following command:
 ```bash
 poetry run flake8 ./openaivec
 ```
+
+## Contribution
+
+Join our Discord community for developers: https://discord.gg/vbb83Pgn
