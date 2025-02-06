@@ -15,6 +15,14 @@ basicConfig(handlers=[_h], level="DEBUG")
 
 
 def create_dummy_parse(messages: List[Message]) -> ParsedChatCompletion[Response]:
+    """Creates a dummy ParsedChatCompletion based on the provided messages.
+
+    Args:
+        messages (List[Message]): A list of Message instances.
+
+    Returns:
+        ParsedChatCompletion[Response]: A dummy parsed chat completion containing a response.
+    """
     response = Response(
         assistant_messages=[Message(id=i, text=f"response_of_{m.text}") for i, m in enumerate(messages)]
     )
@@ -27,6 +35,11 @@ def create_dummy_parse(messages: List[Message]) -> ParsedChatCompletion[Response
 
 class TestVectorizedOpenAI(TestCase):
     def setUp(self):
+        """Set up test fixtures for VectorizedOpenAI.
+
+        Initializes a mock OpenAI client, assigns test parameters,
+        and creates an instance of VectorizedOpenAI.
+        """
         self.mock_openai = MagicMock()
         self.mock_openai.beta.chat.completions.parse = MagicMock()
         self.system_message = "system_message"
@@ -39,6 +52,10 @@ class TestVectorizedOpenAI(TestCase):
         )
 
     def test_predict(self):
+        """Test the predict method of VectorizedOpenAI.
+
+        Verifies that the predict method returns the expected responses for given user messages.
+        """
         user_messages = ["user_message_{i}" for i in range(7)]
         expected = [f"response_of_{m}" for m in user_messages]
 

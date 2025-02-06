@@ -16,6 +16,16 @@ _logger: Logger = getLogger(__name__)
 
 @dataclass(frozen=True)
 class UDFBuilder:
+    """Helper class to build UDFs for OpenAI completion and embedding tasks using Spark.
+
+    Attributes:
+        api_key (str): Azure API key for OpenAI.
+        api_version (str): API version.
+        endpoint (str): The Azure endpoint.
+        model_name (str): OpenAI model name.
+        batch_size (int, optional): Batch size for UDF operations (default: 256).
+    """
+
     api_key: str
     api_version: str
     endpoint: str
@@ -40,6 +50,15 @@ class UDFBuilder:
 
     @observe(_logger)
     def completion(self, system_message: str):
+        """Creates a pandas UDF for generating completions.
+
+        Args:
+            system_message (str): The system prompt for generating completions.
+
+        Returns:
+            function: A pandas UDF that processes a pandas Series.
+        """
+
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             import httpx
@@ -70,6 +89,12 @@ class UDFBuilder:
 
     @observe(_logger)
     def embedding(self):
+        """Creates a pandas UDF for generating embeddings.
+
+        Returns:
+            function: A pandas UDF that processes a pandas Series.
+        """
+
         @pandas_udf(ArrayType(FloatType()))
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             import httpx
