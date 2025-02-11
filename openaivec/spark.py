@@ -1,17 +1,54 @@
 import os
 from dataclasses import dataclass
 from logging import getLogger, Logger
-from typing import Iterator
+from typing import Iterator, Optional
 
+import httpx
 import pandas as pd
+from openai import OpenAI, AzureOpenAI
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
 from openaivec.log import observe
+from openaivec.vectorize import VectorizedLLM
 
 __ALL__ = ["UDFBuilder"]
 
 _logger: Logger = getLogger(__name__)
+
+# Global Singletons
+_http_client: Optional[httpx.Client] = None
+_openai_client: Optional[OpenAI] = None
+_vectorized_client: Optional[VectorizedLLM] = None
+
+
+def get_http_client(http2: bool, verify: bool) -> httpx.Client:
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.Client(http2=http2, verify=verify)
+    return _http_client
+
+
+def get_azure_openai_client(api_version: str, azure_endpoint: str, api_key: str) -> OpenAI:
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = AzureOpenAI(
+            api_version=api_version,
+            azure_endpoint=azure_endpoint,
+            http_client=get_http_client(http2=True, verify=False),
+            api_key=api_key,
+        )
+    return _openai_client
+
+
+def get_openai_client(api_key: str) -> OpenAI:
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = OpenAI(
+            api_key=api_key,
+            http_client=get_http_client(http2=True, verify=False),
+        )
+    return _openai_client
 
 
 @dataclass(frozen=True)
@@ -42,7 +79,6 @@ class UDFBuilder:
     def completion(self, system_message: str):
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-            import httpx
             import pandas as pd
             from openai import AzureOpenAI
 
