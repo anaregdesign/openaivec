@@ -115,23 +115,13 @@ class UDFBuilder:
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             import pandas as pd
-            from openai import AzureOpenAI
 
-            from openaivec import VectorizedOpenAI
-
-            client = AzureOpenAI(
+            client_vec = get_vectorized_azureopenai_client(
                 api_version=self.api_version,
                 azure_endpoint=self.endpoint,
-                http_client=httpx.Client(http2=True, verify=False),
-                api_key=self.api_key,
-            )
-
-            client_vec = VectorizedOpenAI(
-                client=client,
+                apy_key=self.api_key,
                 model_name=self.model_name,
                 system_message=system_message,
-                top_p=1.0,
-                temperature=0.0,
             )
 
             for part in col:
