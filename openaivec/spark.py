@@ -57,7 +57,7 @@ def get_vectorized_azureopenai_client(api_version: str, azure_endpoint: str, apy
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
-            client=get_azure_openai_client(
+            client=get_azureopenai_client(
                 api_version=api_version,
                 azure_endpoint=azure_endpoint,
                 api_key=apy_key,
