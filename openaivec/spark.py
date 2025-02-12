@@ -9,7 +9,7 @@ from openai import OpenAI, AzureOpenAI
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
-from openaivec import VectorizedOpenAI
+from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
 from openaivec.vectorize import VectorizedLLM
 
@@ -21,6 +21,7 @@ _logger: Logger = getLogger(__name__)
 _http_client: Optional[httpx.Client] = None
 _openai_client: Optional[OpenAI] = None
 _vectorized_client: Optional[VectorizedLLM] = None
+_embedding_client: Optional[EmbeddingOpenAI] = None
 
 
 def get_http_client(http2: bool, verify: bool) -> httpx.Client:
@@ -66,6 +67,21 @@ def get_vectorized_azureopenai_client(api_version: str, azure_endpoint: str, apy
             system_message=system_message,
             top_p=1.0,
             temperature=0.0,
+        )
+    return _vectorized_client
+
+
+def get_vectorized_embedding_client(api_version: str, azure_endpoint: str, api_key: str,
+                                    model_name: str) -> VectorizedLLM:
+    global _vectorized_client
+    if _vectorized_client is None:
+        _vectorized_client = EmbeddingOpenAI(
+            client=get_azureopenai_client(
+                api_version=api_version,
+                azure_endpoint=azure_endpoint,
+                api_key=api_key,
+            ),
+            model_name=model_name,
         )
     return _vectorized_client
 
