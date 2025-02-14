@@ -38,8 +38,8 @@ class TestUDFBuilder(TestCase):
             "repeat",
             self.udf.completion(
                 """
-            Just repeat input string.
-        """
+                Just repeat input string.
+                """,
             ),
         )
         dummy_df = self.spark.range(31)

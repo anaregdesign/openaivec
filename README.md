@@ -91,7 +91,7 @@ from openaivec.spark import UDFBuilder
 udf = UDFBuilder(
     api_key="<your-api-key>",
     api_version="2024-10-21",
-    endpoint="https://<your_resource_name>.openai.azure.com",
+    base_url="https://<your_resource_name>.openai.azure.com",
     model_name="<your_deployment_name>"
 )
 
@@ -175,7 +175,7 @@ steps:
      udf = UDFBuilder(
          api_key="<your-api-key>",
          api_version="2024-10-21",
-         endpoint="https://<your-resource-name>.openai.azure.com",
+         base_url="https://<your-resource-name>.openai.azure.com",
          model_name="<your-deployment-name"
      )
      ```
