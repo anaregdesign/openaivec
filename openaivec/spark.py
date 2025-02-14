@@ -87,7 +87,6 @@ class UDFBuilder:
     # Params for minibatch
     batch_size: int = 256
 
-
     @classmethod
     def of_environment(cls, batch_size: int = 256) -> "UDFBuilder":
         return cls(
