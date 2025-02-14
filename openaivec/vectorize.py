@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import List
@@ -73,8 +74,19 @@ class Response(BaseModel):
     assistant_messages: List[Message]
 
 
+class VectorizedLLM(metaclass=ABCMeta):
+
+    @abstractmethod
+    def predict(self, user_messages: List[str]) -> List[str]:
+        pass
+
+    @abstractmethod
+    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
+        pass
+
+
 @dataclass(frozen=True)
-class VectorizedOpenAI:
+class VectorizedOpenAI(VectorizedLLM):
     client: OpenAI
     model_name: str  # it would be the name of deployment for Azure
     system_message: str

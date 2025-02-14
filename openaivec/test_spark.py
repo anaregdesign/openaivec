@@ -15,6 +15,7 @@ class TestUDFBuilder(TestCase):
             SparkSession.builder.appName("test")
             .master("local[*]")
             .config("spark.ui.enabled", "false")
+            .config("spark.driver.bindAddress", "127.0.0.1")
             .config("spark.sql.execution.arrow.pyspark.enabled", "true")
             .config(
                 "spark.driver.extraJavaOptions",
@@ -37,8 +38,8 @@ class TestUDFBuilder(TestCase):
             "repeat",
             self.udf.completion(
                 """
-            Just repeat input string.
-        """
+                Just repeat input string.
+                """,
             ),
         )
         dummy_df = self.spark.range(31)
