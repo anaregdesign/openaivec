@@ -34,7 +34,7 @@ def get_http_client(http2: bool, verify: bool) -> httpx.Client:
 def get_openai_client(conf: "UDFBuilder") -> OpenAI:
     global _openai_client
     if _openai_client is None:
-        if conf.base_url is None:
+        if conf.endpoint is None:
             _openai_client = OpenAI(
                 api_key=conf.api_key,
                 http_client=get_http_client(http2=True, verify=False),
@@ -43,7 +43,7 @@ def get_openai_client(conf: "UDFBuilder") -> OpenAI:
             _openai_client = AzureOpenAI(
                 api_key=conf.api_key,
                 api_version=conf.api_version,
-                azure_endpoint=conf.base_url,
+                azure_endpoint=conf.endpoint,
                 http_client=get_http_client(http2=True, verify=False),
             )
     return _openai_client
@@ -76,7 +76,7 @@ def get_vectorized_embedding_client(conf: "UDFBuilder") -> EmbeddingOpenAI:
 class UDFBuilder:
     # Params for Constructor
     api_key: str
-    base_url: str
+    endpoint: str
     api_version: str
 
     # Params for chat_completion
@@ -93,7 +93,7 @@ class UDFBuilder:
         return cls(
             api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
             api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21"),
-            base_url=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+            endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
             model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
             batch_size=batch_size,
         )
@@ -101,7 +101,7 @@ class UDFBuilder:
     def __post_init__(self):
         assert self.api_key, "api_key must be set"
         assert self.api_version, "api_version must be set"
-        assert self.base_url, "endpoint must be set"
+        assert self.endpoint, "endpoint must be set"
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)
