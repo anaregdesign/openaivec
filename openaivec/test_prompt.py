@@ -160,7 +160,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("Apple", "Company")
             .example("Apple", "Color")
             .example("Apple", "Animal")
-            .enhance(self.client, self.model_name)
+            .improve(self.client, self.model_name)
             .build()
         )
         logging.info("Prompt: %s", prompt)

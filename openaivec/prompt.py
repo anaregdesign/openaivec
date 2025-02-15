@@ -31,6 +31,7 @@ enhance_prompt: str = """
             - Clearly describe the input semantics (e.g., "Expects a name of product or instruction sentence").
             - Clearly describe the output semantics (e.g., "Returns a category, or expected troubles").
             - Explain the main goal or usage scenario of the prompt in a concise manner.
+            - If the "advices" field is present, consider incorporating them into the "purpose" field.
         </Instruction>
 
         <!-- Step 3: Analyze the "examples" field -->
@@ -46,7 +47,7 @@ enhance_prompt: str = """
                 1. Preserve the existing "cautions" and "examples" fields.
                 2. Add as many similar "examples" as possible according the "purpose" and "cautions".
             - If "advices" is present in the input:
-                1. Use the provided "advices" to refine or adjust "examples" and/or "cautions".
+                1. Use the provided "advices" to refine or adjust existing "examples" and/or "cautions".
         </Instruction>
 
         <!-- Step 5: Address contradictions or ambiguities -->
@@ -509,6 +510,13 @@ class FewShotPromptBuilder:
         )
         self._prompt = completion.choices[0].message.parsed
         self._warn_advices()
+        return self
+
+    def improve(self, client: OpenAI, model_name: str, max_iter: int = 5) -> "FewShotPromptBuilder":
+        for _ in range(max_iter):
+            self.enhance(client, model_name)
+            if not self._prompt.advices:
+                break
         return self
 
     def _validate(self):
