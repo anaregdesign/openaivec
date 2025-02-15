@@ -134,7 +134,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             # Steve Wozniak is not boring
             .example("Steve Wozniak", "is not boring")
             .enhance(client, model_name)
-            .build_xml()
+            .build()
         )
 
         # Log the parsed XML result

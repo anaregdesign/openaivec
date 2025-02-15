@@ -412,21 +412,26 @@ class FewShotPromptBuilder:
         self._prompt = completion.choices[0].message.parsed
         return self
 
-    def build(self) -> FewShotPrompt:
+    def _validate(self):
         # Validate that 'purpose' and 'examples' are not empty.
         if not self._prompt.purpose:
             raise ValueError("Purpose is required.")
         if not self._prompt.examples or len(self._prompt.examples) == 0:
             raise ValueError("At least one example is required.")
-        return self._prompt
+
+    def build(self) -> str:
+        self._validate()
+        return self.build_xml()
 
     def build_json(self, **kwargs) -> str:
-        prompt = self.build()
-        return prompt.model_dump_json(**kwargs)
+        self._validate()
+
+        return self._prompt.model_dump_json(**kwargs)
 
     def build_xml(self) -> str:
-        prompt = self.build()
-        prompt_dict = prompt.model_dump()
+        self._validate()
+
+        prompt_dict = self._prompt.model_dump()
         root = ElementTree.Element("Prompt")
 
         # Purpose (always output)
