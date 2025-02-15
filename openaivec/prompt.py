@@ -12,12 +12,12 @@ enhance_prompt: str = """
             Receive the prompt and improve its quality.
         </Instruction>
         <Instruction>
-            Improve the prompt sentence to make it clearer, more concise, and more informative 
+            Improve the prompt sentence to make it clearer, more concise, and more informative
             as a prompt for LLM models.
             In particular, clarify what kind of input it takes and what kind of output it returns.
         </Instruction>
         <Instruction>
-            Identify common characteristics or exceptions in the examples and incorporate them 
+            Identify common characteristics or exceptions in the examples and incorporate them
             into the "cautions" field as needed.
         </Instruction>
         <Instruction>
@@ -27,7 +27,7 @@ enhance_prompt: str = """
             Always preserve the original input language in your output.
         </Instruction>
     </Instructions>
-    
+
     <Examples>
         <!-- without any changes -->
         <Example>
@@ -88,7 +88,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-        
+
         <!-- with improved purpose -->
         <Example>
             <Input>
@@ -148,7 +148,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-    
+
         <!-- with additional cautions -->
         <Example>
             <Input>
@@ -283,7 +283,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-        
+
         <!-- with additional examples and cautions -->
         <Example>
             <Input>
@@ -374,23 +374,25 @@ class FewShotPromptBuilder:
     def __init__(self):
         self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[])
 
-    def purpose(self, purpose: str) -> "Few":
+    def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         self._prompt.purpose = purpose
         return self
 
-    def caution(self, caution: str) -> "Few":
+    def caution(self, caution: str) -> "FewShotPromptBuilder":
         if self._prompt.cautions is None:
             self._prompt.cautions = []
         self._prompt.cautions.append(caution)
         return self
 
-    def example(self, source: str, result: str) -> "Few":
+    def example(self, source: str, result: str) -> "FewShotPromptBuilder":
         if self._prompt.examples is None:
             self._prompt.examples = []
         self._prompt.examples.append(Example(source=source, result=result))
         return self
 
-    def enhance(self, client: OpenAI, model_name: str, temperature: float = 0, top_p: float = 1) -> "Few":
+    def enhance(
+        self, client: OpenAI, model_name: str, temperature: float = 0, top_p: float = 1
+    ) -> "FewShotPromptBuilder":
 
         # At least 5 examples are required to enhance the prompt.
         if len(self._prompt.examples) < 5:
