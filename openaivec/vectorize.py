@@ -18,13 +18,15 @@ _logger: Logger = getLogger(__name__)
 def vectorize_system_message(system_message: str) -> str:
     return f"""
 <SystemMessage>
-    <Instructions>
+    <ElementInstructions>
         <Instruction>{system_message}</Instruction>
+    </ElementInstructions>
+    <BatchInstructions>
         <Instruction>
             You will receive multiple user messages at once.
             Please provide an appropriate response to each message individually.
         </Instruction>
-    </Instructions>
+    </BatchInstructions>
     <Examples>
         <Example>
             <Input>

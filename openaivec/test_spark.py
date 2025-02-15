@@ -38,7 +38,7 @@ class TestUDFBuilder(TestCase):
             "repeat",
             self.udf.completion(
                 """
-                Just repeat input string.
+                Repeat twice input string.
                 """,
             ),
         )
@@ -47,6 +47,6 @@ class TestUDFBuilder(TestCase):
 
         self.spark.sql(
             """
-            SELECT repeat(cast(id as STRING)) as v from dummy
+            SELECT id, repeat(cast(id as STRING)) as v from dummy
             """
         ).show()
