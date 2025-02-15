@@ -1,41 +1,417 @@
 from typing import List
 from xml.etree import ElementTree
 
+from openai import OpenAI
+from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
+enhance_prompt: str = """
+<SystemMessage>
+    <Instructions>
+        <Instruction>
+            Receive the prompt and improve its quality.
+        </Instruction>
+        <Instruction>
+            Improve the prompt sentence by making it more clear, concise, and informative.
+        </Instruction>
+        <Instruction>
+            Identify common characteristics or exceptions in the examples and incorporate them 
+            into the "cautions" field as needed.
+        </Instruction>
+        <Instruction>
+            Keep the original elements of "cautions" and "examples" intact.
+        </Instruction>
+        <Instruction>
+            Always preserve the original input language in your output.
+        </Instruction>
+    </Instructions>
+    
+    <Examples>
+        <!-- without any changes -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>", "<caution2>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>", "<caution2>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Output>
+        </Example>
+        
+        <!-- with improved purpose -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>", "<caution2>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<improved_purpose>",
+                    "cautions": ["<caution1>", "<caution2>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Output>
+        </Example>
+    
+        <!-- with additional cautions -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>", "<caution2>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<improved_purpose>",
+                    "cautions": [
+                        "<caution1>",
+                        "<caution2>",
+                        "<additional_caution1>",
+                        "<additional_caution2>"
+                    ],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Output>
+        </Example>
 
-class FewShotExample(BaseModel):
+        <!-- with additional examples -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<improved_purpose>",
+                    "cautions": [
+                        "<caution1>"
+                    ],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        },
+                        {
+                            "source": "<additional_source1>",
+                            "result": "<additional_result1>"
+                        },
+                        {
+                            "source": "<additional_source2>",
+                            "result": "<additional_result2>"
+                        }
+                    ]
+                }
+            </Output>
+        </Example>
+        
+        <!-- with additional examples and cautions -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": [],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<improved_purpose>",
+                    "cautions": [
+                        "<additional_caution1>",
+                        "<additional_caution2>"
+                    ],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        },
+                        {
+                            "source": "<additional_source1>",
+                            "result": "<additional_result1>"
+                        },
+                        {
+                            "source": "<additional_source2>",
+                            "result": "<additional_result2>"
+                        }
+                    ]
+                }
+            </Output>
+        </Example>
+    </Examples>
+</SystemMessage>
+"""
+
+
+class Example(BaseModel):
     source: str
     result: str
 
 
-class AtomicPrompt(BaseModel):
+class FewShotPrompt(BaseModel):
     purpose: str
     cautions: List[str]
-    examples: List[FewShotExample]
+    examples: List[Example]
 
 
-class AtomicPromptBuilder:
+class FewShotPromptBuilder:
     def __init__(self):
-        self._prompt = AtomicPrompt(purpose="", cautions=[], examples=[])
+        self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[])
 
-    def purpose(self, purpose: str) -> "AtomicPromptBuilder":
+    def purpose(self, purpose: str) -> "Few":
         self._prompt.purpose = purpose
         return self
 
-    def caution(self, caution: str) -> "AtomicPromptBuilder":
+    def caution(self, caution: str) -> "Few":
         if self._prompt.cautions is None:
             self._prompt.cautions = []
         self._prompt.cautions.append(caution)
         return self
 
-    def example(self, source: str, result: str) -> "AtomicPromptBuilder":
+    def example(self, source: str, result: str) -> "Few":
         if self._prompt.examples is None:
             self._prompt.examples = []
-        self._prompt.examples.append(FewShotExample(source=source, result=result))
+        self._prompt.examples.append(Example(source=source, result=result))
         return self
 
-    def build(self) -> AtomicPrompt:
+    def enhance(self, client: OpenAI, model_name: str, temperature: float = 0,
+                top_p: float = 1) -> "Few":
+
+        # At least 5 examples are required to enhance the prompt.
+        if len(self._prompt.examples) < 5:
+            raise ValueError("At least 5 examples are required to enhance the prompt.")
+
+        completion: ParsedChatCompletion[FewShotPrompt] = client.beta.chat.completions.parse(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": enhance_prompt},
+                {
+                    "role": "user",
+                    "content": self._prompt.model_dump_json(),
+                },
+            ],
+            temperature=temperature,
+            top_p=top_p,
+            response_format=FewShotPrompt,
+        )
+        self._prompt = completion.choices[0].message.parsed
+        return self
+
+    def build(self) -> FewShotPrompt:
         # Validate that 'purpose' and 'examples' are not empty.
         if not self._prompt.purpose:
             raise ValueError("Purpose is required.")

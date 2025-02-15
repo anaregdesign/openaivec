@@ -3,7 +3,7 @@ import logging
 import unittest
 from xml.etree import ElementTree
 
-from openaivec.prompt import AtomicPromptBuilder
+from openaivec.prompt import Few
 
 logging.basicConfig(level=logging.INFO, force=True)
 
@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, force=True)
 class TestAtomicPromptBuilder(unittest.TestCase):
     def test_missing_purpose_raises_error(self):
         """Test that a ValueError is raised if 'purpose' is missing."""
-        builder = AtomicPromptBuilder()
+        builder = Few()
         builder.example("source1", "result1")
         with self.assertRaises(ValueError) as context:
             builder.build()
@@ -19,7 +19,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
 
     def test_missing_examples_raises_error(self):
         """Test that a ValueError is raised if 'examples' is missing."""
-        builder = AtomicPromptBuilder()
+        builder = Few()
         builder.purpose("Test Purpose")
         with self.assertRaises(ValueError) as context:
             builder.build()
@@ -27,7 +27,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
 
     def test_build_json_success(self):
         """Test successful JSON serialization when all required fields are set."""
-        builder = AtomicPromptBuilder()
+        builder = Few()
         builder.purpose("Test Purpose")
         builder.example("source1", "result1")
         builder.caution("Check input")
@@ -49,7 +49,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
 
     def test_build_xml_success(self):
         """Test successful XML serialization when all required fields are set."""
-        builder = AtomicPromptBuilder()
+        builder = Few()
         builder.purpose("Test Purpose")
         builder.example("source1", "result1")
         builder.caution("Check input")
