@@ -1,3 +1,4 @@
+from logging import Logger, getLogger
 from typing import List
 from xml.etree import ElementTree
 
@@ -5,26 +6,53 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
+_logger: Logger = getLogger(__name__)
+
 enhance_prompt: str = """
 <SystemMessage>
     <Instructions>
+        <!--
+          This system message is designed to improve a JSON-based prompt.
+          Follow the steps below in order.
+        -->
+
+        <!-- Step 1: Overall Quality Improvement -->
         <Instruction>
-            Receive the prompt and improve its quality.
+            Receive the prompt in JSON format (with fields "purpose", "cautions", "examples",
+            and optionally "advices"). Improve its quality by:
+            - Correcting or refining the language (but preserving the original language).
+            - At least 5 examples are required to enhance the prompt.
         </Instruction>
+
+        <!-- Step 2: Improve the "purpose" field -->
         <Instruction>
-            Improve the prompt sentence to make it clearer, more concise, and more informative
-            as a prompt for LLM models.
-            In particular, clarify what kind of input it takes and what kind of output it returns.
+            Make the "purpose" field more concise, clearer, and more informative.
+            Specifically:
+            - Clearly describe the input semantics (e.g., "Expects a name of product or instruction sentence").
+            - Clearly describe the output semantics (e.g., "Returns a category, or expected troubles").
+            - Explain the main goal or usage scenario of the prompt in a concise manner.
         </Instruction>
+
+        <!-- Step 3: Analyze the "examples" field -->
         <Instruction>
-            Identify common characteristics or exceptions in the examples and incorporate them
-            into the "cautions" field as needed.
+            Examine the examples. If there are common patterns or edge cases (exceptions),
+            incorporate them as necessary into the "cautions" field to help the end user
+            avoid pitfalls. If no changes are needed, keep them as is.
         </Instruction>
+
+        <!-- Step 4: Handle the presence or absence of "advices" -->
         <Instruction>
-            Keep the existing elements of "cautions" and "examples" intact.
+            - If "advices" is not present in the input:
+                1. Preserve the existing "cautions" and "examples" fields.
+                2. Add as many similar "examples" as possible according the "purpose" and "cautions".
+            - If "advices" is present in the input:
+                1. Use the provided "advices" to refine or adjust "examples" and/or "cautions".
         </Instruction>
+
+        <!-- Step 5: Address contradictions or ambiguities -->
         <Instruction>
-            Always preserve the original input language in your output.
+            If you discover any contradictions or ambiguities within the "examples" or "cautions",
+            add them as new entries in the "advices" field, along with proposed possible alternatives.
         </Instruction>
     </Instructions>
 
@@ -88,7 +116,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-
+    
         <!-- with improved purpose -->
         <Example>
             <Input>
@@ -148,7 +176,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-
+    
         <!-- with additional cautions -->
         <Example>
             <Input>
@@ -213,7 +241,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-
+    
         <!-- with additional examples -->
         <Example>
             <Input>
@@ -283,7 +311,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-
+    
         <!-- with additional examples and cautions -->
         <Example>
             <Input>
@@ -354,7 +382,74 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
+    
+        <!-- with advices -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<improved_purpose>",
+                    "cautions": [
+                        "<caution1>"
+                    ],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ],
+                    "advices": [
+                        "<advice1>",
+                        "<advice2>"
+                    ]
+                }
+            </Output>
+        </Example>
     </Examples>
+
 </SystemMessage>
 """
 
@@ -368,11 +463,12 @@ class FewShotPrompt(BaseModel):
     purpose: str
     cautions: List[str]
     examples: List[Example]
+    advices: List[str]
 
 
 class FewShotPromptBuilder:
     def __init__(self):
-        self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[])
+        self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[], advices=[])
 
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         self._prompt.purpose = purpose
@@ -412,6 +508,7 @@ class FewShotPromptBuilder:
             response_format=FewShotPrompt,
         )
         self._prompt = completion.choices[0].message.parsed
+        self._warn_advices()
         return self
 
     def _validate(self):
@@ -420,6 +517,15 @@ class FewShotPromptBuilder:
             raise ValueError("Purpose is required.")
         if not self._prompt.examples or len(self._prompt.examples) == 0:
             raise ValueError("At least one example is required.")
+
+    def _warn_advices(self):
+        if self._prompt.advices:
+            for advice in self._prompt.advices:
+                _logger.warning("Advice: %s", advice)
+
+    def get_object(self) -> FewShotPrompt:
+        self._validate()
+        return self._prompt
 
     def build(self) -> str:
         self._validate()
