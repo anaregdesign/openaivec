@@ -12,14 +12,16 @@ enhance_prompt: str = """
             Receive the prompt and improve its quality.
         </Instruction>
         <Instruction>
-            Improve the prompt sentence by making it more clear, concise, and informative.
+            Improve the prompt sentence to make it clearer, more concise, and more informative 
+            as a prompt for LLM models.
+            In particular, clarify what kind of input it takes and what kind of output it returns.
         </Instruction>
         <Instruction>
             Identify common characteristics or exceptions in the examples and incorporate them 
             into the "cautions" field as needed.
         </Instruction>
         <Instruction>
-            Keep the original elements of "cautions" and "examples" intact.
+            Keep the existing elements of "cautions" and "examples" intact.
         </Instruction>
         <Instruction>
             Always preserve the original input language in your output.
@@ -388,8 +390,7 @@ class FewShotPromptBuilder:
         self._prompt.examples.append(Example(source=source, result=result))
         return self
 
-    def enhance(self, client: OpenAI, model_name: str, temperature: float = 0,
-                top_p: float = 1) -> "Few":
+    def enhance(self, client: OpenAI, model_name: str, temperature: float = 0, top_p: float = 1) -> "Few":
 
         # At least 5 examples are required to enhance the prompt.
         if len(self._prompt.examples) < 5:
@@ -426,7 +427,7 @@ class FewShotPromptBuilder:
     def build_xml(self) -> str:
         prompt = self.build()
         prompt_dict = prompt.model_dump()
-        root = ElementTree.Element("AtomicPrompt")
+        root = ElementTree.Element("Prompt")
 
         # Purpose (always output)
         purpose_elem = ElementTree.SubElement(root, "Purpose")
@@ -448,4 +449,6 @@ class FewShotPromptBuilder:
             result_elem = ElementTree.SubElement(example_elem, "Result")
             result_elem.text = example.get("result")
 
-        return ElementTree.tostring(root, encoding="utf-8")
+        ElementTree.indent(root, level=0)
+
+        return ElementTree.tostring(root, encoding="unicode")

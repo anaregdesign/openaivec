@@ -1,7 +1,10 @@
 import json
 import logging
+import os
 import unittest
 from xml.etree import ElementTree
+
+from openai import OpenAI, AzureOpenAI
 
 from openaivec.prompt import FewShotPromptBuilder
 
@@ -27,10 +30,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
 
     def test_build_json_success(self):
         """Test successful JSON serialization when all required fields are set."""
-        builder = FewShotPromptBuilder()
-        builder.purpose("Test Purpose")
-        builder.example("source1", "result1")
-        builder.caution("Check input")
+        builder = FewShotPromptBuilder().purpose("Test Purpose").example("source1", "result1").caution("Check input")
         json_str = builder.build_json()
 
         # Parse the JSON string to verify its content
@@ -63,7 +63,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         parsed_xml = ElementTree.tostring(root, encoding="unicode")
         logging.info("Parsed XML: %s", parsed_xml)
 
-        self.assertEqual(root.tag, "AtomicPrompt")
+        self.assertEqual(root.tag, "Prompt")
 
         # Check the Purpose tag
         purpose_elem = root.find("Purpose")
@@ -89,5 +89,70 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         self.assertIsNotNone(result_elem)
         self.assertEqual(result_elem.text, "result1")
 
+    def test_enhance(self):
+        client: OpenAI = AzureOpenAI(
+            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        )
+        model_name: str = os.environ.get("AZURE_OPENAI_MODEL_NAME")
 
+        prompt: str = (
+            FewShotPromptBuilder()
+            .purpose("Return the smallest category that includes the given word")
+            .caution("Never use proper nouns as categories")
+            .example("Apple", "Fruit")
+            .example("Car", "Vehicle")
+            .example("Tokyo", "City")
+            .example("Keiichi Sogabe", "Musician")
+            .example("America", "Country")
+            .example("United Kingdom", "Country")
+            # Examples of countries
+            .example("France", "Country")
+            .example("Germany", "Country")
+            .example("Brazil", "Country")
+            # Examples of famous Americans
+            .example("Elvis Presley", "Musician")
+            .example("Marilyn Monroe", "Actor")
+            .example("Michael Jordan", "Athlete")
+            # Examples of American place names
+            .example("New York", "City")
+            .example("Los Angeles", "City")
+            .example("Grand Canyon", "Natural Landmark")
+            # Examples of everyday items
+            .example("Toothbrush", "Hygiene Product")
+            .example("Notebook", "Stationery")
+            .example("Spoon", "Kitchenware")
+            # Examples of company names
+            .example("Google", "Company in USA")
+            .example("Toyota", "Company in Japan")
+            .example("Amazon", "Company in USA")
+            # Examples of abstract concepts
+            .example("Freedom", "Abstract Idea")
+            .example("Happiness", "Emotion)")
+            .example("Justice", "Ethical Principle)")
+            # Steve Wozniak is not boring
+            .example("Steve Wozniak", "is not boring")
+            .enhance(client, model_name)
+            .build_xml()
+        )
 
+        # Log the parsed XML result
+        logging.info("Parsed XML: %s", prompt)
+
+    def test_few_examples_raise_error(self):
+        """Test that a ValueError is raised if less than 3 examples are provided."""
+
+        client: OpenAI = AzureOpenAI(
+            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        )
+        model_name: str = os.environ.get("AZURE_OPENAI_MODEL_NAME")
+
+        builder = (
+            FewShotPromptBuilder().purpose("Test Purpose").example("source1", "result1").example("source2", "result2")
+        )
+        with self.assertRaises(ValueError) as context:
+            builder.enhance(client, model_name)
+        self.assertEqual(str(context.exception), "At least 5 examples are required to enhance the prompt.")
