@@ -12,6 +12,14 @@ logging.basicConfig(level=logging.INFO, force=True)
 
 
 class TestAtomicPromptBuilder(unittest.TestCase):
+    def setUp(self):
+        self.client: OpenAI = AzureOpenAI(
+            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+        )
+        self.model_name: str = os.environ.get("AZURE_OPENAI_MODEL_NAME")
+
     def test_missing_purpose_raises_error(self):
         """Test that a ValueError is raised if 'purpose' is missing."""
         builder = FewShotPromptBuilder()
@@ -90,13 +98,6 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         self.assertEqual(result_elem.text, "result1")
 
     def test_enhance(self):
-        client: OpenAI = AzureOpenAI(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-        )
-        model_name: str = os.environ.get("AZURE_OPENAI_MODEL_NAME")
-
         prompt: str = (
             FewShotPromptBuilder()
             .purpose("Return the smallest category that includes the given word")
@@ -133,7 +134,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("Justice", "Ethical Principle)")
             # Steve Wozniak is not boring
             .example("Steve Wozniak", "is not boring")
-            .enhance(client, model_name)
+            .improve(self.client, self.model_name)
             .build()
         )
 
@@ -142,17 +143,24 @@ class TestAtomicPromptBuilder(unittest.TestCase):
 
     def test_few_examples_raise_error(self):
         """Test that a ValueError is raised if less than 3 examples are provided."""
-
-        client: OpenAI = AzureOpenAI(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-        )
-        model_name: str = os.environ.get("AZURE_OPENAI_MODEL_NAME")
-
         builder = (
             FewShotPromptBuilder().purpose("Test Purpose").example("source1", "result1").example("source2", "result2")
         )
         with self.assertRaises(ValueError) as context:
-            builder.enhance(client, model_name)
+            builder.enhance(self.client, self.model_name)
         self.assertEqual(str(context.exception), "At least 5 examples are required to enhance the prompt.")
+
+    def test_advice(self):
+        """Test that a warning is raised if a contradiction is detected in the examples."""
+        prompt: str = (
+            FewShotPromptBuilder()
+            .purpose("Return the smallest category that includes the given word")
+            .example("Apple", "Fruit")
+            .example("Apple", "Technology")
+            .example("Apple", "Company")
+            .example("Apple", "Color")
+            .example("Apple", "Animal")
+            .improve(self.client, self.model_name)
+            .build()
+        )
+        logging.info("Prompt: %s", prompt)

@@ -1,3 +1,4 @@
+from logging import Logger, getLogger
 from typing import List
 from xml.etree import ElementTree
 
@@ -5,26 +6,64 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
+_logger: Logger = getLogger(__name__)
+
 enhance_prompt: str = """
 <SystemMessage>
     <Instructions>
+        <!--
+          This system message is designed to improve a JSON-based prompt.
+          Follow the steps below in order.
+        -->
+
+        <!-- Step 1: Overall Quality Improvement -->
         <Instruction>
-            Receive the prompt and improve its quality.
+            Receive the prompt in JSON format (with fields "purpose", "cautions", "examples",
+            and optionally "advices"). Improve its quality by:
+            - Ensuring no logical contradictions or ambiguities exist in the entire input.
+            - Correcting or refining the language (while preserving the original intent).
+            - In the "purpose" field: clearly describe the input semantics, output semantics, and the main goal.
+            - In the "cautions" field: gather common points or edge cases found in "examples."
+            - In the "examples" field: enhance the examples to cover a wide range of scenarios.
+                - "source" and "result" must correspond one-to-one.
+                - Provide at least 5 examples for better coverage.
+            - If the "advices" field is present: use them to refine or adjust the "purpose", "examples", and "cautions" fields where necessary.
         </Instruction>
+
+        <!-- Step 2: Improve the "purpose" field -->
         <Instruction>
-            Improve the prompt sentence to make it clearer, more concise, and more informative
-            as a prompt for LLM models.
-            In particular, clarify what kind of input it takes and what kind of output it returns.
+            Make the "purpose" field more concise, clearer, and more informative.
+            Specifically:
+            - Clearly describe the input semantics (e.g., "Expects a product name or instruction sentence").
+            - Clearly describe the output semantics (e.g., "Returns a category or expected issues").
+            - Briefly explain the main goal or usage scenario of the prompt.
+            - If the "advices" field is present, consider incorporating its insights into the "purpose" field.
         </Instruction>
+
+        <!-- Step 3: Improve the "cautions" field -->
         <Instruction>
-            Identify common characteristics or exceptions in the examples and incorporate them
-            into the "cautions" field as needed.
+            Examine the examples. If there are common patterns or edge cases (exceptions),
+            incorporate them as necessary into the "cautions" field to help the end user
+            avoid pitfalls. If no changes are needed, keep them as is.
+            Review the "examples" to ensure that no redundant cautions remain.
+            If the "advices" field is present, reflect any relevant suggestions into the "cautions" field,
+            ensuring consistency with the other fields and the overall intent.
         </Instruction>
+
+        <!-- Step 4: Improve the "examples" field -->
         <Instruction>
-            Keep the existing elements of "cautions" and "examples" intact.
+            - Add or refine as many "examples" as needed based on the "purpose" and "cautions."
+            - Remove any duplicate "source" values; each "source" must be unique across all examples.
+            - If "advices" is present, use them to refine or adjust existing "examples" ensuring consistency throughout.
         </Instruction>
+
+        <!-- Step 5: Resolve contradictions or ambiguities -->
         <Instruction>
-            Always preserve the original input language in your output.
+            After these revisions, delete any items from the "advices" that are no longer necessary.
+            The final output must not contain any unaddressed contradictions or ambiguities.
+            If new contradictions or ambiguities arise during the refining process,
+            record them in the "advices" field with possible resolutions.
+            Ensure that "purpose," "cautions," and "examples" remain consistent in the final output.
         </Instruction>
     </Instructions>
 
@@ -354,6 +393,73 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
+
+        <!-- with advices -->
+        <Example>
+            <Input>
+                {
+                    "purpose": "<some_purpose>",
+                    "cautions": ["<caution1>"],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ],
+                    "advices": ["<advice1>"]
+                }
+            </Input>
+            <Output>
+                {
+                    "purpose": "<improved_purpose>",
+                    "cautions": [
+                        "<caution1>"
+                    ],
+                    "examples": [
+                        {
+                            "source": "<source1>",
+                            "result": "<result1>"
+                        },
+                        {
+                            "source": "<source2>",
+                            "result": "<result2>"
+                        },
+                        {
+                            "source": "<source3>",
+                            "result": "<result3>"
+                        },
+                        {
+                            "source": "<source4>",
+                            "result": "<result4>"
+                        },
+                        {
+                            "source": "<source5>",
+                            "result": "<result5>"
+                        }
+                    ],
+                    "advices": [
+                        "<advice1>",
+                        "<advice2>"
+                    ]
+                }
+            </Output>
+        </Example>
     </Examples>
 </SystemMessage>
 """
@@ -368,11 +474,12 @@ class FewShotPrompt(BaseModel):
     purpose: str
     cautions: List[str]
     examples: List[Example]
+    advices: List[str]
 
 
 class FewShotPromptBuilder:
     def __init__(self):
-        self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[])
+        self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[], advices=[])
 
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         self._prompt.purpose = purpose
@@ -412,6 +519,14 @@ class FewShotPromptBuilder:
             response_format=FewShotPrompt,
         )
         self._prompt = completion.choices[0].message.parsed
+        self._warn_advices()
+        return self
+
+    def improve(self, client: OpenAI, model_name: str, max_iter: int = 5) -> "FewShotPromptBuilder":
+        for _ in range(max_iter):
+            self.enhance(client, model_name)
+            if not self._prompt.advices:
+                break
         return self
 
     def _validate(self):
@@ -420,6 +535,15 @@ class FewShotPromptBuilder:
             raise ValueError("Purpose is required.")
         if not self._prompt.examples or len(self._prompt.examples) == 0:
             raise ValueError("At least one example is required.")
+
+    def _warn_advices(self):
+        if self._prompt.advices:
+            for advice in self._prompt.advices:
+                _logger.warning("Advice: %s", advice)
+
+    def get_object(self) -> FewShotPrompt:
+        self._validate()
+        return self._prompt
 
     def build(self) -> str:
         self._validate()
