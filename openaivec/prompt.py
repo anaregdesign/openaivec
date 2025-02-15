@@ -1,3 +1,4 @@
+import difflib
 from logging import Logger, getLogger
 from typing import List
 from xml.etree import ElementTree
@@ -523,10 +524,21 @@ class FewShotPromptBuilder:
         return self
 
     def improve(self, client: OpenAI, model_name: str, max_iter: int = 5) -> "FewShotPromptBuilder":
-        for _ in range(max_iter):
+        for i in range(max_iter):
+            _logger.info("Iteration %d", i + 1)
+            original: str = self.build()
             self.enhance(client, model_name)
-            if not self._prompt.advices:
+            improved: str = self.build()
+
+            if original == improved:
+                _logger.info("No further improvement.")
                 break
+            else:
+                lines1 = original.splitlines()
+                lines2 = improved.splitlines()
+                diff = difflib.unified_diff(lines1, lines2, fromfile="before", tofile="after", lineterm="")
+                for line in diff:
+                    _logger.info(line)
         return self
 
     def _validate(self):
