@@ -134,7 +134,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("Justice", "Ethical Principle)")
             # Steve Wozniak is not boring
             .example("Steve Wozniak", "is not boring")
-            .enhance(self.client, self.model_name)
+            .improve(self.client, self.model_name)
             .build()
         )
 

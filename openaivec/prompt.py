@@ -20,40 +20,50 @@ enhance_prompt: str = """
         <Instruction>
             Receive the prompt in JSON format (with fields "purpose", "cautions", "examples",
             and optionally "advices"). Improve its quality by:
-            - Correcting or refining the language (but preserving the original language).
-            - At least 5 examples are required to enhance the prompt.
+            - Ensuring no logical contradictions or ambiguities exist in the entire input.
+            - Correcting or refining the language (while preserving the original intent).
+            - In the "purpose" field: clearly describe the input semantics, output semantics, and the main goal.
+            - In the "cautions" field: gather common points or edge cases found in "examples."
+            - In the "examples" field: enhance the examples to cover a wide range of scenarios.
+                - "source" and "result" must correspond one-to-one.
+                - Provide at least 5 examples for better coverage.
+            - If the "advices" field is present: use them to refine or adjust the "purpose", "examples", and "cautions" fields where necessary.
         </Instruction>
 
         <!-- Step 2: Improve the "purpose" field -->
         <Instruction>
             Make the "purpose" field more concise, clearer, and more informative.
             Specifically:
-            - Clearly describe the input semantics (e.g., "Expects a name of product or instruction sentence").
-            - Clearly describe the output semantics (e.g., "Returns a category, or expected troubles").
-            - Explain the main goal or usage scenario of the prompt in a concise manner.
-            - If the "advices" field is present, consider incorporating them into the "purpose" field.
+            - Clearly describe the input semantics (e.g., "Expects a product name or instruction sentence").
+            - Clearly describe the output semantics (e.g., "Returns a category or expected issues").
+            - Briefly explain the main goal or usage scenario of the prompt.
+            - If the "advices" field is present, consider incorporating its insights into the "purpose" field.
         </Instruction>
 
-        <!-- Step 3: Analyze the "examples" field -->
+        <!-- Step 3: Improve the "cautions" field -->
         <Instruction>
             Examine the examples. If there are common patterns or edge cases (exceptions),
             incorporate them as necessary into the "cautions" field to help the end user
             avoid pitfalls. If no changes are needed, keep them as is.
+            Review the "examples" to ensure that no redundant cautions remain.
+            If the "advices" field is present, reflect any relevant suggestions into the "cautions" field,
+            ensuring consistency with the other fields and the overall intent.
         </Instruction>
 
-        <!-- Step 4: Handle the presence or absence of "advices" -->
+        <!-- Step 4: Improve the "examples" field -->
         <Instruction>
-            - If "advices" is not present in the input:
-                1. Preserve the existing "cautions" and "examples" fields.
-                2. Add as many similar "examples" as possible according the "purpose" and "cautions".
-            - If "advices" is present in the input:
-                1. Use the provided "advices" to refine or adjust existing "examples" and/or "cautions".
+            - Add or refine as many "examples" as needed based on the "purpose" and "cautions."
+            - Remove any duplicate "source" values; each "source" must be unique across all examples.
+            - If "advices" is present, use them to refine or adjust existing "examples" ensuring consistency throughout.
         </Instruction>
 
-        <!-- Step 5: Address contradictions or ambiguities -->
+        <!-- Step 5: Resolve contradictions or ambiguities -->
         <Instruction>
-            If you discover any contradictions or ambiguities within the "examples" or "cautions",
-            add them as new entries in the "advices" field, along with proposed possible alternatives.
+            After these revisions, delete any items from the "advices" that are no longer necessary.
+            The final output must not contain any unaddressed contradictions or ambiguities.
+            If new contradictions or ambiguities arise during the refining process,
+            record them in the "advices" field with possible resolutions.
+            Ensure that "purpose," "cautions," and "examples" remain consistent in the final output.
         </Instruction>
     </Instructions>
 
@@ -117,7 +127,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-    
+
         <!-- with improved purpose -->
         <Example>
             <Input>
@@ -177,7 +187,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-    
+
         <!-- with additional cautions -->
         <Example>
             <Input>
@@ -242,7 +252,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-    
+
         <!-- with additional examples -->
         <Example>
             <Input>
@@ -312,7 +322,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-    
+
         <!-- with additional examples and cautions -->
         <Example>
             <Input>
@@ -383,7 +393,7 @@ enhance_prompt: str = """
                 }
             </Output>
         </Example>
-    
+
         <!-- with advices -->
         <Example>
             <Input>
@@ -411,7 +421,8 @@ enhance_prompt: str = """
                             "source": "<source5>",
                             "result": "<result5>"
                         }
-                    ]
+                    ],
+                    "advices": ["<advice1>"]
                 }
             </Input>
             <Output>
@@ -450,7 +461,6 @@ enhance_prompt: str = """
             </Output>
         </Example>
     </Examples>
-
 </SystemMessage>
 """
 
