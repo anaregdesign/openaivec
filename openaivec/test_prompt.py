@@ -4,9 +4,10 @@ import os
 import unittest
 from xml.etree import ElementTree
 
+import langdetect
 from openai import OpenAI, AzureOpenAI
 
-from openaivec.prompt import FewShotPromptBuilder
+from openaivec.prompt import FewShotPromptBuilder, FewShotPrompt
 
 logging.basicConfig(level=logging.INFO, force=True)
 
@@ -97,7 +98,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         self.assertIsNotNone(result_elem)
         self.assertEqual(result_elem.text, "result1")
 
-    def test_enhance(self):
+    def test_improve(self):
         prompt: str = (
             FewShotPromptBuilder()
             .purpose("Return the smallest category that includes the given word")
@@ -130,11 +131,11 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("Amazon", "Company in USA")
             # Examples of abstract concepts
             .example("Freedom", "Abstract Idea")
-            .example("Happiness", "Emotion)")
-            .example("Justice", "Ethical Principle)")
+            .example("Happiness", "Emotion")
+            .example("Justice", "Ethical Principle")
             # Steve Wozniak is not boring
             .example("Steve Wozniak", "is not boring")
-            .improve(self.client, self.model_name, max_iter=10)
+            .improve(self.client, self.model_name, max_iter=5)
             .build()
         )
 
@@ -142,7 +143,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         logging.info("Parsed XML: %s", prompt)
 
     def test_few_examples_raise_error(self):
-        """Test that a ValueError is raised if less than 3 examples are provided."""
+        """Test that a ValueError is raised if less than 5 examples are provided."""
         builder = (
             FewShotPromptBuilder().purpose("Test Purpose").example("source1", "result1").example("source2", "result2")
         )
@@ -160,7 +161,29 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("Apple", "Company")
             .example("Apple", "Color")
             .example("Apple", "Animal")
-            .improve(self.client, self.model_name, max_iter=10)
+            .improve(self.client, self.model_name, max_iter=5)
             .build()
         )
         logging.info("Prompt: %s", prompt)
+
+    def test_language_consistency_ja(self):
+        """Test that linguistic language is preserved between input and output."""
+
+        prompt_ja: FewShotPrompt = (
+            FewShotPromptBuilder()
+            .purpose("受け取った単語を含む最小のカテゴリ名を返してください")
+            .caution("カテゴリ名に固有名詞を使用しないでください")
+            .example("りんご", "果物")
+            .example("パンダ", "クマ科")
+            .example("東京", "都市")
+            .example("ネコ", "ネコ科")
+            .example("アメリカ", "国")
+            .get_object()
+        )
+
+        improved_prompt_ja: FewShotPrompt = (
+            FewShotPromptBuilder.of(prompt_ja).improve(self.client, self.model_name, max_iter=5).get_object()
+        )
+
+        # Assert that the linguistic language is preserved between input and output with langdetect
+        self.assertEqual(langdetect.detect(prompt_ja.purpose), langdetect.detect(improved_prompt_ja.purpose))

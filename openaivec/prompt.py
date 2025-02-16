@@ -22,7 +22,8 @@ enhance_prompt: str = """
             Receive the prompt in JSON format (with fields "purpose", "cautions", "examples",
             and optionally "advices"). Improve its quality by:
             - Ensuring no logical contradictions or ambiguities exist in the entire input.
-            - Correcting or refining the language (while preserving the original intent).
+            - Always respond in the same linguistic language as the input.
+            - Correcting or refining the sentences (while preserving the original intent).
             - In the "purpose" field: clearly describe the input semantics, output semantics, and the main goal.
             - In the "cautions" field: gather common points or edge cases found in "examples."
             - In the "examples" field: enhance the examples to cover a wide range of scenarios.
@@ -60,11 +61,11 @@ enhance_prompt: str = """
 
         <!-- Step 5: Resolve contradictions or ambiguities -->
         <Instruction>
-            After these revisions, delete any items from the "advices" that are no longer necessary.
+            After these steps, delete any items from the "advices" that are no longer necessary.
             The final output must not contain any unaddressed contradictions or ambiguities.
-            If new contradictions or ambiguities arise during the refining process,
-            record them in the "advices" field with possible resolutions.
             Ensure that "purpose," "cautions," and "examples" remain consistent in the final output.
+            If new contradictions or ambiguities arise during the refining process,
+            add the issues and their possible alternatives to the "advices" field.
         </Instruction>
     </Instructions>
 
@@ -479,8 +480,16 @@ class FewShotPrompt(BaseModel):
 
 
 class FewShotPromptBuilder:
+    _prompt: FewShotPrompt
+
     def __init__(self):
         self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[], advices=[])
+
+    @classmethod
+    def of(cls, prompt: FewShotPrompt) -> "FewShotPromptBuilder":
+        builder = cls()
+        builder._prompt = prompt
+        return builder
 
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         self._prompt.purpose = purpose
