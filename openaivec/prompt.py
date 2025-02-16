@@ -61,11 +61,10 @@ enhance_prompt: str = """
 
         <!-- Step 5: Resolve contradictions or ambiguities -->
         <Instruction>
-            After these revisions, delete any items from the "advices" that are no longer necessary.
+            After these steps, delete any items from the "advices" that are no longer necessary.
             The final output must not contain any unaddressed contradictions or ambiguities.
             If new contradictions or ambiguities arise during the refining process,
-            record them in the "advices" field with possible resolutions.
-            Ensure that "purpose," "cautions," and "examples" remain consistent in the final output.
+            add the issues and their possible alternatives to the "advices" field.
         </Instruction>
     </Instructions>
 
