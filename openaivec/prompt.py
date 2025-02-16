@@ -480,8 +480,16 @@ class FewShotPrompt(BaseModel):
 
 
 class FewShotPromptBuilder:
+    _prompt: FewShotPrompt
+
     def __init__(self):
         self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[], advices=[])
+
+    @classmethod
+    def of(cls, prompt: FewShotPrompt) -> "FewShotPromptBuilder":
+        builder = cls()
+        builder._prompt = prompt
+        return builder
 
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         self._prompt.purpose = purpose
