@@ -22,7 +22,8 @@ enhance_prompt: str = """
             Receive the prompt in JSON format (with fields "purpose", "cautions", "examples",
             and optionally "advices"). Improve its quality by:
             - Ensuring no logical contradictions or ambiguities exist in the entire input.
-            - Correcting or refining the language (while preserving the original intent).
+            - Always respond in the same linguistic language as the input.
+            - Correcting or refining the sentences (while preserving the original intent).
             - In the "purpose" field: clearly describe the input semantics, output semantics, and the main goal.
             - In the "cautions" field: gather common points or edge cases found in "examples."
             - In the "examples" field: enhance the examples to cover a wide range of scenarios.

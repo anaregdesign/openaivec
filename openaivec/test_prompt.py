@@ -164,3 +164,21 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .build()
         )
         logging.info("Prompt: %s", prompt)
+
+    def test_language_consistency(self):
+        """Test that linguistic language is preserved between input and output."""
+
+        prompt_ja: str = (
+            FewShotPromptBuilder()
+            .purpose("受け取った単語を含む最小のカテゴリ名を返してください")
+            .caution("カテゴリ名に固有名詞を使用しないでください")
+            .example("りんご", "果物")
+            .example("パンダ", "クマ科")
+            .example("東京", "都市")
+            .example("ネコ", "ネコ科")
+            .example("アメリカ", "国")
+            .improve(self.client, self.model_name, max_iter=10)
+            .build()
+        )
+
+        logging.info("Prompt: %s", prompt_ja)
