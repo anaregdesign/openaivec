@@ -64,7 +64,7 @@ enhance_prompt: str = """
             After these steps, delete any items from the "advices" that are no longer necessary.
             The final output must not contain any unaddressed contradictions or ambiguities.
             Ensure that "purpose," "cautions," and "examples" remain consistent in the final output.
-            If new contradictions or ambiguities arise during the refining process,
+            If new contradictions, ambiguities or any ideas for improvement arise during the refining process,
             add the issues and their possible alternatives to the "advices" field.
         </Instruction>
     </Instructions>
@@ -97,200 +97,14 @@ enhance_prompt: str = """
                             "source": "<source5>",
                             "result": "<result5>"
                         }
-                    ]
-                }
-            </Input>
-            <Output>
-                {
-                    "purpose": "<some_purpose>",
-                    "cautions": ["<caution1>", "<caution2>"],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
-                }
-            </Output>
-        </Example>
-
-        <!-- with improved purpose -->
-        <Example>
-            <Input>
-                {
-                    "purpose": "<some_purpose>",
-                    "cautions": ["<caution1>", "<caution2>"],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
+                    ],
+                    "advices": ["<advice1>", "<advice2>"]
                 }
             </Input>
             <Output>
                 {
                     "purpose": "<improved_purpose>",
-                    "cautions": ["<caution1>", "<caution2>"],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
-                }
-            </Output>
-        </Example>
-
-        <!-- with additional cautions -->
-        <Example>
-            <Input>
-                {
-                    "purpose": "<some_purpose>",
-                    "cautions": ["<caution1>", "<caution2>"],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
-                }
-            </Input>
-            <Output>
-                {
-                    "purpose": "<improved_purpose>",
-                    "cautions": [
-                        "<caution1>",
-                        "<caution2>",
-                        "<additional_caution1>",
-                        "<additional_caution2>"
-                    ],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
-                }
-            </Output>
-        </Example>
-
-        <!-- with additional examples -->
-        <Example>
-            <Input>
-                {
-                    "purpose": "<some_purpose>",
-                    "cautions": ["<caution1>"],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
-                }
-            </Input>
-            <Output>
-                {
-                    "purpose": "<improved_purpose>",
-                    "cautions": [
-                        "<caution1>"
-                    ],
+                    "cautions": ["<caution1>", "<new_caution1>"],
                     "examples": [
                         {
                             "source": "<source1>",
@@ -313,152 +127,15 @@ enhance_prompt: str = """
                             "result": "<result5>"
                         },
                         {
-                            "source": "<additional_source1>",
-                            "result": "<additional_result1>"
+                            "source": "<new_source1>",
+                            "result": "<new_result1>"
                         },
                         {
-                            "source": "<additional_source2>",
-                            "result": "<additional_result2>"
-                        }
-                    ]
-                }
-            </Output>
-        </Example>
-
-        <!-- with additional examples and cautions -->
-        <Example>
-            <Input>
-                {
-                    "purpose": "<some_purpose>",
-                    "cautions": [],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ]
-                }
-            </Input>
-            <Output>
-                {
-                    "purpose": "<improved_purpose>",
-                    "cautions": [
-                        "<additional_caution1>",
-                        "<additional_caution2>"
-                    ],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        },
-                        {
-                            "source": "<additional_source1>",
-                            "result": "<additional_result1>"
-                        },
-                        {
-                            "source": "<additional_source2>",
-                            "result": "<additional_result2>"
-                        }
-                    ]
-                }
-            </Output>
-        </Example>
-
-        <!-- with advices -->
-        <Example>
-            <Input>
-                {
-                    "purpose": "<some_purpose>",
-                    "cautions": ["<caution1>"],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
+                            "source": "<new_source2>",
+                            "result": "<new_result2>"
                         }
                     ],
-                    "advices": ["<advice1>"]
-                }
-            </Input>
-            <Output>
-                {
-                    "purpose": "<improved_purpose>",
-                    "cautions": [
-                        "<caution1>"
-                    ],
-                    "examples": [
-                        {
-                            "source": "<source1>",
-                            "result": "<result1>"
-                        },
-                        {
-                            "source": "<source2>",
-                            "result": "<result2>"
-                        },
-                        {
-                            "source": "<source3>",
-                            "result": "<result3>"
-                        },
-                        {
-                            "source": "<source4>",
-                            "result": "<result4>"
-                        },
-                        {
-                            "source": "<source5>",
-                            "result": "<result5>"
-                        }
-                    ],
-                    "advices": [
-                        "<advice1>",
-                        "<advice2>"
-                    ]
+                    "advices": ["<new_advice1>", "<new_advice2>"]
                 }
             </Output>
         </Example>
