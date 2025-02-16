@@ -97,7 +97,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         self.assertIsNotNone(result_elem)
         self.assertEqual(result_elem.text, "result1")
 
-    def test_enhance(self):
+    def test_improve(self):
         prompt: str = (
             FewShotPromptBuilder()
             .purpose("Return the smallest category that includes the given word")
@@ -130,8 +130,8 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("Amazon", "Company in USA")
             # Examples of abstract concepts
             .example("Freedom", "Abstract Idea")
-            .example("Happiness", "Emotion)")
-            .example("Justice", "Ethical Principle)")
+            .example("Happiness", "Emotion")
+            .example("Justice", "Ethical Principle")
             # Steve Wozniak is not boring
             .example("Steve Wozniak", "is not boring")
             .improve(self.client, self.model_name, max_iter=10)
@@ -142,7 +142,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         logging.info("Parsed XML: %s", prompt)
 
     def test_few_examples_raise_error(self):
-        """Test that a ValueError is raised if less than 3 examples are provided."""
+        """Test that a ValueError is raised if less than 5 examples are provided."""
         builder = (
             FewShotPromptBuilder().purpose("Test Purpose").example("source1", "result1").example("source2", "result2")
         )
