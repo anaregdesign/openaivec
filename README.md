@@ -138,90 +138,156 @@ Example Output:
 | 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
 | ...           | ...                                  | ...       | ...         |
 
-## FewShotPrompt
+## Building few-shot Prompts
 
-The `FewShotPromptBuilder` class allows you to create and improve few-shot prompts for OpenAI models.
+Building prompt is a crucial step in using LLMs.
+`FewShotPromptBuilder` is a class that helps you build a few-shot prompt with simple interface.
 
 ### Basic Usage
+
+`FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will return rendered prompt
+with XML format.
+
+Here is an example:
 
 ```python
 from openaivec.prompt import FewShotPromptBuilder
 
-builder = FewShotPromptBuilder()
-builder.purpose("Return the smallest category that includes the given word")
-builder.caution("Never use proper nouns as categories")
-builder.example("Apple", "Fruit")
-builder.example("Car", "Vehicle")
-builder.example("Tokyo", "City")
-builder.example("Keiichi Sogabe", "Musician")
-builder.example("America", "Country")
-
-prompt = builder.build()
+prompt: str = (
+    FewShotPromptBuilder()
+    .purpose("Return the smallest category that includes the given word")
+    .caution("Never use proper nouns as categories")
+    .example("Apple", "Fruit")
+    .example("Car", "Vehicle")
+    .example("Tokyo", "City")
+    .example("Keiichi Sogabe", "Musician")
+    .example("America", "Country")
+    .build()
+)
 print(prompt)
+```
+
+The output will be:
+
+```xml
+
+<Prompt>
+    <Purpose>Return the smallest category that includes the given word</Purpose>
+    <Cautions>
+        <Caution>Never use proper nouns as categories</Caution>
+    </Cautions>
+    <Examples>
+        <Example>
+            <Source>Apple</Source>
+            <Result>Fruit</Result>
+        </Example>
+        <Example>
+            <Source>Car</Source>
+            <Result>Vehicle</Result>
+        </Example>
+        <Example>
+            <Source>Tokyo</Source>
+            <Result>City</Result>
+        </Example>
+        <Example>
+            <Source>Keiichi Sogabe</Source>
+            <Result>Musician</Result>
+        </Example>
+        <Example>
+            <Source>America</Source>
+            <Result>Country</Result>
+        </Example>
+    </Examples>
+</Prompt>
 ```
 
 ### Improve with openai
 
+For the most of analysts, it is hard to write a prompt with no contradiction, ambiguity, or redundancy.
+`FewShotPromptBuilder` provides a method `improve` to help you improve the prompt with OpenAI's API.
+
+`improve` method will try to eliminate contradictions, ambiguities, and redundancies in the prompt with OpenAI's API,
+and iterate the process `max_iter` times at most.
+
 ```python
-import os
-from openai import AzureOpenAI
+from openai import OpenAI
 from openaivec.prompt import FewShotPromptBuilder
 
-# Set environment variables and configurations
-os.environ["AZURE_OPENAI_API_KEY"] = "<your_api_key>"
-api_version = "2024-10-21"
-azure_endpoint = "https://<your_resource_name>.openai.azure.com"
-deployment_name = "<your_deployment_name>"
-
-client = AzureOpenAI(
-    api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-    api_version=api_version,
-    azure_endpoint=azure_endpoint,
+client = OpenAI(...)
+model_name = "<your-model-name>"
+improved_prompt: str = (
+    FewShotPromptBuilder()
+    .purpose("Return the smallest category that includes the given word")
+    .caution("Never use proper nouns as categories")
+    # Examples has contradictions, ambiguities, or redundancies
+    .example("Apple", "Fruit")
+    .example("Apple", "Technology")
+    .example("Apple", "Company")
+    .example("Apple", "Color")
+    .example("Apple", "Animal")
+    # improve the prompt with OpenAI's API, max_iter is number of iterations to improve the prompt.
+    .improve(client, model_name, max_iter=5)
+    .build()
 )
-
-builder = FewShotPromptBuilder()
-builder.purpose("Return the smallest category that includes the given word")
-builder.caution("Never use proper nouns as categories")
-builder.example("Apple", "Fruit")
-builder.example("Car", "Vehicle")
-builder.example("Tokyo", "City")
-builder.example("Keiichi Sogabe", "Musician")
-builder.example("America", "Country")
-
-improved_prompt = builder.improve(client, deployment_name, max_iter=5).build()
 print(improved_prompt)
 ```
 
-Example result of `build`:
+Then we will get the improved prompt with extra examples, improved purpose, and cautions:
 
 ```xml
 <Prompt>
-  <Purpose>Return the smallest category that includes the given word</Purpose>
-  <Cautions>
-    <Caution>Never use proper nouns as categories</Caution>
-  </Cautions>
-  <Examples>
-    <Example>
-      <Source>Apple</Source>
-      <Result>Fruit</Result>
-    </Example>
-    <Example>
-      <Source>Car</Source>
-      <Result>Vehicle</Result>
-    </Example>
-    <Example>
-      <Source>Tokyo</Source>
-      <Result>City</Result>
-    </Example>
-    <Example>
-      <Source>Keiichi Sogabe</Source>
-      <Result>Musician</Result>
-    </Example>
-    <Example>
-      <Source>America</Source>
-      <Result>Country</Result>
-    </Example>
-  </Examples>
+    <Purpose>Classify a given word into its most relevant category by considering its context and potential meanings.
+        The input is a word accompanied by context, and the output is the appropriate category based on that context.
+        This is useful for disambiguating words with multiple meanings, ensuring accurate understanding and
+        categorization.
+    </Purpose>
+    <Cautions>
+        <Caution>Ensure the context of the word is clear to avoid incorrect categorization.</Caution>
+        <Caution>Be aware of words with multiple meanings and provide the most relevant category.</Caution>
+        <Caution>Consider the possibility of new or uncommon contexts that may not fit traditional categories.</Caution>
+    </Cautions>
+    <Examples>
+        <Example>
+            <Source>Apple (as a fruit)</Source>
+            <Result>Fruit</Result>
+        </Example>
+        <Example>
+            <Source>Apple (as a tech company)</Source>
+            <Result>Technology</Result>
+        </Example>
+        <Example>
+            <Source>Java (as a programming language)</Source>
+            <Result>Technology</Result>
+        </Example>
+        <Example>
+            <Source>Java (as an island)</Source>
+            <Result>Geography</Result>
+        </Example>
+        <Example>
+            <Source>Mercury (as a planet)</Source>
+            <Result>Astronomy</Result>
+        </Example>
+        <Example>
+            <Source>Mercury (as an element)</Source>
+            <Result>Chemistry</Result>
+        </Example>
+        <Example>
+            <Source>Bark (as a sound made by a dog)</Source>
+            <Result>Animal Behavior</Result>
+        </Example>
+        <Example>
+            <Source>Bark (as the outer covering of a tree)</Source>
+            <Result>Botany</Result>
+        </Example>
+        <Example>
+            <Source>Bass (as a type of fish)</Source>
+            <Result>Aquatic Life</Result>
+        </Example>
+        <Example>
+            <Source>Bass (as a low-frequency sound)</Source>
+            <Result>Music</Result>
+        </Example>
+    </Examples>
 </Prompt>
 ```
 
