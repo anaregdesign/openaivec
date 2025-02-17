@@ -46,7 +46,7 @@ client = VectorizedOpenAI(
     temperature=0.0,
     top_p=1.0,
     model_name="<your-model-name>",
-   system_message="Please answer only with 'xx family' and do not output anything else."
+    system_message="Please answer only with 'xx family' and do not output anything else."
 )
 
 result = client.predict(["panda", "rabbit", "koala"])
