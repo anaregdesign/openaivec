@@ -59,13 +59,11 @@ enhance_prompt: str = """
             - If "advices" is present, use them to refine or adjust existing "examples" ensuring consistency throughout.
         </Instruction>
 
-        <!-- Step 5: Resolve contradictions or ambiguities -->
+        <!-- Step 5: Resolve contradictions, ambiguities or redundancies -->
         <Instruction>
-            After these steps, delete any items from the "advices" that are no longer necessary.
-            The final output must not contain any unaddressed contradictions or ambiguities.
             Ensure that "purpose," "cautions," and "examples" remain consistent in the final output.
-            If new contradictions, ambiguities or any ideas for improvement arise during the refining process,
-            add the issues and their possible alternatives to the "advices" field.
+            If some contradictions, ambiguities or redundancies are found,
+            add solutions that are as detailed and specific as possible to the "advices" field.
         </Instruction>
     </Instructions>
 
@@ -206,7 +204,6 @@ class FewShotPromptBuilder:
             response_format=FewShotPrompt,
         )
         self._prompt = completion.choices[0].message.parsed
-        self._warn_advices()
         return self
 
     def improve(self, client: OpenAI, model_name: str, max_iter: int = 5) -> "FewShotPromptBuilder":
@@ -214,6 +211,7 @@ class FewShotPromptBuilder:
             _logger.info("Iteration %d", i + 1)
             original: str = self.build()
             self.enhance(client, model_name)
+            self._warn_advices()
             improved: str = self.build()
 
             if original == improved:
