@@ -138,7 +138,7 @@ Example Output:
 | 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
 | ...           | ...                                  | ...       | ...         |
 
-## Building few-shot Prompts
+## Building Prompts
 
 Building prompt is a crucial step in using LLMs.
 `FewShotPromptBuilder` is a class that helps you build a few-shot prompt with simple interface.
