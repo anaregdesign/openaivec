@@ -1,8 +1,9 @@
 # Overview
 
 This package provides a vectorized interface for the OpenAI API, enabling you to process multiple inputs with a single
-API call instead of sending requests one by one.  
-This approach reduces latency and simplifies your code.  
+API call instead of sending requests one by one.
+This approach helps reduce latency and simplifies your code.
+
 Additionally, it integrates effortlessly with Pandas DataFrames and Apache Spark UDFs, making it easy to incorporate
 into your data processing pipelines.
 
@@ -35,25 +36,17 @@ pip uninstall openaivec
 
 ```python
 import os
-from openai import AzureOpenAI
+from openai import OpenAI
 from openaivec import VectorizedOpenAI
 
-# Set environment variables and configurations
-os.environ["AZURE_OPENAI_API_KEY"] = "<your_api_key>"
-api_version = "2024-10-21"
-azure_endpoint = "https://<your_resource_name>.openai.azure.com"
-deployment_name = "<your_deployment_name>"
 
 # Initialize the vectorized client with your system message and parameters
 client = VectorizedOpenAI(
-    client=AzureOpenAI(
-        api_version=api_version,
-        azure_endpoint=azure_endpoint
-    ),
+    client=OpenAI(...),
     temperature=0.0,
     top_p=1.0,
-    model_name=deployment_name,
-    system_message="Please answer simply with a simple “xx family” and do not output anything else."
+    model_name="<your-model-name>",
+   system_message="Please answer only with 'xx family' and do not output anything else."
 )
 
 result = client.predict(["panda", "rabbit", "koala"])
@@ -82,8 +75,8 @@ Example output:
 
 ## Using with Apache Spark UDF
 
-Below is an example of creating UDFs for Apache Spark using the provided `UDFBuilder`.  
-This configuration is intended for Azure OpenAI.
+Below is an example showing how to create UDFs for Apache Spark using the provided `UDFBuilder`.
+This configuration is intended for use with Azure OpenAI.
 
 ```python
 from openaivec.spark import UDFBuilder
@@ -141,12 +134,16 @@ Example Output:
 ## Building Prompts
 
 Building prompt is a crucial step in using LLMs.
-`FewShotPromptBuilder` is a class that helps you build a few-shot prompt with simple interface.
+In particular, providing a few examples in a prompt can significantly improve an LLM’s performance,
+a technique known as "few-shot learning." Typically, a few-shot prompt consists of a purpose, cautions,
+and examples.
+
+`FewShotPromptBuilder` is a class that helps you build a few-shot learning prompt with simple interface.
 
 ### Basic Usage
 
-`FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will return rendered prompt
-with XML format.
+`FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will 
+return rendered prompt with XML format.
 
 Here is an example:
 
@@ -203,11 +200,12 @@ The output will be:
 
 ### Improve with openai
 
-For the most of analysts, it is hard to write a prompt with no contradiction, ambiguity, or redundancy.
+For most analysts, it can be challenging to write a prompt entirely free of contradictions, ambiguities, or
+redundancies.
 `FewShotPromptBuilder` provides a method `improve` to help you improve the prompt with OpenAI's API.
 
 `improve` method will try to eliminate contradictions, ambiguities, and redundancies in the prompt with OpenAI's API,
-and iterate the process `max_iter` times at most.
+and iterate the process up to `max_iter` times.
 
 ```python
 from openai import OpenAI
@@ -301,36 +299,36 @@ This section provides instructions on how to integrate and use `vectorize-openai
 steps:
 
 1. **Create an Environment in Microsoft Fabric:**
-   - In Microsoft Fabric, click on **New item** on your own workspace.
-   - Select **Environment** to create a new environment for Apache Spark.
-   - Determine the environment name, eg. `openai-environment`.
-   - ![image](https://github.com/user-attachments/assets/bd1754ef-2f58-46b4-83ed-b335b64aaa1c)
-     *Figure: Creating a new Environment in Microsoft Fabric.*
+    - In Microsoft Fabric, click on **New item** in your workspace.
+    - Select **Environment** to create a new environment for Apache Spark.
+    - Determine the environment name, eg. `openai-environment`.
+    - ![image](https://github.com/user-attachments/assets/bd1754ef-2f58-46b4-83ed-b335b64aaa1c)
+      *Figure: Creating a new Environment in Microsoft Fabric.*
 
 2. **Add `openaivec` to the Environment from Public Library**
-   - Once your environment is set up, go to the **Custom Library** section within that environment.
-   - Click on **Add from PyPI** and search for latest version of `openaivec`.
-   - Save and publish to reflect the changes.
-   - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
-     *Figure: Add `openaivec` from PyPI to Public Library*
+    - Once your environment is set up, go to the **Custom Library** section within that environment.
+    - Click on **Add from PyPI** and search for latest version of `openaivec`.
+    - Save and publish to reflect the changes.
+    - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
+      *Figure: Add `openaivec` from PyPI to Public Library*
 
 3. **Use the Environment from a Notebook:**
-   - Open a notebook within Microsoft Fabric.
-   - Select the environment you created in the previous steps.
-   - ![image](https://github.com/user-attachments/assets/2457c078-1691-461b-b66e-accc3989e419)
-     *Figure: Using custom environment from a notebook.*
-   - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
+    - Open a notebook within Microsoft Fabric.
+    - Select the environment you created in the previous steps.
+    - ![image](https://github.com/user-attachments/assets/2457c078-1691-461b-b66e-accc3989e419)
+      *Figure: Using custom environment from a notebook.*
+    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
 
-     ```python
-     from openaivec.spark import UDFBuilder
-
-     udf = UDFBuilder(
-         api_key="<your-api-key>",
-         api_version="2024-10-21",
-         endpoint="https://<your-resource-name>.openai.azure.com",
-         model_name="<your-deployment-name"
-     )
-     ```
+      ```python
+      from openaivec.spark import UDFBuilder
+ 
+      udf = UDFBuilder(
+          api_key="<your-api-key>",
+          api_version="2024-10-21",
+          endpoint="https://<your-resource-name>.openai.azure.com",
+          model_name="<your-deployment-name"
+      )
+      ```
 
 Following these steps allows you to successfully integrate and use `vectorize-openai` within Microsoft Fabric.
 
