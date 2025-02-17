@@ -138,6 +138,92 @@ Example Output:
 | 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
 | ...           | ...                                  | ...       | ...         |
 
+## FewShotPrompt
+
+The `FewShotPromptBuilder` class allows you to create and improve few-shot prompts for OpenAI models.
+
+### Basic Usage
+
+```python
+from openaivec.prompt import FewShotPromptBuilder
+
+builder = FewShotPromptBuilder()
+builder.purpose("Return the smallest category that includes the given word")
+builder.caution("Never use proper nouns as categories")
+builder.example("Apple", "Fruit")
+builder.example("Car", "Vehicle")
+builder.example("Tokyo", "City")
+builder.example("Keiichi Sogabe", "Musician")
+builder.example("America", "Country")
+
+prompt = builder.build()
+print(prompt)
+```
+
+### Improve with openai
+
+```python
+import os
+from openai import AzureOpenAI
+from openaivec.prompt import FewShotPromptBuilder
+
+# Set environment variables and configurations
+os.environ["AZURE_OPENAI_API_KEY"] = "<your_api_key>"
+api_version = "2024-10-21"
+azure_endpoint = "https://<your_resource_name>.openai.azure.com"
+deployment_name = "<your_deployment_name>"
+
+client = AzureOpenAI(
+    api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+    api_version=api_version,
+    azure_endpoint=azure_endpoint,
+)
+
+builder = FewShotPromptBuilder()
+builder.purpose("Return the smallest category that includes the given word")
+builder.caution("Never use proper nouns as categories")
+builder.example("Apple", "Fruit")
+builder.example("Car", "Vehicle")
+builder.example("Tokyo", "City")
+builder.example("Keiichi Sogabe", "Musician")
+builder.example("America", "Country")
+
+improved_prompt = builder.improve(client, deployment_name, max_iter=5).build()
+print(improved_prompt)
+```
+
+Example result of `build`:
+
+```xml
+<Prompt>
+  <Purpose>Return the smallest category that includes the given word</Purpose>
+  <Cautions>
+    <Caution>Never use proper nouns as categories</Caution>
+  </Cautions>
+  <Examples>
+    <Example>
+      <Source>Apple</Source>
+      <Result>Fruit</Result>
+    </Example>
+    <Example>
+      <Source>Car</Source>
+      <Result>Vehicle</Result>
+    </Example>
+    <Example>
+      <Source>Tokyo</Source>
+      <Result>City</Result>
+    </Example>
+    <Example>
+      <Source>Keiichi Sogabe</Source>
+      <Result>Musician</Result>
+    </Example>
+    <Example>
+      <Source>America</Source>
+      <Result>Country</Result>
+    </Example>
+  </Examples>
+</Prompt>
+```
 
 ## Using with Microsoft Fabric
 
