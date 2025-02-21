@@ -18,42 +18,34 @@ __ALL__ = ["UDFBuilder"]
 _logger: Logger = getLogger(__name__)
 
 # Global Singletons
-_http_client: Optional[httpx.Client] = None
 _openai_client: Optional[OpenAI] = None
 _vectorized_client: Optional[VectorizedLLM] = None
 _embedding_client: Optional[EmbeddingOpenAI] = None
 
 
-def get_http_client(http2: bool, verify: bool) -> httpx.Client:
-    global _http_client
-    if _http_client is None:
-        _http_client = httpx.Client(http2=http2, verify=verify)
-    return _http_client
-
-
-def get_openai_client(conf: "UDFBuilder") -> OpenAI:
+def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
     global _openai_client
     if _openai_client is None:
         if conf.endpoint is None:
             _openai_client = OpenAI(
                 api_key=conf.api_key,
-                http_client=get_http_client(http2=True, verify=False),
+                http_client=http_client,
             )
         else:
             _openai_client = AzureOpenAI(
                 api_key=conf.api_key,
                 api_version=conf.api_version,
                 azure_endpoint=conf.endpoint,
-                http_client=get_http_client(http2=True, verify=False),
+                http_client=http_client,
             )
     return _openai_client
 
 
-def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str) -> VectorizedLLM:
+def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, http_client: httpx.Client) -> VectorizedLLM:
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
-            client=get_openai_client(conf),
+            client=get_openai_client(conf, http_client),
             model_name=conf.model_name,
             system_message=system_message,
             temperature=conf.temperature,
@@ -87,6 +79,10 @@ class UDFBuilder:
     # Params for minibatch
     batch_size: int = 256
 
+    # Params for httpx.Client
+    http2: bool = True
+    ssl_verify: bool = False
+
     @classmethod
     def of_environment(cls, batch_size: int = 256) -> "UDFBuilder":
         return cls(
@@ -107,9 +103,11 @@ class UDFBuilder:
     def completion(self, system_message: str):
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+            http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
                 conf=self,
                 system_message=system_message,
+                http_client=http_client,
             )
 
             for part in col:
