@@ -54,11 +54,11 @@ def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, http_c
     return _vectorized_client
 
 
-def get_vectorized_embedding_client(conf: "UDFBuilder") -> EmbeddingOpenAI:
+def get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> EmbeddingOpenAI:
     global _embedding_client
     if _embedding_client is None:
         _embedding_client = EmbeddingOpenAI(
-            client=get_openai_client(conf),
+            client=get_openai_client(conf, http_client),
             model_name=conf.model_name,
         )
     return _embedding_client
@@ -119,7 +119,8 @@ class UDFBuilder:
     def embedding(self):
         @pandas_udf(ArrayType(FloatType()))
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-            client_emb = get_vectorized_embedding_client(self)
+            http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
+            client_emb = get_vectorized_embedding_client(self, http_client)
 
             for part in col:
                 yield pd.Series(client_emb.embed_minibatch(part.tolist(), self.batch_size))
