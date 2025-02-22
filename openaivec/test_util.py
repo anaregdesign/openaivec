@@ -2,6 +2,7 @@ from typing import List, Type
 from unittest import TestCase
 
 from openai import BaseModel
+from pyspark.sql.types import StructField, IntegerType, StringType, ArrayType, FloatType, StructType
 
 from openaivec.util import (
     split_to_minibatch,
@@ -12,6 +13,7 @@ from openaivec.util import (
     map_minibatch_parallel,
     serialize_base_model,
     deserialize_base_model,
+    pydantic_to_spark_schema,
 )
 
 
@@ -120,3 +122,34 @@ class TestMappingFunctions(TestCase):
         six = cls(value=6)
 
         self.assertEqual(six.value, 6)
+
+    def test_pydantic_to_spark_schema(self):
+
+        class InnerModel(BaseModel):
+            inner_id: int
+            description: str
+
+        class OuterModel(BaseModel):
+            id: int
+            name: str
+            values: List[float]
+            inner: InnerModel
+
+        schema = pydantic_to_spark_schema(OuterModel)
+
+        expected = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("name", StringType(), True),
+                StructField("values", ArrayType(FloatType(), True), True),
+                StructField(
+                    "inner",
+                    StructType(
+                        [StructField("inner_id", IntegerType(), True), StructField("description", StringType(), True)]
+                    ),
+                    True,
+                ),
+            ]
+        )
+
+        self.assertEqual(schema, expected)
