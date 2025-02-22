@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
-from typing import List, TypeVar, Generic, Type
+from typing import List, TypeVar, Generic, Type, cast
 
 from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
@@ -114,7 +114,16 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
     @observe(_logger)
     def request(self, user_messages: List[Message[str]]) -> ParsedChatCompletion[Response[T]]:
-        completion = self.client.beta.chat.completions.parse(
+        response_format = self.response_format
+
+        class MessageT(BaseModel):
+            id: int
+            body: response_format
+
+        class ResponseT(BaseModel):
+            assistant_messages: List[MessageT]
+
+        completion: ParsedChatCompletion[ResponseT] = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=[
                 {"role": "system", "content": self._vectorized_system_message},
@@ -125,9 +134,9 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
             ],
             temperature=self.temperature,
             top_p=self.top_p,
-            response_format=Response[self.response_format],
+            response_format=ResponseT,
         )
-        return completion
+        return cast(ParsedChatCompletion[Response[T]], completion)
 
     @observe(_logger)
     def predict(self, user_messages: List[str]) -> List[T]:
