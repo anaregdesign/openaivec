@@ -12,6 +12,7 @@ from pyspark.sql.types import StringType, ArrayType, FloatType
 
 from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
+from openaivec.util import serialize_base_model, deserialize_base_model
 from openaivec.vectorize import VectorizedLLM
 
 __ALL__ = ["UDFBuilder"]
@@ -108,13 +109,24 @@ class UDFBuilder:
 
     @observe(_logger)
     def completion(self, system_message: str, response_format: Type[T] = str):
+        format_source = None
+        format_class_name = None
+
+        if issubclass(response_format, BaseModel):
+            format_source = serialize_base_model(response_format)
+            format_class_name = response_format.__name__
+
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+            cls = str
+            if format_source is not None:
+                cls = deserialize_base_model(format_source, format_class_name)
+
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
                 conf=self,
                 system_message=system_message,
-                response_format=response_format,
+                response_format=cls,
                 http_client=http_client,
             )
 

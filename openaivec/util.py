@@ -79,4 +79,7 @@ def deserialize_base_model(source: str, class_name: str) -> Type[BaseModel]:
     dedented_source = textwrap.dedent(source)
     exec(dedented_source, namespace)
 
+    if not issubclass(namespace[class_name], BaseModel):
+        raise ValueError(f"{class_name} is not a subclass of pydantic.BaseModel")
+
     return namespace[class_name]

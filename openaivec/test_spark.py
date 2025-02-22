@@ -84,6 +84,6 @@ class TestUDFBuilder(TestCase):
 
         self.spark.sql(
             """
-            SELECT id, fruit(name) as v from dummy
+            SELECT fruit(name) as v from dummy
             """
         ).show(truncate=False)
