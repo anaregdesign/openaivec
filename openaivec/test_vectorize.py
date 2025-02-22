@@ -1,50 +1,65 @@
+import os
 from logging import basicConfig, Handler, StreamHandler
-from types import SimpleNamespace
 from typing import List
 from unittest import TestCase
-from unittest.mock import MagicMock
 
-from openai.types.chat import ParsedChatCompletion
+from openai import AzureOpenAI
+from pydantic import BaseModel
 
 from openaivec import VectorizedOpenAI
-from openaivec.vectorize import Message, Response
 
 _h: Handler = StreamHandler()
 
 basicConfig(handlers=[_h], level="DEBUG")
 
 
-def create_dummy_parse(messages: List[Message]) -> ParsedChatCompletion[Response]:
-    response = Response(
-        assistant_messages=[Message(id=i, text=f"response_of_{m.text}") for i, m in enumerate(messages)]
-    )
-    dummy_message = SimpleNamespace(parsed=response)
-    dummy_choice = SimpleNamespace(message=dummy_message)
-    dummy_completion = SimpleNamespace(choices=[dummy_choice])
-
-    return dummy_completion
-
-
 class TestVectorizedOpenAI(TestCase):
     def setUp(self):
-        self.mock_openai = MagicMock()
-        self.mock_openai.beta.chat.completions.parse = MagicMock()
-        self.system_message = "system_message"
-        self.model_name = "model_name"
-
-        self.client = VectorizedOpenAI(
-            client=self.mock_openai,
-            model_name=self.model_name,
-            system_message=self.system_message,
+        self.openai_client = AzureOpenAI(
+            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
+            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
         )
 
-    def test_predict(self):
-        user_messages = ["user_message_{i}" for i in range(7)]
-        expected = [f"response_of_{m}" for m in user_messages]
+        self.model_name = "gpt-4o"
 
-        dummy_completion = create_dummy_parse([Message(id=i, text=message) for i, message in enumerate(user_messages)])
-        self.mock_openai.beta.chat.completions.parse.return_value = dummy_completion
+    def test_predict_str(self):
+        system_message = """
+        just repeat the user message
+        """.strip()
+        client = VectorizedOpenAI(
+            client=self.openai_client,
+            model_name=self.model_name,
+            system_message=system_message,
+        )
+        response: List[str] = client.predict(["hello", "world"])
 
-        actual = self.client.predict(user_messages)
+        self.assertEqual(response, ["hello", "world"])
 
-        self.assertEqual(actual, expected)
+    def test_predict_structured(self):
+        system_message = """
+        return the color and taste of given fruit
+        #example
+        ## input
+        apple
+
+        ## output
+        {{
+            "name": "apple",
+            "color": "red",
+            "taste": "sweet"
+        }}
+        """
+
+        class Fruit(BaseModel):
+            name: str
+            color: str
+            taste: str
+
+        client = VectorizedOpenAI(
+            client=self.openai_client, model_name=self.model_name, system_message=system_message, response_format=Fruit
+        )
+
+        response: List[Fruit] = client.predict(["apple", "banana"])
+
+        self.assertTrue(all(isinstance(item, Fruit) for item in response))
