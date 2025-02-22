@@ -160,9 +160,9 @@ class UDFBuilder:
 
             for part in col:
                 if self.is_parallel:
-                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                    predictions = client_vec.predict_minibatch_parallel(part.tolist(), self.batch_size)
                 else:
-                    predictions = client_vec.predict(part.tolist())
+                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
@@ -178,9 +178,9 @@ class UDFBuilder:
 
             for part in col:
                 if self.is_parallel:
-                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                    predictions = client_vec.predict_minibatch_parallel(part.tolist(), self.batch_size)
                 else:
-                    predictions = client_vec.predict(part.tolist())
+                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield result.map(_safe_cast_str)
 
