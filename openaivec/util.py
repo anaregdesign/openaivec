@@ -6,15 +6,7 @@ from typing import TypeVar, Callable, Type
 from typing import get_origin, get_args, List, Union
 
 from pydantic import BaseModel
-from pyspark.sql.types import (
-    StructType,
-    StructField,
-    IntegerType,
-    FloatType,
-    StringType,
-    BooleanType,
-    ArrayType
-)
+from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, BooleanType, ArrayType
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -138,4 +130,3 @@ def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
         # Set nullable to True (adjust logic as needed)
         fields.append(StructField(field_name, spark_type, nullable=True))
     return StructType(fields)
-

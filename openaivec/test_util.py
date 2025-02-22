@@ -12,7 +12,8 @@ from openaivec.util import (
     map_unique_minibatch_parallel,
     map_minibatch_parallel,
     serialize_base_model,
-    deserialize_base_model, pydantic_to_spark_schema,
+    deserialize_base_model,
+    pydantic_to_spark_schema,
 )
 
 
@@ -124,11 +125,9 @@ class TestMappingFunctions(TestCase):
 
     def test_pydantic_to_spark_schema(self):
 
-
         class InnerModel(BaseModel):
             inner_id: int
             description: str
-
 
         class OuterModel(BaseModel):
             id: int
@@ -136,18 +135,21 @@ class TestMappingFunctions(TestCase):
             values: List[float]
             inner: InnerModel
 
-
         schema = pydantic_to_spark_schema(OuterModel)
 
-        expected = StructType([
-            StructField("id", IntegerType(), True),
-            StructField("name", StringType(), True),
-            StructField("values", ArrayType(FloatType(), True), True),
-            StructField("inner", StructType([
-                StructField("inner_id", IntegerType(), True),
-                StructField("description", StringType(), True)
-            ]), True)
-        ])
+        expected = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("name", StringType(), True),
+                StructField("values", ArrayType(FloatType(), True), True),
+                StructField(
+                    "inner",
+                    StructType(
+                        [StructField("inner_id", IntegerType(), True), StructField("description", StringType(), True)]
+                    ),
+                    True,
+                ),
+            ]
+        )
 
         self.assertEqual(schema, expected)
-
