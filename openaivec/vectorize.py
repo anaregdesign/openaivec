@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
-from typing import List
+from typing import List, TypeVar, Generic, Type
 
 from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
@@ -10,7 +10,11 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import map_unique_minibatch_parallel
 
-__ALL__ = ["VectorizedOpenAI"]
+__ALL__ = [
+    "VectorizedLLM",
+    "GeneralVectorizedOpenAI",
+    "VectorizedOpenAI"
+]
 
 _logger: Logger = getLogger(__name__)
 
@@ -34,11 +38,11 @@ def vectorize_system_message(system_message: str) -> str:
                     "user_messages": [
                         {{
                             "id": 1,
-                            "text": "{{user_message_1}}"
+                            "body": "{{user_message_1}}"
                         }},
                         {{
                             "id": 2,
-                            "text": "{{user_message_2}}"
+                            "body": "{{user_message_2}}"
                         }}
                     ]
                 }}
@@ -48,11 +52,11 @@ def vectorize_system_message(system_message: str) -> str:
                     "assistant_messages": [
                         {{
                             "id": 1,
-                            "text": "{{assistant_response_1}}"
+                            "body": "{{assistant_response_1}}"
                         }},
                         {{
                             "id": 2,
-                            "text": "{{assistant_response_2}}"
+                            "body": "{{assistant_response_2}}"
                         }}
                     ]
                 }}
@@ -63,38 +67,43 @@ def vectorize_system_message(system_message: str) -> str:
 """
 
 
-class Message(BaseModel):
+T = TypeVar("T")
+
+
+class Message(BaseModel, Generic[T]):
     id: int
-    text: str
+    body: T
 
 
 class Request(BaseModel):
-    user_messages: List[Message]
+    user_messages: List[Message[str]]
 
 
-class Response(BaseModel):
-    assistant_messages: List[Message]
+class Response(BaseModel, Generic[T]):
+    assistant_messages: List[Message[T]]
 
 
-class VectorizedLLM(metaclass=ABCMeta):
+class VectorizedLLM(Generic[T], metaclass=ABCMeta):
 
     @abstractmethod
-    def predict(self, user_messages: List[str]) -> List[str]:
+    def predict(self, user_messages: List[str]) -> List[T]:
         pass
 
     @abstractmethod
-    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
+    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[T]:
         pass
 
 
 @dataclass(frozen=True)
-class VectorizedOpenAI(VectorizedLLM):
+class VectorizedOpenAI(VectorizedLLM, Generic[T]):
     client: OpenAI
     model_name: str  # it would be the name of deployment for Azure
     system_message: str
     temperature: float = 0.0
     top_p: float = 1.0
+    response_format: Type[T] = str
     _vectorized_system_message: str = field(init=False)
+    _model_json_schema: dict = field(init=False)
 
     def __post_init__(self):
         object.__setattr__(
@@ -104,7 +113,7 @@ class VectorizedOpenAI(VectorizedLLM):
         )
 
     @observe(_logger)
-    def request(self, user_messages: List[Message]) -> ParsedChatCompletion[Response]:
+    def request(self, user_messages: List[Message[str]]) -> ParsedChatCompletion[Response[T]]:
         completion = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=[
@@ -116,20 +125,20 @@ class VectorizedOpenAI(VectorizedLLM):
             ],
             temperature=self.temperature,
             top_p=self.top_p,
-            response_format=Response,
+            response_format=Response[self.response_format],
         )
         return completion
 
     @observe(_logger)
-    def predict(self, user_messages: List[str]) -> List[str]:
-        messages = [Message(id=i, text=message) for i, message in enumerate(user_messages)]
+    def predict(self, user_messages: List[str]) -> List[T]:
+        messages = [Message(id=i, body=message) for i, message in enumerate(user_messages)]
         completion = self.request(messages)
         response_dict = {
-            message.id: message.text for message in completion.choices[0].message.parsed.assistant_messages
+            message.id: message.body for message in completion.choices[0].message.parsed.assistant_messages
         }
         sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses
 
     @observe(_logger)
-    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[str]:
+    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[T]:
         return map_unique_minibatch_parallel(user_messages, batch_size, self.predict)
