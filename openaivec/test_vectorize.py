@@ -4,6 +4,7 @@ from typing import List
 from unittest import TestCase
 
 from openai import AzureOpenAI
+from pydantic import BaseModel
 
 from openaivec import VectorizedOpenAI
 
@@ -32,4 +33,33 @@ class TestVectorizedOpenAI(TestCase):
             system_message=system_message,
         )
         response: List[str] = client.predict(["hello", "world"])
-        print(response)
+
+        self.assertEqual(response, ["hello", "world"])
+
+    def test_predict_structured(self):
+        system_message = """
+        return the color and taste of given fruit
+        #example
+        ## input
+        apple
+
+        ## output
+        {{
+            "name": "apple",
+            "color": "red",
+            "taste": "sweet"
+        }}
+        """
+
+        class Fruit(BaseModel):
+            name: str
+            color: str
+            taste: str
+
+        client = VectorizedOpenAI(
+            client=self.openai_client, model_name=self.model_name, system_message=system_message, response_format=Fruit
+        )
+
+        response: List[Fruit] = client.predict(["apple", "banana"])
+
+        self.assertTrue(all(isinstance(item, Fruit) for item in response))

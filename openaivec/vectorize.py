@@ -10,11 +10,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import map_unique_minibatch_parallel
 
-__ALL__ = [
-    "VectorizedLLM",
-    "GeneralVectorizedOpenAI",
-    "VectorizedOpenAI"
-]
+__ALL__ = ["VectorizedLLM", "GeneralVectorizedOpenAI", "VectorizedOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
