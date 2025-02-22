@@ -1,3 +1,50 @@
+# What is this?
+We can do like this:
+
+```python
+class Fruit(pydantic.BaseModel):
+   name: str
+   color: str
+   taste: str
+
+prompt = """
+    return the color and taste of given fruit.
+
+    #example
+
+    ## input
+    apple
+
+    ## output
+    {{
+        "name": "apple",
+        "color": "red",
+        "taste": "sweet"
+    }}
+"""
+# Simple UDF builder in openaivec
+udf = UDFBuilder(...)
+
+# Register UDFs with structured output
+spark.udf.register("parse_fruit", udf.completion(prompt, respose_format=Fruit))
+
+# Use UDFs in Spark SQL
+spark.sql("SELECT name, parse_fruit(name) from dummy").show(truncate=False)
+```
+
+Then we will get the output like this:
+```text
++------+--------------------------------------------------------+
+|name  |fruit(name)                                             |
++------+--------------------------------------------------------+
+|apple |{"name":"apple","color":"red","taste":"sweet"}          |
+|banana|{"name":"banana","color":"yellow","taste":"sweet"}      |
+|cherry|{"name":"cherry","color":"red","taste":"sweet and tart"}|
++------+--------------------------------------------------------+
+```
+
+
+
 # Overview
 
 This package provides a vectorized interface for the OpenAI API, enabling you to process multiple inputs with a single
