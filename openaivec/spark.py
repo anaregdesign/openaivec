@@ -1,16 +1,18 @@
 import os
 from dataclasses import dataclass
 from logging import getLogger, Logger
-from typing import Iterator, Optional
+from typing import Iterator, Optional, TypeVar, Type, Any
 
 import httpx
 import pandas as pd
 from openai import OpenAI, AzureOpenAI
+from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
 from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
+from openaivec.util import serialize_base_model, deserialize_base_model
 from openaivec.vectorize import VectorizedLLM
 
 __ALL__ = ["UDFBuilder"]
@@ -21,6 +23,9 @@ _logger: Logger = getLogger(__name__)
 _openai_client: Optional[OpenAI] = None
 _vectorized_client: Optional[VectorizedLLM] = None
 _embedding_client: Optional[EmbeddingOpenAI] = None
+
+
+T = TypeVar("T")
 
 
 def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
@@ -41,7 +46,9 @@ def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
     return _openai_client
 
 
-def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, http_client: httpx.Client) -> VectorizedLLM:
+def get_vectorized_openai_client(
+    conf: "UDFBuilder", system_message: str, response_format: Type[T], http_client: httpx.Client
+) -> VectorizedLLM:
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
@@ -50,6 +57,7 @@ def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, http_c
             system_message=system_message,
             temperature=conf.temperature,
             top_p=conf.top_p,
+            response_format=response_format,
         )
     return _vectorized_client
 
@@ -100,18 +108,49 @@ class UDFBuilder:
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)
-    def completion(self, system_message: str):
+    def completion(self, system_message: str, response_format: Type[T] = str):
+        format_source = None
+        format_class_name = None
+
+        if issubclass(response_format, BaseModel):
+            format_source = serialize_base_model(response_format)
+            format_class_name = response_format.__name__
+
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+            cls = str
+            if format_source is not None:
+                cls = deserialize_base_model(format_source, format_class_name)
+
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
                 conf=self,
                 system_message=system_message,
+                response_format=cls,
                 http_client=http_client,
             )
 
+            def _cast_to_string(x: Any) -> Optional[str]:
+                match x:
+                    case None:
+                        return None
+
+                    case str():
+                        return x
+
+                    case BaseModel():
+                        return x.model_dump_json()
+
+                    case _:
+                        try:
+                            return str(x)
+
+                        except Exception as e:
+                            _logger.warning(f"Failed to cast {x} to string: {e}")
+                            return None
+
             for part in col:
-                yield pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size))
+                yield (pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size)).map(_cast_to_string))
 
         return fn
 

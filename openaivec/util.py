@@ -1,6 +1,10 @@
+import inspect
+import textwrap
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
-from typing import List, TypeVar, Callable
+from typing import List, TypeVar, Callable, Type
+
+from pydantic import BaseModel
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -61,3 +65,21 @@ def map_unique_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List
     and the results are mapped back to match the order of the original list.
     """
     return map_unique(b, lambda x: map_minibatch_parallel(x, batch_size, f))
+
+
+def serialize_base_model(obj: Type[BaseModel]) -> str:
+    if not isinstance(obj, type) or not issubclass(obj, BaseModel):
+        raise ValueError("obj must be a subclass of pydantic.BaseModel")
+
+    return inspect.getsource(obj)
+
+
+def deserialize_base_model(source: str, class_name: str) -> Type[BaseModel]:
+    namespace = {"BaseModel": BaseModel}
+    dedented_source = textwrap.dedent(source)
+    exec(dedented_source, namespace)
+
+    if not issubclass(namespace[class_name], BaseModel):
+        raise ValueError(f"{class_name} is not a subclass of pydantic.BaseModel")
+
+    return namespace[class_name]
