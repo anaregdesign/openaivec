@@ -2,11 +2,13 @@
 We can do like this:
 
 ```python
+# Model for structured output
 class Fruit(pydantic.BaseModel):
    name: str
    color: str
    taste: str
 
+# Prompt with example
 prompt = """
     return the color and taste of given fruit.
 
