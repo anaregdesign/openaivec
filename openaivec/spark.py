@@ -8,7 +8,7 @@ import pandas as pd
 from openai import OpenAI, AzureOpenAI
 from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StringType, ArrayType, FloatType
+from pyspark.sql.types import StringType, ArrayType, FloatType, DataType
 
 from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
@@ -72,6 +72,35 @@ def get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Clien
     return _embedding_client
 
 
+def _safe_dump(x: BaseModel) -> Optional[dict]:
+    try:
+        return x.model_dump()
+    except Exception as e:
+        _logger.error(f"Error during model_dump: {e}")
+        return None
+
+
+def _safe_cast_str(x: str) -> Optional[str]:
+    try:
+        return str(x)
+    except Exception as e:
+        _logger.error(f"Error during casting to str: {e}")
+        return None
+
+
+def _derive_format_details(response_format: Type[T]) -> tuple[Optional[str], Optional[str], DataType]:
+    if issubclass(response_format, BaseModel):
+        return (
+            serialize_base_model(response_format),
+            response_format.__name__,
+            pydantic_to_spark_schema(response_format),
+        )
+    elif issubclass(response_format, str):
+        return None, None, StringType()
+    else:
+        raise ValueError(f"Unsupported response_format: {response_format}")
+
+
 @dataclass(frozen=True)
 class UDFBuilder:
     # Params for Constructor
@@ -91,6 +120,9 @@ class UDFBuilder:
     http2: bool = True
     ssl_verify: bool = False
 
+    # Task parallelism
+    task_parallel: bool = False
+
     @classmethod
     def of_environment(cls, batch_size: int = 256) -> "UDFBuilder":
         return cls(
@@ -109,20 +141,14 @@ class UDFBuilder:
 
     @observe(_logger)
     def completion(self, system_message: str, response_format: Type[T] = str):
-        format_source = None
-        format_class_name = None
-
-        if issubclass(response_format, BaseModel):
-            format_source = serialize_base_model(response_format)
-            format_class_name = response_format.__name__
-
-        schema = pydantic_to_spark_schema(response_format) if issubclass(response_format, BaseModel) else StringType()
+        format_source, format_class_name, schema = _derive_format_details(response_format)
 
         @pandas_udf(schema)
         def fn_struct(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-            cls = str
             if format_source is not None:
                 cls = deserialize_base_model(format_source, format_class_name)
+            else:
+                cls = str
 
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
@@ -133,8 +159,12 @@ class UDFBuilder:
             )
 
             for part in col:
-                result = pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size))
-                yield pd.DataFrame(result.map(lambda x: x.model_dump()).tolist())
+                if self.task_parallel:
+                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                else:
+                    predictions = client_vec.predict(part.tolist())
+                result = pd.Series(predictions)
+                yield pd.DataFrame(result.map(_safe_dump).tolist())
 
         @pandas_udf(schema)
         def fn_str(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
@@ -147,7 +177,12 @@ class UDFBuilder:
             )
 
             for part in col:
-                yield pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size))
+                if self.task_parallel:
+                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                else:
+                    predictions = client_vec.predict(part.tolist())
+                result = pd.Series(predictions)
+                yield result.map(_safe_cast_str)
 
         if issubclass(response_format, str):
             return fn_str
