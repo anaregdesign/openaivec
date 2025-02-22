@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from logging import getLogger, Logger
-from typing import Iterator, Optional, TypeVar, Type
+from typing import Iterator, Optional, TypeVar, Type, Any
 
 import httpx
 import pandas as pd
@@ -45,7 +45,9 @@ def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
     return _openai_client
 
 
-def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, response_format: Type[T], http_client: httpx.Client) -> VectorizedLLM:
+def get_vectorized_openai_client(
+    conf: "UDFBuilder", system_message: str, response_format: Type[T], http_client: httpx.Client
+) -> VectorizedLLM:
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
@@ -116,8 +118,27 @@ class UDFBuilder:
                 http_client=http_client,
             )
 
+            def _cast_to_string(x: Any) -> Optional[str]:
+                match x:
+                    case None:
+                        return None
+
+                    case str():
+                        return x
+
+                    case BaseModel():
+                        return x.model_dump_json()
+
+                    case _:
+                        try:
+                            return str(x)
+
+                        except Exception as e:
+                            _logger.warning(f"Failed to cast {x} to string: {e}")
+                            return None
+
             for part in col:
-                yield pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size))
+                yield (pd.Series(client_vec.predict_minibatch(part.tolist(), self.batch_size)).map(_cast_to_string))
 
         return fn
 

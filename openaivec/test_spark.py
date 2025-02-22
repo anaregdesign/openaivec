@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+from openai import BaseModel
 from pyspark.sql.session import SparkSession
 
 from openaivec.spark import UDFBuilder
@@ -50,3 +51,39 @@ class TestUDFBuilder(TestCase):
             SELECT id, repeat(cast(id as STRING)) as v from dummy
             """
         ).show()
+
+    def test_completion_structured(self):
+        class Fruit(BaseModel):
+            name: str
+            color: str
+            taste: str
+
+        self.spark.udf.register(
+            "fruit",
+            self.udf.completion(
+                """
+                return the color and taste of given fruit
+                #example
+                ## input
+                apple
+
+                ## output
+                {{
+                    "name": "apple",
+                    "color": "red",
+                    "taste": "sweet"
+                }}
+                """,
+                response_format=Fruit,
+            ),
+        )
+
+        fruit_data = [("apple",), ("banana",), ("cherry",)]
+        dummy_df = self.spark.createDataFrame(fruit_data, ["name"])
+        dummy_df.createOrReplaceTempView("dummy")
+
+        self.spark.sql(
+            """
+            SELECT id, fruit(name) as v from dummy
+            """
+        ).show(truncate=False)
