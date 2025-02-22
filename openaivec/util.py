@@ -2,9 +2,19 @@ import inspect
 import textwrap
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
-from typing import List, TypeVar, Callable, Type
+from typing import TypeVar, Callable, Type
+from typing import get_origin, get_args, List, Union
 
 from pydantic import BaseModel
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    IntegerType,
+    FloatType,
+    StringType,
+    BooleanType,
+    ArrayType
+)
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -83,3 +93,49 @@ def deserialize_base_model(source: str, class_name: str) -> Type[BaseModel]:
         raise ValueError(f"{class_name} is not a subclass of pydantic.BaseModel")
 
     return namespace[class_name]
+
+
+def python_type_to_spark(python_type):
+    origin = get_origin(python_type)
+
+    # For list types (e.g., List[int])
+    if origin is list or origin is List:
+        # Retrieve the inner type and recursively convert it
+        inner_type = get_args(python_type)[0]
+        return ArrayType(python_type_to_spark(inner_type))
+
+    # For Optional types (Union[..., None])
+    elif origin is Union:
+        non_none_args = [arg for arg in get_args(python_type) if arg is not type(None)]
+        if len(non_none_args) == 1:
+            return python_type_to_spark(non_none_args[0])
+        else:
+            raise ValueError(f"Unsupported Union type with multiple non-None types: {python_type}")
+
+    # For nested Pydantic models (to be treated as Structs)
+    elif isinstance(python_type, type) and issubclass(python_type, BaseModel):
+        return pydantic_to_spark_schema(python_type)
+
+    # Basic type mapping
+    elif python_type == int:
+        return IntegerType()
+    elif python_type == float:
+        return FloatType()
+    elif python_type == str:
+        return StringType()
+    elif python_type == bool:
+        return BooleanType()
+    else:
+        raise ValueError(f"Unsupported type: {python_type}")
+
+
+def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
+    fields = []
+    for field_name, field in model.model_fields.items():
+        field_type = field.annotation
+        # Use outer_type_ to correctly handle types like Optional
+        spark_type = python_type_to_spark(field_type)
+        # Set nullable to True (adjust logic as needed)
+        fields.append(StructField(field_name, spark_type, nullable=True))
+    return StructType(fields)
+

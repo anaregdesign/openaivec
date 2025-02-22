@@ -43,8 +43,6 @@ Then we will get the output like this:
 +------+--------------------------------------------------------+
 ```
 
-
-
 # Overview
 
 This package provides a vectorized interface for the OpenAI API, enabling you to process multiple inputs with a single
