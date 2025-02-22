@@ -121,7 +121,7 @@ class UDFBuilder:
     ssl_verify: bool = False
 
     # Task parallelism
-    task_parallel: bool = False
+    is_parallel: bool = False
 
     @classmethod
     def of_environment(cls, batch_size: int = 256) -> "UDFBuilder":
@@ -159,7 +159,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                if self.task_parallel:
+                if self.is_parallel:
                     predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 else:
                     predictions = client_vec.predict(part.tolist())
@@ -177,7 +177,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                if self.task_parallel:
+                if self.is_parallel:
                     predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 else:
                     predictions = client_vec.predict(part.tolist())
