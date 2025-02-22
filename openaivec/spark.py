@@ -1,11 +1,12 @@
 import os
 from dataclasses import dataclass
 from logging import getLogger, Logger
-from typing import Iterator, Optional
+from typing import Iterator, Optional, TypeVar, Type
 
 import httpx
 import pandas as pd
 from openai import OpenAI, AzureOpenAI
+from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType, ArrayType, FloatType
 
@@ -21,6 +22,9 @@ _logger: Logger = getLogger(__name__)
 _openai_client: Optional[OpenAI] = None
 _vectorized_client: Optional[VectorizedLLM] = None
 _embedding_client: Optional[EmbeddingOpenAI] = None
+
+
+T = TypeVar("T")
 
 
 def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
@@ -41,7 +45,7 @@ def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
     return _openai_client
 
 
-def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, http_client: httpx.Client) -> VectorizedLLM:
+def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, response_format: Type[T], http_client: httpx.Client) -> VectorizedLLM:
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
@@ -50,6 +54,7 @@ def get_vectorized_openai_client(conf: "UDFBuilder", system_message: str, http_c
             system_message=system_message,
             temperature=conf.temperature,
             top_p=conf.top_p,
+            response_format=response_format,
         )
     return _vectorized_client
 
@@ -100,13 +105,14 @@ class UDFBuilder:
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)
-    def completion(self, system_message: str):
+    def completion(self, system_message: str, response_format: Type[T] = str):
         @pandas_udf(StringType())
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
                 conf=self,
                 system_message=system_message,
+                response_format=response_format,
                 http_client=http_client,
             )
 
