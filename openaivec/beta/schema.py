@@ -1,5 +1,10 @@
 from pydantic import BaseModel
 
+__ALL__ = [
+    "RelationshipResponse",
+    "schemaorg_extraction_prompt",
+]
+
 
 class Entity(BaseModel):
     body: str
@@ -16,8 +21,7 @@ class RelationshipResponse(BaseModel):
     relationships: list[Relationship]
 
 
-schemaorg_extraction_prompt = (
-    """
+schemaorg_extraction_prompt = """
 <Prompt>
     <Instructions>
         Analyze the provided text to extract entities and their relationships in
@@ -117,4 +121,3 @@ During the conference, Alice knows Bob and is the spouse of Charlie.
     </Example>
 </Prompt>
     """
-)

@@ -6,9 +6,7 @@ import pandas as pd
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType
 
-__ALL__ = [
-
-]
+__ALL__ = []
 
 
 @dataclass(frozen=True)
@@ -23,21 +21,23 @@ class JsonlUDFBuilder:
 
                 yield pd.Series(
                     df.apply(
-                        lambda row: json.dumps({
-                            "custom_id": row["custom_id"],
-                            "method": "POST",
-                            "url": "/chat/completions",
-                            "body": {
-                                "model": self.model_name,
-                                "messages": [
-                                    {"role": "system", "content": system_message},
-                                    {"role": "user", "content": row["user_message"]}
-                                ],
-                                "temperature": temperature,
-                                "top_p": top_p
+                        lambda row: json.dumps(
+                            {
+                                "custom_id": row["custom_id"],
+                                "method": "POST",
+                                "url": "/chat/completions",
+                                "body": {
+                                    "model": self.model_name,
+                                    "messages": [
+                                        {"role": "system", "content": system_message},
+                                        {"role": "user", "content": row["user_message"]},
+                                    ],
+                                    "temperature": temperature,
+                                    "top_p": top_p,
+                                },
                             }
-                        }),
-                        axis=1
+                        ),
+                        axis=1,
                     )
                 )
 
