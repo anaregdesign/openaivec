@@ -89,10 +89,6 @@ class VectorizedLLM(Generic[T], metaclass=ABCMeta):
     def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[T]:
         pass
 
-    @abstractmethod
-    def predict_minibatch_parallel(self, user_messages: List[str], batch_size: int) -> List[T]:
-        pass
-
 
 @dataclass(frozen=True)
 class VectorizedOpenAI(VectorizedLLM, Generic[T]):
@@ -102,6 +98,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
     temperature: float = 0.0
     top_p: float = 1.0
     response_format: Type[T] = str
+    is_parallel: bool = False
     _vectorized_system_message: str = field(init=False)
     _model_json_schema: dict = field(init=False)
 
@@ -150,8 +147,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
     @observe(_logger)
     def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[T]:
-        return map_unique_minibatch(user_messages, batch_size, self.predict)
-
-    @observe(_logger)
-    def predict_minibatch_parallel(self, user_messages: List[str], batch_size: int) -> List[T]:
-        return map_unique_minibatch_parallel(user_messages, batch_size, self.predict)
+        if self.is_parallel:
+            return map_unique_minibatch_parallel(user_messages, batch_size, self.predict)
+        else:
+            return map_unique_minibatch(user_messages, batch_size, self.predict)

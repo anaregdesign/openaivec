@@ -63,6 +63,7 @@ def get_vectorized_openai_client(
             temperature=temperature,
             top_p=top_p,
             response_format=response_format,
+            is_parallel=conf.is_parallel,
         )
     return _vectorized_client
 
@@ -118,13 +119,11 @@ class UDFBuilder:
 
     # Params for minibatch
     batch_size: int = 256
+    is_parallel: bool = False
 
     # Params for httpx.Client
     http2: bool = True
     ssl_verify: bool = False
-
-    # Task parallelism
-    is_parallel: bool = False
 
     @classmethod
     def of_azureopenai(
@@ -200,10 +199,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                if self.is_parallel:
-                    predictions = client_vec.predict_minibatch_parallel(part.tolist(), self.batch_size)
-                else:
-                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
@@ -220,10 +216,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                if self.is_parallel:
-                    predictions = client_vec.predict_minibatch_parallel(part.tolist(), self.batch_size)
-                else:
-                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield result.map(_safe_cast_str)
 
