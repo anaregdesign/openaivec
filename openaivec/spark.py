@@ -127,16 +127,6 @@ class UDFBuilder:
     is_parallel: bool = False
 
     @classmethod
-    def of_environment(cls, batch_size: int = 256) -> "UDFBuilder":
-        return cls(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21"),
-            endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-            model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
-            batch_size=batch_size,
-        )
-
-    @classmethod
     def of_azureopenai(
         cls,
         api_key: str,
