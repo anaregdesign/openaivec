@@ -110,8 +110,8 @@ def _derive_format_details(response_format: Type[T]) -> tuple[Optional[str], Opt
 class UDFBuilder:
     # Params for Constructor
     api_key: str
-    endpoint: str
-    api_version: str
+    endpoint: Optional[str]
+    api_version: Optional[str]
 
     # Params for chat_completion
     model_name: str  # it would be the name of deployment for Azure
@@ -134,6 +134,50 @@ class UDFBuilder:
             endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
             model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
             batch_size=batch_size,
+        )
+
+    @classmethod
+    def of_azureopenai(
+        cls,
+        api_key: str,
+        api_version: str,
+        endpoint: str,
+        model_name: str,
+        batch_size: int = 256,
+        http2: bool = True,
+        ssl_verify: bool = False,
+        is_parallel: bool = False,
+    ) -> "UDFBuilder":
+        return cls(
+            api_key=api_key,
+            api_version=api_version,
+            endpoint=endpoint,
+            model_name=model_name,
+            batch_size=batch_size,
+            http2=http2,
+            ssl_verify=ssl_verify,
+            is_parallel=is_parallel,
+        )
+
+    @classmethod
+    def of_openai(
+        cls,
+        api_key: str,
+        model_name: str,
+        batch_size: int = 256,
+        http2: bool = True,
+        ssl_verify: bool = False,
+        is_parallel: bool = False,
+    ) -> "UDFBuilder":
+        return cls(
+            api_key=api_key,
+            api_version=None,
+            endpoint=None,
+            model_name=model_name,
+            batch_size=batch_size,
+            http2=http2,
+            ssl_verify=ssl_verify,
+            is_parallel=is_parallel,
         )
 
     def __post_init__(self):
