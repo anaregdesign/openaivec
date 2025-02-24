@@ -47,7 +47,12 @@ def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
 
 
 def get_vectorized_openai_client(
-    conf: "UDFBuilder", system_message: str, response_format: Type[T], http_client: httpx.Client
+    conf: "UDFBuilder",
+    system_message: str,
+    response_format: Type[T],
+    temperature: float,
+    top_p: float,
+    http_client: httpx.Client,
 ) -> VectorizedLLM:
     global _vectorized_client
     if _vectorized_client is None:
@@ -55,8 +60,8 @@ def get_vectorized_openai_client(
             client=get_openai_client(conf, http_client),
             model_name=conf.model_name,
             system_message=system_message,
-            temperature=conf.temperature,
-            top_p=conf.top_p,
+            temperature=temperature,
+            top_p=top_p,
             response_format=response_format,
         )
     return _vectorized_client
@@ -110,8 +115,6 @@ class UDFBuilder:
 
     # Params for chat_completion
     model_name: str  # it would be the name of deployment for Azure
-    temperature: float = 0.0
-    top_p: float = 1.0
 
     # Params for minibatch
     batch_size: int = 256
@@ -140,7 +143,9 @@ class UDFBuilder:
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)
-    def completion(self, system_message: str, response_format: Type[T] = str):
+    def completion(
+        self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
+    ):
         format_source, format_class_name, schema = _derive_format_details(response_format)
 
         @pandas_udf(schema)
@@ -155,6 +160,8 @@ class UDFBuilder:
                 conf=self,
                 system_message=system_message,
                 response_format=cls,
+                temperature=temperature,
+                top_p=top_p,
                 http_client=http_client,
             )
 
@@ -173,6 +180,8 @@ class UDFBuilder:
                 conf=self,
                 system_message=system_message,
                 response_format=str,
+                temperature=temperature,
+                top_p=top_p,
                 http_client=http_client,
             )
 
