@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 from logging import getLogger, Logger
 from typing import Iterator, Optional, TypeVar, Type
