@@ -1,5 +1,5 @@
 # What is this?
-We can do like this:
+Define a LLM based UDF for Apache Spark with simple code!
 
 ```python
 # Model for structured output
@@ -25,16 +25,16 @@ prompt = """
     }}
 """
 # Simple UDF builder in openaivec
-udf = UDFBuilder(...)
+udf = UDFBuilder.of_azureopenai(...)
 
 # Register UDFs with structured output
-spark.udf.register("parse_fruit", udf.completion(prompt, respose_format=Fruit))
+spark.udf.register("parse_fruit", udf.completion(prompt, response_format=Fruit))
 
 # Use UDFs in Spark SQL
 spark.sql("SELECT name, parse_fruit(name) from dummy").show(truncate=False)
 ```
 
-Then we will get the output like this:
+The following output is produced:
 ```text
 +------+--------------------------------------------------------+
 |name  |fruit(name)                                             |
@@ -123,12 +123,12 @@ Example output:
 ## Using with Apache Spark UDF
 
 Below is an example showing how to create UDFs for Apache Spark using the provided `UDFBuilder`.
-This configuration is intended for use with Azure OpenAI.
+This configuration is intended for use with Azure OpenAI or OpenAI.
 
 ```python
 from openaivec.spark import UDFBuilder
 
-udf = UDFBuilder(
+udf = UDFBuilder.of_azureopenai(
     api_key="<your-api-key>",
     api_version="2024-10-21",
     endpoint="https://<your_resource_name>.openai.azure.com",
@@ -245,11 +245,11 @@ The output will be:
 </Prompt>
 ```
 
-### Improve with openai
+### Improve with OpenAI
 
-For most analysts, it can be challenging to write a prompt entirely free of contradictions, ambiguities, or
+For most users, it can be challenging to write a prompt entirely free of contradictions, ambiguities, or
 redundancies.
-`FewShotPromptBuilder` provides a method `improve` to help you improve the prompt with OpenAI's API.
+`FewShotPromptBuilder` provides an `improve` method to refine your prompt using OpenAI's API.
 
 `improve` method will try to eliminate contradictions, ambiguities, and redundancies in the prompt with OpenAI's API,
 and iterate the process up to `max_iter` times.
@@ -264,7 +264,7 @@ improved_prompt: str = (
     FewShotPromptBuilder()
     .purpose("Return the smallest category that includes the given word")
     .caution("Never use proper nouns as categories")
-    # Examples has contradictions, ambiguities, or redundancies
+    # Examples which has contradictions, ambiguities, or redundancies
     .example("Apple", "Fruit")
     .example("Apple", "Technology")
     .example("Apple", "Company")
@@ -373,7 +373,7 @@ steps:
           api_key="<your-api-key>",
           api_version="2024-10-21",
           endpoint="https://<your-resource-name>.openai.azure.com",
-          model_name="<your-deployment-name"
+          model_name="<your-deployment-name>"
       )
       ```
 
