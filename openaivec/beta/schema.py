@@ -24,25 +24,23 @@ class RelationshipResponse(BaseModel):
 schemaorg_extraction_prompt = """
 <Prompt>
     <Instructions>
-        Analyze the provided text to extract entities and their relationships in
-        accordance with schema.org guidelines. The extraction should follow these
-        steps:
+        Analyze the provided text and extract entities and their relationships
+        according to schema.org guidelines. Follow these steps:
         1. Identify all entities in the text.
-        2. For each entity, determine its schema.org class. All classes must begin
-           with "Thing" (e.g. "Thing.Person").
-        3. Identify relationships between the entities. For each relationship,
-           ensure that the property used exists in the corresponding schema.org
-           definition. For example, for a "Thing.Person" entity, only properties
-           defined on the [schema.org/Person](https://schema.org/Person) page may
-           be used.
-        4. If no entities or relationships can be identified, return an empty
-           relationships array.
+        2. For each entity, determine its schema.org class.
+           **IMPORTANT: Return the complete hierarchy from the root "Thing" to
+           the most specific class using dot-separated notation (e.g. "Thing.Person").**
+        3. Identify relationships between entities, using only properties
+           defined in the respective schema.org definitions (e.g. for a
+           "Thing.Person" entity, use properties from
+           [schema.org/Person](https://schema.org/Person)).
+        4. If no entities or relationships are found, return an empty relationships
+           array.
 
-        IMPORTANT: Do not invent custom entity classes or relationship properties.
-        Every "entity_class" and "property" must be strictly verified against
+        Do not invent custom classes or properties; all must be verified against
         schema.org definitions.
 
-        Follow these models for your output:
+        Use these output models:
         - Entity:
           {
             "body": "string",
@@ -61,10 +59,10 @@ schemaorg_extraction_prompt = """
             ]
           }
 
-        Return the result as a single JSON object. Do not include any additional text.
+        Return a single JSON object with no additional text.
     </Instructions>
     <OutputFormat>
-        Output must be in the following JSON structure:
+        Output must be in this JSON structure:
         {
             "relationships": [
                 {
