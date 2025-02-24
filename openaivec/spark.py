@@ -47,7 +47,12 @@ def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
 
 
 def get_vectorized_openai_client(
-    conf: "UDFBuilder", system_message: str, response_format: Type[T], http_client: httpx.Client
+    conf: "UDFBuilder",
+    system_message: str,
+    response_format: Type[T],
+    temperature: float,
+    top_p: float,
+    http_client: httpx.Client,
 ) -> VectorizedLLM:
     global _vectorized_client
     if _vectorized_client is None:
@@ -55,9 +60,10 @@ def get_vectorized_openai_client(
             client=get_openai_client(conf, http_client),
             model_name=conf.model_name,
             system_message=system_message,
-            temperature=conf.temperature,
-            top_p=conf.top_p,
+            temperature=temperature,
+            top_p=top_p,
             response_format=response_format,
+            is_parallel=conf.is_parallel,
         )
     return _vectorized_client
 
@@ -105,32 +111,62 @@ def _derive_format_details(response_format: Type[T]) -> tuple[Optional[str], Opt
 class UDFBuilder:
     # Params for Constructor
     api_key: str
-    endpoint: str
-    api_version: str
+    endpoint: Optional[str]
+    api_version: Optional[str]
 
     # Params for chat_completion
     model_name: str  # it would be the name of deployment for Azure
-    temperature: float = 0.0
-    top_p: float = 1.0
 
     # Params for minibatch
     batch_size: int = 256
+    is_parallel: bool = False
 
     # Params for httpx.Client
     http2: bool = True
     ssl_verify: bool = False
 
-    # Task parallelism
-    is_parallel: bool = False
+    @classmethod
+    def of_azureopenai(
+        cls,
+        api_key: str,
+        api_version: str,
+        endpoint: str,
+        model_name: str,
+        batch_size: int = 256,
+        http2: bool = True,
+        ssl_verify: bool = False,
+        is_parallel: bool = False,
+    ) -> "UDFBuilder":
+        return cls(
+            api_key=api_key,
+            api_version=api_version,
+            endpoint=endpoint,
+            model_name=model_name,
+            batch_size=batch_size,
+            http2=http2,
+            ssl_verify=ssl_verify,
+            is_parallel=is_parallel,
+        )
 
     @classmethod
-    def of_environment(cls, batch_size: int = 256) -> "UDFBuilder":
+    def of_openai(
+        cls,
+        api_key: str,
+        model_name: str,
+        batch_size: int = 256,
+        http2: bool = True,
+        ssl_verify: bool = False,
+        is_parallel: bool = False,
+    ) -> "UDFBuilder":
         return cls(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21"),
-            endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-            model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
+            api_key=api_key,
+            api_version=None,
+            endpoint=None,
+            model_name=model_name,
             batch_size=batch_size,
+            http2=http2,
+            ssl_verify=ssl_verify,
+            is_parallel=is_parallel,
         )
 
     def __post_init__(self):
@@ -140,7 +176,9 @@ class UDFBuilder:
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)
-    def completion(self, system_message: str, response_format: Type[T] = str):
+    def completion(
+        self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
+    ):
         format_source, format_class_name, schema = _derive_format_details(response_format)
 
         @pandas_udf(schema)
@@ -155,14 +193,13 @@ class UDFBuilder:
                 conf=self,
                 system_message=system_message,
                 response_format=cls,
+                temperature=temperature,
+                top_p=top_p,
                 http_client=http_client,
             )
 
             for part in col:
-                if self.is_parallel:
-                    predictions = client_vec.predict_minibatch_parallel(part.tolist(), self.batch_size)
-                else:
-                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
@@ -173,14 +210,13 @@ class UDFBuilder:
                 conf=self,
                 system_message=system_message,
                 response_format=str,
+                temperature=temperature,
+                top_p=top_p,
                 http_client=http_client,
             )
 
             for part in col:
-                if self.is_parallel:
-                    predictions = client_vec.predict_minibatch_parallel(part.tolist(), self.batch_size)
-                else:
-                    predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield result.map(_safe_cast_str)
 
