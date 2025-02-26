@@ -31,8 +31,8 @@ schemaorg_extraction_prompt = """
            **IMPORTANT: Return the full hierarchy from "Thing" to the class that
            does not have any child classes using dot-separated notation (e.g.
            "Thing.Person"). Use only classes that exist in schema.org. For instance,
-           classify a historical landmark as 
-           "Thing.Place.LandmarksOrHistoricalBuildings" and a broadcast event as 
+           classify a historical landmark as
+           "Thing.Place.LandmarksOrHistoricalBuildings" and a broadcast event as
            "Thing.Event.PublicationEvent.BroadcastEvent".**
         3. Identify relationships between entities using only properties defined
            in the relevant schema.org definitions.
