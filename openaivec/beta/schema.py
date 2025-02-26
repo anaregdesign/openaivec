@@ -24,23 +24,25 @@ class RelationshipResponse(BaseModel):
 schemaorg_extraction_prompt = """
 <Prompt>
     <Instructions>
-        Analyze the provided text and extract entities and their relationships
+        Analyze the provided text to extract entities and their relationships
         according to schema.org guidelines. Follow these steps:
         1. Identify all entities in the text.
         2. For each entity, determine its schema.org class.
-           **IMPORTANT: Return the complete hierarchy from the root "Thing" to
-           the most specific class using dot-separated notation (e.g. "Thing.Person").**
-        3. Identify relationships between entities, using only properties
-           defined in the respective schema.org definitions (e.g. for a
-           "Thing.Person" entity, use properties from
-           [schema.org/Person](https://schema.org/Person)).
+           **IMPORTANT: Return the full hierarchy from "Thing" to the class that
+           does not have any child classes using dot-separated notation (e.g.
+           "Thing.Person"). Use only classes that exist in schema.org. For instance,
+           classify a historical landmark as 
+           "Thing.Place.LandmarksOrHistoricalBuildings" and a broadcast event as 
+           "Thing.Event.PublicationEvent.BroadcastEvent".**
+        3. Identify relationships between entities using only properties defined
+           in the relevant schema.org definitions.
         4. If no entities or relationships are found, return an empty relationships
            array.
 
-        Do not invent custom classes or properties; all must be verified against
-        schema.org definitions.
+        Do not invent or use custom classes or properties; all must be verified
+        against schema.org.
 
-        Use these output models:
+        Output models:
         - Entity:
           {
             "body": "string",
@@ -50,7 +52,7 @@ schemaorg_extraction_prompt = """
           {
             "tail": (Entity),
             "head": (Entity),
-            "property": "string"
+            "property": "string (e.g. birthPlace)"
           }
         - Response:
           {
@@ -59,7 +61,7 @@ schemaorg_extraction_prompt = """
             ]
           }
 
-        Return a single JSON object with no additional text.
+        Return a single JSON object with no extra text.
     </Instructions>
     <OutputFormat>
         Output must be in this JSON structure:
@@ -83,7 +85,7 @@ schemaorg_extraction_prompt = """
     <Example>
         <Input>
             <![CDATA[
-During the conference, Alice knows Bob and is the spouse of Charlie.
+The Oscars broadcast took place at the Colosseum, and it was organized by Alice.
             ]]>
         </Input>
         <Output>
@@ -92,25 +94,25 @@ During the conference, Alice knows Bob and is the spouse of Charlie.
     "relationships": [
         {
             "tail": {
-                "body": "Alice",
-                "entity_class": "Thing.Person"
+                "body": "The Oscars broadcast",
+                "entity_class": "Thing.Event.PublicationEvent.BroadcastEvent"
             },
             "head": {
-                "body": "Bob",
-                "entity_class": "Thing.Person"
+                "body": "Colosseum",
+                "entity_class": "Thing.Place.LandmarksOrHistoricalBuildings"
             },
-            "property": "knows"
+            "property": "location"
         },
         {
             "tail": {
+                "body": "The Oscars broadcast",
+                "entity_class": "Thing.Event.PublicationEvent.BroadcastEvent"
+            },
+            "head": {
                 "body": "Alice",
                 "entity_class": "Thing.Person"
             },
-            "head": {
-                "body": "Charlie",
-                "entity_class": "Thing.Person"
-            },
-            "property": "spouse"
+            "property": "organizer"
         }
     ]
 }
@@ -118,4 +120,4 @@ During the conference, Alice knows Bob and is the spouse of Charlie.
         </Output>
     </Example>
 </Prompt>
-    """
+"""
