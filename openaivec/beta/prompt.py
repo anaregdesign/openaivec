@@ -51,7 +51,8 @@ _prompt: str = """
         <Instruction id="2">
             - Modify only one element per step among “purpose”, “examples”, or
               “cautions”, refining each at least once.
-            - Do not change more than one element at a time.
+            - Do not change more than one element at a time. But consider about
+              the consistency of entire prompt when you modify one element.
             - Address exactly one type of issue in each step.
             - Focus solely on that issue and provide a detailed explanation of the
               problem and its negative impacts.
