@@ -6,7 +6,6 @@ from openai import AzureOpenAI, OpenAI
 
 from openaivec.beta.prompt import FewShotPromptBuilder
 
-
 logging.basicConfig(level=logging.INFO, force=True)
 
 
@@ -64,7 +63,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         logging.info("Parsed XML: %s", prompt)
 
     def test_improve_ja(self):
-        prompt1: str = (
+        prompt: str = (
             FewShotPromptBuilder()
             .purpose("受け取った単語を含む最小のカテゴリ名を返してください。")
             .caution("カテゴリ名に固有名詞を使用しないでください")
@@ -75,20 +74,8 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             .example("ネコ", "ネコ科")
             .example("アメリカ", "国")
             .improve(self.client, self.model_name)
+            .explain()
             .build()
         )
 
-        logging.info("Prompt: %s", prompt1)
-
-        # prompt2: str = (
-        #     FewShotPromptBuilder()
-        #     .purpose("Return the smallest category that includes the given word")
-        #     .example("Apple", "Fruit")
-        #     .example("Apple", "Technology")
-        #     .example("Apple", "Company")
-        #     .example("Apple", "Color")
-        #     .example("Apple", "Animal")
-        #     .improve(self.client, self.model_name, temperature=0.0)
-        #     .build()
-        # )
-        # logging.info("Prompt: %s", prompt2)
+        logging.info("Prompt: %s", prompt)

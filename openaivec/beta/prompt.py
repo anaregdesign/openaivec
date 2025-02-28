@@ -49,10 +49,8 @@ _prompt: str = """
             from logical contradictions, redundancies, and ambiguities.
         </Instruction>
         <Instruction id="2">
-            - Modify only one element per step among “purpose”, “examples”, or
+            - Modify only one element per iteration among “purpose”, “examples”, or
               “cautions”, refining each at least once.
-            - Do not change more than one element at a time. But consider about
-              the consistency of entire prompt when you modify one element.
             - Address exactly one type of issue in each step.
             - Focus solely on that issue and provide a detailed explanation of the
               problem and its negative impacts.
@@ -217,8 +215,37 @@ _prompt: str = """
 """
 
 
+def render_prompt(prompt: FewShotPrompt) -> str:
+    prompt_dict = prompt.model_dump()
+    root = ElementTree.Element("Prompt")
+
+    # Purpose (always output)
+    purpose_elem = ElementTree.SubElement(root, "Purpose")
+    purpose_elem.text = prompt_dict["purpose"]
+
+    # Cautions (always output, even if empty)
+    cautions_elem = ElementTree.SubElement(root, "Cautions")
+    if prompt_dict.get("cautions"):
+        for caution in prompt_dict["cautions"]:
+            caution_elem = ElementTree.SubElement(cautions_elem, "Caution")
+            caution_elem.text = caution
+
+    # Examples (always output)
+    examples_elem = ElementTree.SubElement(root, "Examples")
+    for example in prompt_dict["examples"]:
+        example_elem = ElementTree.SubElement(examples_elem, "Example")
+        input_elem = ElementTree.SubElement(example_elem, "Input")
+        input_elem.text = example.get("input")
+        output_elem = ElementTree.SubElement(example_elem, "Output")
+        output_elem.text = example.get("output")
+
+    ElementTree.indent(root, level=0)
+    return ElementTree.tostring(root, encoding="unicode")
+
+
 class FewShotPromptBuilder:
     _prompt: FewShotPrompt
+    _steps: List[Step]
 
     def __init__(self):
         self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[])
@@ -265,20 +292,24 @@ class FewShotPromptBuilder:
             top_p=top_p,
             response_format=Response,
         )
+        self._steps = completion.choices[0].message.parsed.iterations
+        self._prompt = self._steps[-1].prompt
 
-        for step in completion.choices[0].message.parsed.iterations:
-            original = self.build()
-            self._prompt = step.prompt
-            improved = self.build()
+        return self
 
-            _logger.info(f"=== Iteration {step.id} ===\n")
-            _logger.info(f"Instruction: {step.analysis}")
-            lines1 = original.splitlines()
-            lines2 = improved.splitlines()
-            diff = difflib.unified_diff(lines1, lines2, fromfile="before", tofile="after", lineterm="")
+    def explain(self) -> "FewShotPromptBuilder":
+        for previous, current in zip(self._steps, self._steps[1:]):
+            print(f"=== Iteration {current.id} ===\n")
+            print(f"Instruction: {current.analysis}")
+            diff = difflib.unified_diff(
+                render_prompt(previous.prompt).splitlines(),
+                render_prompt(current.prompt).splitlines(),
+                fromfile="before",
+                tofile="after",
+                lineterm=""
+            )
             for line in diff:
-                _logger.info(line)
-
+                print(line)
         return self
 
     def _validate(self):
@@ -302,28 +333,4 @@ class FewShotPromptBuilder:
 
     def build_xml(self) -> str:
         self._validate()
-        prompt_dict = self._prompt.model_dump()
-        root = ElementTree.Element("Prompt")
-
-        # Purpose (always output)
-        purpose_elem = ElementTree.SubElement(root, "Purpose")
-        purpose_elem.text = prompt_dict["purpose"]
-
-        # Cautions (always output, even if empty)
-        cautions_elem = ElementTree.SubElement(root, "Cautions")
-        if prompt_dict.get("cautions"):
-            for caution in prompt_dict["cautions"]:
-                caution_elem = ElementTree.SubElement(cautions_elem, "Caution")
-                caution_elem.text = caution
-
-        # Examples (always output)
-        examples_elem = ElementTree.SubElement(root, "Examples")
-        for example in prompt_dict["examples"]:
-            example_elem = ElementTree.SubElement(examples_elem, "Example")
-            input_elem = ElementTree.SubElement(example_elem, "Input")
-            input_elem.text = example.get("input")
-            output_elem = ElementTree.SubElement(example_elem, "Output")
-            output_elem.text = example.get("output")
-
-        ElementTree.indent(root, level=0)
-        return ElementTree.tostring(root, encoding="unicode")
+        return render_prompt(self._prompt)
