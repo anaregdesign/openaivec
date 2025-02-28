@@ -292,7 +292,15 @@ class FewShotPromptBuilder:
             top_p=top_p,
             response_format=Response,
         )
-        self._steps = completion.choices[0].message.parsed.iterations
+
+        # keep the original prompt
+        self._steps = [Step(id=0, analysis="Original Prompt", prompt=self._prompt)]
+
+        # add the histories
+        for step in completion.choices[0].message.parsed.iterations:
+            self._steps.append(step)
+
+        # set the final prompt
         self._prompt = self._steps[-1].prompt
 
         return self
@@ -306,7 +314,7 @@ class FewShotPromptBuilder:
                 render_prompt(current.prompt).splitlines(),
                 fromfile="before",
                 tofile="after",
-                lineterm=""
+                lineterm="",
             )
             for line in diff:
                 print(line)
