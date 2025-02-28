@@ -56,6 +56,7 @@ class TestAtomicPromptBuilder(unittest.TestCase):
             # Steve Wozniak is not boring
             .example("Steve Wozniak", "is not boring")
             .improve(self.client, self.model_name)
+            .explain()
             .build()
         )
 

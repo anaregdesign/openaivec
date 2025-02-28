@@ -273,7 +273,7 @@ class FewShotPromptBuilder:
         return self
 
     def improve(
-        self, client: OpenAI, model_name: str, temperature: float = 0, top_p: float = 1
+        self, client: OpenAI, model_name: str, temperature: float = 0.0, top_p: float = 1.0
     ) -> "FewShotPromptBuilder":
         # At least 5 examples are required to enhance the prompt.
         if len(self._prompt.examples) < 5:
