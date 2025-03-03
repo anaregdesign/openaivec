@@ -20,7 +20,7 @@ httpx = {extras = ["http2"], version = "^0.28.1"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
-pyarrow = "^19.0.0"
+pyarrow = "^19.0.1"
 flake8 = "^6.0.0"
 black = "^25.1.0"
 flake8-black = "^0.3.6"
