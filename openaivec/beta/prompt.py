@@ -62,7 +62,7 @@ _prompt: str = """
               and apply any necessary modifications.
         </Instruction>
         <Instruction id="3">
-            Always respond in the same language as specified in the "purpose" field for all output fields,
+            Always respond in the same language as specified in the "purpose" field for all output values,
             including the analysis field and chain-of-thought steps.
         </Instruction>
         <Instruction id="4">
