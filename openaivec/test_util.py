@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import List
 from unittest import TestCase
 
 from openai import BaseModel
@@ -111,7 +111,6 @@ class TestMappingFunctions(TestCase):
         self.assertEqual(map_unique_minibatch_parallel(b, batch_size, square_list), expected)
 
     def test_pydantic_to_spark_schema(self):
-
         class InnerModel(BaseModel):
             inner_id: int
             description: str

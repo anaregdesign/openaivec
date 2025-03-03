@@ -1,4 +1,3 @@
-import json
 from enum import Enum
 from typing import Type, Any, Dict, List
 
@@ -70,6 +69,7 @@ def deserialize_base_model(json_schema: Dict[str, Any]) -> Type[BaseModel]:
             elif item_type == "boolean":
                 fields[k] = (List[bool], ...)
             elif item_type == "object":
-                fields[k] = (List[deserialize_base_model(v["items"])], ...)
+                cls = deserialize_base_model(v["items"])
+                fields[k] = (List[cls], ...)
 
     return create_model(json_schema["title"], **fields)

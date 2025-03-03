@@ -7,7 +7,7 @@ import pandas as pd
 from openai import OpenAI, AzureOpenAI
 from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StringType, ArrayType, FloatType, DataType
+from pyspark.sql.types import StringType, ArrayType, FloatType
 
 from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
@@ -23,7 +23,6 @@ _logger: Logger = getLogger(__name__)
 _openai_client: Optional[OpenAI] = None
 _vectorized_client: Optional[VectorizedLLM] = None
 _embedding_client: Optional[EmbeddingOpenAI] = None
-
 
 T = TypeVar("T")
 

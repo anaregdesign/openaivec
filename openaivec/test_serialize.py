@@ -1,4 +1,3 @@
-import json
 from enum import Enum
 from typing import List
 from unittest import TestCase
