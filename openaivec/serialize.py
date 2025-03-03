@@ -5,8 +5,8 @@ from typing import Type, Any, Dict, List
 from pydantic import BaseModel, create_model
 
 
-def serialize_base_model(obj: Type[BaseModel]) -> str:
-    return json.dumps(obj.model_json_schema(), ensure_ascii=False)
+def serialize_base_model(obj: Type[BaseModel]) -> Dict[str, Any]:
+    return obj.model_json_schema()
 
 
 def dereference_json_schema(json_schema: Dict["str", Any]) -> Dict["str", Any]:

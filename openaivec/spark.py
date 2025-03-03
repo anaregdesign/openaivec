@@ -11,7 +11,8 @@ from pyspark.sql.types import StringType, ArrayType, FloatType, DataType
 
 from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
-from openaivec.util import serialize_base_model, deserialize_base_model, pydantic_to_spark_schema
+from openaivec.serialize import serialize_base_model, deserialize_base_model
+from openaivec.util import pydantic_to_spark_schema
 from openaivec.vectorize import VectorizedLLM
 
 __ALL__ = ["UDFBuilder"]
@@ -93,19 +94,6 @@ def _safe_cast_str(x: str) -> Optional[str]:
         return None
 
 
-def _derive_format_details(response_format: Type[T]) -> tuple[Optional[str], Optional[str], DataType]:
-    if issubclass(response_format, BaseModel):
-        return (
-            serialize_base_model(response_format),
-            response_format.__name__,
-            pydantic_to_spark_schema(response_format),
-        )
-    elif issubclass(response_format, str):
-        return None, None, StringType()
-    else:
-        raise ValueError(f"Unsupported response_format: {response_format}")
-
-
 @dataclass(frozen=True)
 class UDFBuilder:
     # Params for Constructor
@@ -178,14 +166,21 @@ class UDFBuilder:
     def completion(
         self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
     ):
-        format_source, format_class_name, schema = _derive_format_details(response_format)
+        if issubclass(response_format, BaseModel):
+            schema = pydantic_to_spark_schema(response_format)
+            json_schema = serialize_base_model(response_format)
+
+        elif issubclass(response_format, str):
+            schema = StringType()
+            json_schema = None
+
+        else:
+            raise ValueError(f"Unsupported response_format: {response_format}")
 
         @pandas_udf(schema)
         def fn_struct(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-            if format_source is not None:
-                cls = deserialize_base_model(format_source, format_class_name)
-            else:
-                cls = str
+            if json_schema:
+                cls = deserialize_base_model(json_schema)
 
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
