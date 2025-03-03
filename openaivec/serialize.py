@@ -4,6 +4,9 @@ from typing import Type, Any, Dict, List
 from pydantic import BaseModel, create_model
 
 
+__ALL__ = ["deserialize_base_model", "serialize_base_model"]
+
+
 def serialize_base_model(obj: Type[BaseModel]) -> Dict[str, Any]:
     return obj.model_json_schema()
 
@@ -34,42 +37,33 @@ def dereference_json_schema(json_schema: Dict["str", Any]) -> Dict["str", Any]:
     return result
 
 
+def parse_field(v: Dict[str, Any]) -> Any:
+    t = v["type"]
+    if t == "string":
+        return str
+    elif t == "integer":
+        return int
+    elif t == "number":
+        return float
+    elif t == "boolean":
+        return bool
+    elif t == "object":
+        return deserialize_base_model(v)
+    elif t == "array":
+        inner_type = parse_field(v["items"])
+        return List[inner_type]
+    else:
+        raise ValueError(f"Unsupported type: {t}")
+
+
 def deserialize_base_model(json_schema: Dict[str, Any]) -> Type[BaseModel]:
     fields = {}
+    properties = dereference_json_schema(json_schema).get("properties", {})
 
-    for k, v in dereference_json_schema(json_schema)["properties"].items():
-
+    for k, v in properties.items():
         if "enum" in v:
             dynamic_enum = Enum(v["title"], {x: x for x in v["enum"]})
             fields[k] = (dynamic_enum, ...)
-
-        elif v["type"] == "string":
-            fields[k] = (str, ...)
-
-        elif v["type"] == "integer":
-            fields[k] = (int, ...)
-
-        elif v["type"] == "number":
-            fields[k] = (float, ...)
-
-        elif v["type"] == "boolean":
-            fields[k] = (bool, ...)
-
-        elif v["type"] == "object":
-            fields[k] = (deserialize_base_model(v), ...)
-
-        elif v["type"] == "array":
-            item_type = v["items"]["type"]
-            if item_type == "string":
-                fields[k] = (List[str], ...)
-            elif item_type == "integer":
-                fields[k] = (List[int], ...)
-            elif item_type == "number":
-                fields[k] = (List[float], ...)
-            elif item_type == "boolean":
-                fields[k] = (List[bool], ...)
-            elif item_type == "object":
-                cls = deserialize_base_model(v["items"])
-                fields[k] = (List[cls], ...)
-
+        else:
+            fields[k] = (parse_field(v), ...)
     return create_model(json_schema["title"], **fields)
