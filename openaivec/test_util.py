@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import List
 from unittest import TestCase
 
 from openai import BaseModel
@@ -11,8 +11,6 @@ from openaivec.util import (
     map_unique_minibatch,
     map_unique_minibatch_parallel,
     map_minibatch_parallel,
-    serialize_base_model,
-    deserialize_base_model,
     pydantic_to_spark_schema,
 )
 
@@ -112,19 +110,7 @@ class TestMappingFunctions(TestCase):
         expected = [9, 4, 9, 1]
         self.assertEqual(map_unique_minibatch_parallel(b, batch_size, square_list), expected)
 
-    def test_serialize_and_deserialize(self):
-        class IntValue(BaseModel):
-            value: int
-
-        source = serialize_base_model(IntValue)
-        cls: Type[BaseModel] = deserialize_base_model(source, "IntValue")
-
-        six = cls(value=6)
-
-        self.assertEqual(six.value, 6)
-
     def test_pydantic_to_spark_schema(self):
-
         class InnerModel(BaseModel):
             inner_id: int
             description: str
