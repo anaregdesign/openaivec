@@ -15,7 +15,7 @@ packages = [
 python = "^3.10"
 pandas = "^2.2.3"
 pyspark = "^3.5.1"
-openai = "^1.57.2"
+openai = "^1.65.2"
 httpx = {extras = ["http2"], version = "^0.28.1"}
 
 [tool.poetry.group.dev.dependencies]
