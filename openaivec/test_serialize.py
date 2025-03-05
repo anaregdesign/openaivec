@@ -1,4 +1,3 @@
-import json
 from enum import Enum
 from typing import List
 from unittest import TestCase
@@ -43,8 +42,6 @@ class TestDeserialize(TestCase):
     def test_deserialize_with_nested_list(self):
         cls = deserialize_base_model(Matrix.model_json_schema())
         json_schema = cls.model_json_schema()
-        s = json.dumps(json_schema, indent=2)
-        print(s)
         self.assertEqual("Matrix", json_schema["title"])
         self.assertEqual("object", json_schema["type"])
         self.assertEqual("array", json_schema["properties"]["data"]["type"])

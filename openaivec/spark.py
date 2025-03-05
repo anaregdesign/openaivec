@@ -166,20 +166,21 @@ class UDFBuilder:
         self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
     ):
         if issubclass(response_format, BaseModel):
-            schema = pydantic_to_spark_schema(response_format)
-            json_schema = serialize_base_model(response_format)
+            spark_schema = pydantic_to_spark_schema(response_format)
+            json_schema_string = serialize_base_model(response_format)
 
         elif issubclass(response_format, str):
-            schema = StringType()
-            json_schema = None
+            spark_schema = StringType()
+            json_schema_string = None
 
         else:
             raise ValueError(f"Unsupported response_format: {response_format}")
 
-        @pandas_udf(schema)
+        @pandas_udf(spark_schema)
         def fn_struct(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-            if json_schema:
-                cls = deserialize_base_model(json_schema)
+            cls = str
+            if json_schema_string:
+                cls = deserialize_base_model(json_schema_string)
 
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
@@ -196,7 +197,7 @@ class UDFBuilder:
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
-        @pandas_udf(schema)
+        @pandas_udf(spark_schema)
         def fn_str(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = get_vectorized_openai_client(
