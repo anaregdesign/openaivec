@@ -4,10 +4,11 @@ from typing import Iterator, Optional, TypeVar, Type
 
 import httpx
 import pandas as pd
+import tiktoken
 from openai import OpenAI, AzureOpenAI
 from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StringType, ArrayType, FloatType
+from pyspark.sql.types import StringType, ArrayType, FloatType, IntegerType
 
 from openaivec import VectorizedOpenAI, EmbeddingOpenAI
 from openaivec.log import observe
@@ -15,7 +16,10 @@ from openaivec.serialize import serialize_base_model, deserialize_base_model
 from openaivec.util import pydantic_to_spark_schema
 from openaivec.vectorize import VectorizedLLM
 
-__ALL__ = ["UDFBuilder"]
+__ALL__ = [
+    "UDFBuilder",
+    "count_tokens",
+]
 
 _logger: Logger = getLogger(__name__)
 
@@ -231,3 +235,20 @@ class UDFBuilder:
                 yield pd.Series(client_emb.embed_minibatch(part.tolist(), self.batch_size))
 
         return fn
+
+
+# singleton for tiktoken
+_tiktoken_enc: Optional[tiktoken.Encoding] = None
+
+
+def count_tokens(model_name: str = "gpt-4o"):
+    @pandas_udf(IntegerType())
+    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+        global _tiktoken_enc
+        if _tiktoken_enc is None:
+            _tiktoken_enc = tiktoken.encoding_for_model(model_name)
+
+        for part in col:
+            yield part.map(lambda x: len(_tiktoken_enc.encode(x)) if isinstance(x, str) else 0)
+
+    return fn
