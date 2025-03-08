@@ -5,7 +5,7 @@ from unittest import TestCase
 from openai import BaseModel
 from pyspark.sql.session import SparkSession
 
-from openaivec.spark import UDFBuilder, count_tokens
+from openaivec.spark import UDFBuilder, count_tokens_udf
 
 
 class TestUDFBuilder(TestCase):
@@ -99,7 +99,7 @@ class TestUDFBuilder(TestCase):
     def test_count_token(self):
         self.spark.udf.register(
             "count_tokens",
-            count_tokens("gpt-4o"),
+            count_tokens_udf("gpt-4o"),
         )
         sentences = [
             ("How many tokens in this sentence?",),

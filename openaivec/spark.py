@@ -18,7 +18,7 @@ from openaivec.vectorize import VectorizedLLM
 
 __ALL__ = [
     "UDFBuilder",
-    "count_tokens",
+    "count_tokens_udf",
 ]
 
 _logger: Logger = getLogger(__name__)
@@ -241,7 +241,7 @@ class UDFBuilder:
 _tiktoken_enc: Optional[tiktoken.Encoding] = None
 
 
-def count_tokens(model_name: str = "gpt-4o"):
+def count_tokens_udf(model_name: str = "gpt-4o"):
     @pandas_udf(IntegerType())
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
         global _tiktoken_enc
