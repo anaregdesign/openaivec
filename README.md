@@ -182,7 +182,7 @@ Example Output:
 
 Building prompt is a crucial step in using LLMs.
 In particular, providing a few examples in a prompt can significantly improve an LLM’s performance,
-a technique known as "few-shot learning." Typically, a few-shot prompt consists of a purpose, cautions,
+a technique known as "[few-shot learning](#basic-usage-1)." Typically, a few-shot prompt consists of a purpose, cautions,
 and examples.
 
 `FewShotPromptBuilder` is a class that helps you build a few-shot learning prompt with simple interface.
@@ -192,7 +192,7 @@ and examples.
 `FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will 
 return rendered prompt with XML format.
 
-Here is an example:
+Here is an [example](#basic-usage-1):
 
 ```python
 from openaivec.prompt import FewShotPromptBuilder
@@ -253,6 +253,8 @@ redundancies.
 
 `improve` method will try to eliminate contradictions, ambiguities, and redundancies in the prompt with OpenAI's API,
 and iterate the process up to `max_iter` times.
+
+Here is an [example](#improve-with-openai):
 
 ```python
 from openai import OpenAI
