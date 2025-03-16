@@ -3,6 +3,8 @@
 venv
 .vscode
 
+### ruff
+.ruff_cache
 
 ### Jupyter
 *.ipynb
