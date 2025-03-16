@@ -401,15 +401,7 @@ poetry install --dev
 To reformat the code, use the following command:
 
 ```bash
-poetry run black ./openaivec
-```
-
-### Linting
-
-To check for linting issues, use the following command:
-
-```bash
-poetry run flake8 ./openaivec
+poetry run ruff check . --fix
 ```
 
 ## Community
