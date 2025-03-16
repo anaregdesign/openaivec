@@ -88,13 +88,13 @@ def python_type_to_spark(python_type):
         return pydantic_to_spark_schema(python_type)
 
     # Basic type mapping
-    elif python_type == int:
+    elif python_type is int:
         return IntegerType()
-    elif python_type == float:
+    elif python_type is float:
         return FloatType()
-    elif python_type == str:
+    elif python_type is str:
         return StringType()
-    elif python_type == bool:
+    elif python_type is bool:
         return BooleanType()
     else:
         raise ValueError(f"Unsupported type: {python_type}")

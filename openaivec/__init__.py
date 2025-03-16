@@ -1,7 +1,7 @@
 from .embedding import EmbeddingOpenAI
 from .vectorize import VectorizedOpenAI
 
-__ALL__ = [
+__all__ = [
     "VectorizedOpenAI",
     "EmbeddingOpenAI",
 ]
