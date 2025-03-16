@@ -266,10 +266,13 @@ class FewShotPromptBuilder:
         self._prompt.cautions.append(caution)
         return self
 
-    def example(self, input_value: str, output_value: str) -> "FewShotPromptBuilder":
+    def example(self, input_value: str | BaseModel, output_value: str | BaseModel) -> "FewShotPromptBuilder":
         if self._prompt.examples is None:
             self._prompt.examples = []
-        self._prompt.examples.append(Example(input=input_value, output=output_value))
+
+        input_string = input_value if isinstance(input_value, str) else input_value.model_dump_json()
+        output_string = output_value if isinstance(output_value, str) else output_value.model_dump_json()
+        self._prompt.examples.append(Example(input=input_string, output=output_string))
         return self
 
     def improve(

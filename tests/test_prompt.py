@@ -3,6 +3,7 @@ import os
 import unittest
 
 from openai import AzureOpenAI, OpenAI
+from pydantic import BaseModel
 
 from openaivec.prompt import FewShotPromptBuilder
 
@@ -80,3 +81,20 @@ class TestAtomicPromptBuilder(unittest.TestCase):
         )
 
         logging.info("Prompt: %s", prompt)
+
+    def test_with_basemodel(self):
+        class Fruit(BaseModel):
+            name: str
+            color: str
+
+        prompt: str = (
+            FewShotPromptBuilder()
+            .purpose("Return the smallest category that includes the given word")
+            .caution("Never use proper nouns as categories")
+            .example("Apple", Fruit(name="Apple", color="Red"))
+            .example("Peach", Fruit(name="Peach", color="Pink"))
+            .example("Banana", Fruit(name="Banana", color="Yellow"))
+            .build()
+        )
+
+        logging.info(prompt)
