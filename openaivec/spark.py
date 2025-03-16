@@ -161,8 +161,6 @@ class UDFBuilder:
 
     def __post_init__(self):
         assert self.api_key, "api_key must be set"
-        assert self.api_version, "api_version must be set"
-        assert self.endpoint, "endpoint must be set"
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)

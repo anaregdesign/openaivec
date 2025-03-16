@@ -1,6 +1,8 @@
 ### Idea
 .idea
 venv
+.vscode
+
 
 ### Jupyter
 *.ipynb
