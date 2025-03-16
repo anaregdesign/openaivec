@@ -12,11 +12,9 @@ class TestUDFBuilder(TestCase):
     def setUp(self):
         project_root = Path(__file__).parent.parent
         policy_path = project_root / "spark.policy"
-        self.udf = UDFBuilder.of_azureopenai(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-            model_name=os.environ.get("AZURE_OPENAI_MODEL_NAME"),
+        self.udf = UDFBuilder.of_openai(
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            model_name="gpt-4o-mini",
             batch_size=8,
         )
         self.spark: SparkSession = (
