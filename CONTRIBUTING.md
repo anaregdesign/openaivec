@@ -19,22 +19,10 @@ To install the necessary dependencies for development, run:
 poetry install --dev
 ```
 
-## Running black
+## Running ruff
 
 To reformat the code, use the following command:
 
 ```bash
-poetry run black ./openaivec
-```
-
-## Linting Guidance
-
-To maintain code quality and consistency, we use `flake8` for linting. Please ensure your code passes the linting checks before submitting a pull request.
-
-### Running flake8
-
-To run `flake8` and check for linting issues, use the following command:
-
-```bash
-poetry run flake8 ./openaivec
+poetry run ruff check . --fix
 ```

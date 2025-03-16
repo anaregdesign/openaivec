@@ -1,18 +1,18 @@
 from dataclasses import dataclass
-from logging import getLogger, Logger
-from typing import Iterator, Optional, TypeVar, Type
+from logging import Logger, getLogger
+from typing import Iterator, Optional, Type, TypeVar
 
 import httpx
 import pandas as pd
 import tiktoken
-from openai import OpenAI, AzureOpenAI
+from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import StringType, ArrayType, FloatType, IntegerType
+from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType
 
-from openaivec import VectorizedOpenAI, EmbeddingOpenAI
+from openaivec import EmbeddingOpenAI, VectorizedOpenAI
 from openaivec.log import observe
-from openaivec.serialize import serialize_base_model, deserialize_base_model
+from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import pydantic_to_spark_schema
 from openaivec.vectorize import VectorizedLLM
 

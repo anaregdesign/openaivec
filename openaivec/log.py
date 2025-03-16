@@ -12,9 +12,9 @@ def observe(logger: Logger):
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def decorated(self: object, *args, **kwargs):
-            l: Logger = logger.getChild(self.__class__.__name__).getChild(func.__name__)
+            child_logger: Logger = logger.getChild(self.__class__.__name__).getChild(func.__name__)
             transaction_id: str = str(uuid.uuid4())
-            l.info(
+            child_logger.info(
                 json.dumps(
                     {
                         "transaction_id": transaction_id,
@@ -29,7 +29,7 @@ def observe(logger: Logger):
                 res = func(self, *args, **kwargs)
 
             finally:
-                l.info(
+                child_logger.info(
                     json.dumps(
                         {
                             "transaction_id": transaction_id,
