@@ -6,7 +6,7 @@ import pandas as pd
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import StringType
 
-__ALL__ = []
+__all__ = ["JsonlUDFBuilder"]
 
 
 @dataclass(frozen=True)

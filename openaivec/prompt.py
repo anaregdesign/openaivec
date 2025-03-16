@@ -7,6 +7,11 @@ from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
+__all__ = [
+    "FewShotPrompt",
+    "FewShotPromptBuilder",
+]
+
 """
 This is a beta version of FewShotPromptBuilder.
 Using CoT method instead of multiple callings of OpenAI API.

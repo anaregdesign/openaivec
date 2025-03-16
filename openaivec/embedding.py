@@ -9,7 +9,7 @@ from openai import OpenAI
 from openaivec.log import observe
 from openaivec.util import map_unique_minibatch_parallel
 
-__ALL__ = ["EmbeddingOpenAI"]
+__all__ = ["EmbeddingOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
