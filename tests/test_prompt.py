@@ -1,8 +1,7 @@
 import logging
-import os
 import unittest
 
-from openai import AzureOpenAI, OpenAI
+from openai import OpenAI
 from pydantic import BaseModel
 
 from openaivec.prompt import FewShotPromptBuilder
@@ -12,12 +11,8 @@ logging.basicConfig(level=logging.INFO, force=True)
 
 class TestAtomicPromptBuilder(unittest.TestCase):
     def setUp(self):
-        self.client: OpenAI = AzureOpenAI(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-        )
-        self.model_name: str = os.environ.get("AZURE_OPENAI_MODEL_NAME")
+        self.client: OpenAI = OpenAI()
+        self.model_name: str = "gpt-4o-mini"
 
     def test_improve(self):
         prompt: str = (

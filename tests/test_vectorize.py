@@ -1,9 +1,8 @@
-import os
 from logging import Handler, StreamHandler, basicConfig
 from typing import List
 from unittest import TestCase
 
-from openai import AzureOpenAI
+from openai import OpenAI
 from pydantic import BaseModel
 
 from openaivec import VectorizedOpenAI
@@ -15,13 +14,8 @@ basicConfig(handlers=[_h], level="DEBUG")
 
 class TestVectorizedOpenAI(TestCase):
     def setUp(self):
-        self.openai_client = AzureOpenAI(
-            api_key=os.environ.get("AZURE_OPENAI_API_KEY"),
-            api_version=os.environ.get("AZURE_OPENAI_API_VERSION"),
-            azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-        )
-
-        self.model_name = "gpt-4o"
+        self.openai_client = OpenAI()
+        self.model_name = "gpt-4o-mini"
 
     def test_predict_str(self):
         system_message = """
