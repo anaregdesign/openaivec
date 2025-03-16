@@ -25,7 +25,7 @@ prompt = """
     }}
 """
 # Simple UDF builder in openaivec
-udf = UDFBuilder.of_azureopenai(...)
+udf = UDFBuilder.of_openai(...)
 
 # Register UDFs with structured output
 spark.udf.register("parse_fruit", udf.completion(prompt, response_format=Fruit))
@@ -89,7 +89,7 @@ from openaivec import VectorizedOpenAI
 
 # Initialize the vectorized client with your system message and parameters
 client = VectorizedOpenAI(
-    client=OpenAI(...),
+    client=OpenAI(),
     temperature=0.0,
     top_p=1.0,
     model_name="<your-model-name>",
@@ -99,6 +99,8 @@ client = VectorizedOpenAI(
 result = client.predict(["panda", "rabbit", "koala"])
 print(result)  # Expected output: ['bear family', 'rabbit family', 'koala family']
 ```
+
+See [examples/basic_usage.ipynb](examples/basic_usage.ipynb) for a complete example.
 
 ## Using with Pandas DataFrame
 
@@ -182,7 +184,7 @@ Example Output:
 
 Building prompt is a crucial step in using LLMs.
 In particular, providing a few examples in a prompt can significantly improve an LLM’s performance,
-a technique known as "[few-shot learning](#basic-usage-1)." Typically, a few-shot prompt consists of a purpose, cautions,
+a technique known as "few-shot learning." Typically, a few-shot prompt consists of a purpose, cautions,
 and examples.
 
 `FewShotPromptBuilder` is a class that helps you build a few-shot learning prompt with simple interface.
@@ -192,7 +194,7 @@ and examples.
 `FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will 
 return rendered prompt with XML format.
 
-Here is an [example](#basic-usage-1):
+Here is an example:
 
 ```python
 from openaivec.prompt import FewShotPromptBuilder
@@ -254,7 +256,7 @@ redundancies.
 `improve` method will try to eliminate contradictions, ambiguities, and redundancies in the prompt with OpenAI's API,
 and iterate the process up to `max_iter` times.
 
-Here is an [example](#improve-with-openai):
+Here is an example:
 
 ```python
 from openai import OpenAI
