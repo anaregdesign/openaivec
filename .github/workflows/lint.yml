@@ -25,5 +25,5 @@ jobs:
           echo "${HOME}/.local/bin" >> $GITHUB_PATH
           poetry install --with dev --no-interaction --no-ansi
 
-      - name: Run flake8
-        run: poetry run flake8
+      - name: Run ruff
+        run: poetry run ruff check .
