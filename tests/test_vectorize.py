@@ -1,5 +1,5 @@
 import os
-from logging import basicConfig, Handler, StreamHandler
+from logging import Handler, StreamHandler, basicConfig
 from typing import List
 from unittest import TestCase
 

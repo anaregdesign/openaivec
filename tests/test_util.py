@@ -2,16 +2,16 @@ from typing import List
 from unittest import TestCase
 
 from openai import BaseModel
-from pyspark.sql.types import StructField, IntegerType, StringType, ArrayType, FloatType, StructType
+from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
 from openaivec.util import (
-    split_to_minibatch,
     map_minibatch,
+    map_minibatch_parallel,
     map_unique,
     map_unique_minibatch,
     map_unique_minibatch_parallel,
-    map_minibatch_parallel,
     pydantic_to_spark_schema,
+    split_to_minibatch,
 )
 
 

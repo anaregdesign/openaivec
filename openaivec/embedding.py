@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from logging import getLogger, Logger
+from logging import Logger, getLogger
 from typing import List
 
 import numpy as np

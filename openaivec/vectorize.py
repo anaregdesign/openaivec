@@ -1,14 +1,14 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
-from typing import List, TypeVar, Generic, Type, cast
+from typing import Generic, List, Type, TypeVar, cast
 
 from openai import OpenAI
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.util import map_unique_minibatch_parallel, map_unique_minibatch
+from openaivec.util import map_unique_minibatch, map_unique_minibatch_parallel
 
 __ALL__ = ["VectorizedLLM", "GeneralVectorizedOpenAI", "VectorizedOpenAI"]
 

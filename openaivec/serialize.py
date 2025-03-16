@@ -1,8 +1,7 @@
 from enum import Enum
-from typing import Type, Any, Dict, List
+from typing import Any, Dict, List, Type
 
 from pydantic import BaseModel, create_model
-
 
 __ALL__ = ["deserialize_base_model", "serialize_base_model"]
 

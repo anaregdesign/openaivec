@@ -1,10 +1,9 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
-from typing import TypeVar, Callable, Type
-from typing import get_origin, get_args, List, Union
+from typing import Callable, List, Type, TypeVar, Union, get_args, get_origin
 
 from pydantic import BaseModel
-from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, StringType, BooleanType, ArrayType
+from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
 T = TypeVar("T")
 U = TypeVar("U")
