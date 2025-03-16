@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import map_unique_minibatch, map_unique_minibatch_parallel
 
-__ALL__ = ["VectorizedLLM", "GeneralVectorizedOpenAI", "VectorizedOpenAI"]
+__all__ = ["VectorizedLLM", "VectorizedOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
@@ -80,7 +80,6 @@ class Response(BaseModel, Generic[T]):
 
 
 class VectorizedLLM(Generic[T], metaclass=ABCMeta):
-
     @abstractmethod
     def predict(self, user_messages: List[str]) -> List[T]:
         pass

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-__ALL__ = [
+__all__ = [
     "RelationshipResponse",
     "schemaorg_extraction_prompt",
 ]

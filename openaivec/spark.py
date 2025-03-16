@@ -16,7 +16,7 @@ from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import pydantic_to_spark_schema
 from openaivec.vectorize import VectorizedLLM
 
-__ALL__ = [
+__all__ = [
     "UDFBuilder",
     "count_tokens_udf",
 ]
