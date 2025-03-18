@@ -1,12 +1,15 @@
+import functools
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
-from typing import Callable, List, Type, TypeVar, Union, get_args, get_origin
+from typing import Callable, List, Optional, Type, TypeVar, Union, get_args, get_origin
 
 from pydantic import BaseModel
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
 T = TypeVar("T")
 U = TypeVar("U")
+V = TypeVar("V")
 
 
 def split_to_minibatch(b: List[T], batch_size: int) -> List[List[T]]:
@@ -109,3 +112,25 @@ def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
         # Set nullable to True (adjust logic as needed)
         fields.append(StructField(field_name, spark_type, nullable=True))
     return StructType(fields)
+
+
+def backoff(
+    exception: Exception, interval: Optional[int] = None, max_retries: Optional[int] = None
+) -> Callable[..., V]:
+    def decorator(func: Callable[..., V]) -> Callable[..., V]:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> V:
+            attempt = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except exception:
+                    attempt += 1
+                    if max_retries is not None and attempt >= max_retries:
+                        raise
+                    if interval is not None:
+                        time.sleep(interval)
+
+        return wrapper
+
+    return decorator

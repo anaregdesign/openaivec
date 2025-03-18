@@ -3,12 +3,12 @@ from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import Generic, List, Type, TypeVar, cast
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.util import map_unique_minibatch, map_unique_minibatch_parallel
+from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
 __all__ = ["VectorizedLLM", "VectorizedOpenAI"]
 
@@ -109,6 +109,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
         )
 
     @observe(_logger)
+    @backoff(exception=RateLimitError, interval=60, max_retries=32)
     def request(self, user_messages: List[Message[str]]) -> ParsedChatCompletion[Response[T]]:
         response_format = self.response_format
 
