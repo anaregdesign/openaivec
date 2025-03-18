@@ -1,3 +1,4 @@
+import functools
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
@@ -8,6 +9,7 @@ from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, St
 
 T = TypeVar("T")
 U = TypeVar("U")
+V = TypeVar("V")
 
 
 def split_to_minibatch(b: List[T], batch_size: int) -> List[List[T]]:
@@ -112,9 +114,12 @@ def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
     return StructType(fields)
 
 
-def backoff(exception: Exception, retry_interval: Optional[int] = None, max_retries: Optional[int] = None) -> Callable:
-    def decorator(func: Callable):
-        def wrapper(*args, **kwargs):
+def backoff(
+    exception: Exception, interval: Optional[int] = None, max_retries: Optional[int] = None
+) -> Callable[..., V]:
+    def decorator(func: Callable[..., V]) -> Callable[..., V]:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> V:
             attempt = 0
             while True:
                 try:
@@ -123,8 +128,8 @@ def backoff(exception: Exception, retry_interval: Optional[int] = None, max_retr
                     attempt += 1
                     if max_retries is not None and attempt >= max_retries:
                         raise
-                    if retry_interval is not None:
-                        time.sleep(retry_interval)
+                    if interval is not None:
+                        time.sleep(interval)
 
         return wrapper
 
