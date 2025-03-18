@@ -1,6 +1,7 @@
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
-from typing import Callable, List, Type, TypeVar, Union, get_args, get_origin
+from typing import Callable, List, Optional, Type, TypeVar, Union, get_args, get_origin
 
 from pydantic import BaseModel
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
@@ -109,3 +110,22 @@ def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
         # Set nullable to True (adjust logic as needed)
         fields.append(StructField(field_name, spark_type, nullable=True))
     return StructType(fields)
+
+
+def backoff(exception: Exception, retry_interval: Optional[int] = None, max_retries: Optional[int] = None) -> Callable:
+    def decorator(func: Callable):
+        def wrapper(*args, **kwargs):
+            attempt = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except exception:
+                    attempt += 1
+                    if max_retries is not None and attempt >= max_retries:
+                        raise
+                    if retry_interval is not None:
+                        time.sleep(retry_interval)
+
+        return wrapper
+
+    return decorator
