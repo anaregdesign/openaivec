@@ -20,7 +20,7 @@ class EmbeddingOpenAI:
     model_name: str
 
     @observe(_logger)
-    @backoff(exception=RateLimitError, scale=60, max_retries=5)
+    @backoff(exception=RateLimitError, scale=60, max_retries=16)
     def embed(self, sentences: List[str]) -> List[NDArray[np.float32]]:
         responses = self.client.embeddings.create(input=sentences, model=self.model_name)
         return [np.array(d.embedding, dtype=np.float32) for d in responses.data]
