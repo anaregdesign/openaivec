@@ -128,7 +128,6 @@ def backoff(exception: Exception, scale: int = None, max_retries: Optional[int] 
     def decorator(func: Callable[..., V]) -> Callable[..., V]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> V:
-            interval = get_exponential_with_cutoff(scale)
             attempt = 0
             while True:
                 try:
@@ -138,6 +137,7 @@ def backoff(exception: Exception, scale: int = None, max_retries: Optional[int] 
                     if max_retries is not None and attempt >= max_retries:
                         raise
 
+                    interval = get_exponential_with_cutoff(scale)
                     time.sleep(interval)
 
         return wrapper
