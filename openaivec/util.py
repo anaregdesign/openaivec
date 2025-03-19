@@ -162,7 +162,8 @@ class TextChunker:
         token_count = 0
         for s, n in sentences:
             if token_count + n > max_tokens:
-                chunks.append(sentence)
+                if sentence:
+                    chunks.append(sentence)
                 sentence = ""
                 token_count = 0
 
