@@ -4,6 +4,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from itertools import chain
 from typing import Callable, List, Optional, Type, TypeVar, Union, get_args, get_origin
 
+import numpy as np
 from pydantic import BaseModel
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
@@ -114,9 +115,16 @@ def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
     return StructType(fields)
 
 
-def backoff(
-    exception: Exception, interval: Optional[int] = None, max_retries: Optional[int] = None
-) -> Callable[..., V]:
+def get_exponential_with_cutoff(scale: float) -> float:
+    gen = np.random.default_rng()
+
+    while True:
+        v = gen.exponential(scale)
+        if v < scale * 3:
+            return v
+
+
+def backoff(exception: Exception, scale: int = None, max_retries: Optional[int] = None) -> Callable[..., V]:
     def decorator(func: Callable[..., V]) -> Callable[..., V]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> V:
@@ -128,8 +136,9 @@ def backoff(
                     attempt += 1
                     if max_retries is not None and attempt >= max_retries:
                         raise
-                    if interval is not None:
-                        time.sleep(interval)
+
+                    interval = get_exponential_with_cutoff(scale)
+                    time.sleep(interval)
 
         return wrapper
 

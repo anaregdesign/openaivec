@@ -109,7 +109,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
         )
 
     @observe(_logger)
-    @backoff(exception=RateLimitError, interval=60, max_retries=32)
+    @backoff(exception=RateLimitError, scale=60, max_retries=5)
     def request(self, user_messages: List[Message[str]]) -> ParsedChatCompletion[Response[T]]:
         response_format = self.response_format
 
