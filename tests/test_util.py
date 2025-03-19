@@ -6,7 +6,7 @@ from openai import BaseModel
 from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
 from openaivec.util import (
-    ChunkSeparator,
+    TextChunker,
     map_minibatch,
     map_minibatch_parallel,
     map_unique,
@@ -142,9 +142,9 @@ class TestMappingFunctions(TestCase):
         self.assertEqual(schema, expected)
 
 
-class TestChunkSeparator(TestCase):
+class TestTextChunker(TestCase):
     def setUp(self):
-        self.sep = ChunkSeparator(
+        self.sep = TextChunker(
             enc=tiktoken.encoding_for_model("text-embedding-3-large"),
         )
 

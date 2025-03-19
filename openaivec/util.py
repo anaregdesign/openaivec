@@ -149,7 +149,7 @@ def backoff(exception: Exception, scale: int = None, max_retries: Optional[int] 
 
 
 @dataclass(frozen=True)
-class ChunkSeparator:
+class TextChunker:
     enc: tiktoken.Encoding
 
     def split(self, original: str, max_tokens: int, sep: List[str]) -> List[str]:
