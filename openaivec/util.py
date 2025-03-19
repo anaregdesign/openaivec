@@ -159,15 +159,15 @@ class TextChunker:
 
         chunks = []
         sentence = ""
-        n = 0
-        for s, i in sentences:
-            if n + i > max_tokens:
+        token_count = 0
+        for s, n in sentences:
+            if token_count + n > max_tokens:
                 chunks.append(sentence)
                 sentence = ""
-                n = 0
+                token_count = 0
 
             sentence += s
-            n += i
+            token_count += n
 
         if sentence:
             chunks.append(sentence)
