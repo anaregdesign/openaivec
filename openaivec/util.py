@@ -1,10 +1,13 @@
 import functools
+import re
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
+from dataclasses import dataclass
 from itertools import chain
 from typing import Callable, List, Optional, Type, TypeVar, Union, get_args, get_origin
 
 import numpy as np
+import tiktoken
 from pydantic import BaseModel
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
@@ -143,3 +146,31 @@ def backoff(exception: Exception, scale: int = None, max_retries: Optional[int] 
         return wrapper
 
     return decorator
+
+
+@dataclass(frozen=True)
+class TextChunker:
+    enc: tiktoken.Encoding
+
+    def split(self, original: str, max_tokens: int, sep: List[str]) -> List[str]:
+        sentences = re.split(f"({'|'.join(sep)})", original)
+        sentences = [s.strip() for s in sentences if s.strip()]
+        sentences = [(s, len(self.enc.encode(s))) for s in sentences]
+
+        chunks = []
+        sentence = ""
+        token_count = 0
+        for s, n in sentences:
+            if token_count + n > max_tokens:
+                if sentence:
+                    chunks.append(sentence)
+                sentence = ""
+                token_count = 0
+
+            sentence += s
+            token_count += n
+
+        if sentence:
+            chunks.append(sentence)
+
+        return chunks

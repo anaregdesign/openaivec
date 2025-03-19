@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from logging import Logger, getLogger
-from typing import Iterator, Optional, Type, TypeVar
+from typing import Iterator, List, Optional, Type, TypeVar
 
 import httpx
 import pandas as pd
@@ -13,7 +13,7 @@ from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType
 from openaivec import EmbeddingOpenAI, VectorizedOpenAI
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
-from openaivec.util import pydantic_to_spark_schema
+from openaivec.util import TextChunker, pydantic_to_spark_schema
 from openaivec.vectorize import VectorizedLLM
 
 __all__ = [
@@ -248,5 +248,20 @@ def count_tokens_udf(model_name: str = "gpt-4o"):
 
         for part in col:
             yield part.map(lambda x: len(_tiktoken_enc.encode(x)) if isinstance(x, str) else 0)
+
+    return fn
+
+
+def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
+    @pandas_udf(ArrayType(StringType()))
+    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+        global _tiktoken_enc
+        if _tiktoken_enc is None:
+            _tiktoken_enc = tiktoken.encoding_for_model(model_name)
+
+        chunker = TextChunker(_tiktoken_enc)
+
+        for part in col:
+            yield part.map(lambda x: chunker.split(x, max_tokens=max_tokens, sep=sep) if isinstance(x, str) else [])
 
     return fn
