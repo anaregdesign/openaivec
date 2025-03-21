@@ -3,6 +3,7 @@ from typing import Type, TypeVar
 
 import pandas as pd
 from openai import AzureOpenAI, OpenAI
+from pydantic import BaseModel
 
 from openaivec.embedding import EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
@@ -74,7 +75,7 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def predict(self, model_name: str, prompt: str, respnse_format: Type[T] = str, batch_size: int = 128):
+    def predict(self, model_name: str, prompt: str, respnse_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
             model_name=model_name,
@@ -90,7 +91,7 @@ class OpenAIVecSeriesAccessor:
             index=self._obj.index,
         )
 
-    def embed(self, model_name: str, batch_size: int = 128):
+    def embed(self, model_name: str, batch_size: int = 128) -> pd.Series:
         client: VectorizedLLM = EmbeddingOpenAI(
             client=get_openai_client(),
             model_name=model_name,
@@ -98,5 +99,11 @@ class OpenAIVecSeriesAccessor:
 
         return pd.Series(
             client.embed_minibatch(self._obj.tolist(), batch_size=batch_size),
+            index=self._obj.index,
+        )
+
+    def extract(self) -> pd.DataFrame:
+        return pd.DataFrame(
+            self._obj.map(lambda x: x.model_dump() if isinstance(x, BaseModel) else {self._obj.name: x}).tolist(),
             index=self._obj.index,
         )
