@@ -1,10 +1,16 @@
 import os
+from typing import Type, TypeVar
 
 import pandas as pd
 from openai import AzureOpenAI, OpenAI
 
 from openaivec.embedding import EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
+
+__all__ = []
+
+
+T = TypeVar("T")
 
 
 def get_openai_client() -> OpenAI:
@@ -36,12 +42,13 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def process(self, model_name: str, prompt: str, batch_size: int = 128):
+    def predict(self, model_name: str, prompt: str, respnse_format: Type[T] = str, batch_size: int = 128):
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
+            model_name=model_name,
             system_message=prompt,
             is_parallel=True,
-            response_format="text",
+            response_format=respnse_format,
             temperature=0,
             top_p=1,
         )
