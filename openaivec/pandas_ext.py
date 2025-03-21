@@ -23,7 +23,7 @@ def use_openai(api_key: str) -> None:
     Set the OpenAI API key to use for OpenAI and Azure OpenAI.
     """
     global _client
-    _client = OpenAI(api_key)
+    _client = OpenAI(api_key=api_key)
 
 
 def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
