@@ -12,10 +12,17 @@ __all__ = []
 
 T = TypeVar("T")
 
+_client: OpenAI | None = None
+
 
 def get_openai_client() -> OpenAI:
+    global _client
+    if _client is not None:
+        return _client
+
     if "OPENAI_API_KEY" in os.environ:
-        return OpenAI()
+        _client = OpenAI()
+        return _client
 
     aoai_param_names = [
         "AZURE_OPENAI_API_KEY",
@@ -24,11 +31,13 @@ def get_openai_client() -> OpenAI:
     ]
 
     if all(param in os.environ for param in aoai_param_names):
-        return AzureOpenAI(
+        _client = AzureOpenAI(
             api_key=os.environ["AZURE_OPENAI_API_KEY"],
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version=os.environ["AZURE_OPENAI_API_VERSION"],
         )
+
+        return _client
 
     raise ValueError(
         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters."
@@ -37,7 +46,7 @@ def get_openai_client() -> OpenAI:
     )
 
 
-@pd.api.extensions.register_series_accessor("openaivec")
+@pd.api.extensions.register_series_accessor("ai")
 class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
