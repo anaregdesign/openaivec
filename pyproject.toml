@@ -31,6 +31,7 @@ ipykernel = "^6.29.5"
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+exclude = ["./tests/test_pandas_ext.py"]
 
 [tool.ruff.lint]
 extend-select = ["I"]
