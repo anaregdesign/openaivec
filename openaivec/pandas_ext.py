@@ -7,12 +7,35 @@ from openai import AzureOpenAI, OpenAI
 from openaivec.embedding import EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
 
-__all__ = []
+__all__ = [
+    "use_openai",
+    "use_azure_openai",
+]
 
 
 T = TypeVar("T")
 
 _client: OpenAI | None = None
+
+
+def use_openai(api_key: str) -> None:
+    """
+    Set the OpenAI API key to use for OpenAI and Azure OpenAI.
+    """
+    global _client
+    _client = OpenAI(api_key)
+
+
+def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
+    """
+    Set the Azure OpenAI API key to use for Azure OpenAI.
+    """
+    global _client
+    _client = AzureOpenAI(
+        api_key=api_key,
+        azure_endpoint=endpoint,
+        api_version=api_version,
+    )
 
 
 def get_openai_client() -> OpenAI:
