@@ -103,14 +103,16 @@ print(result)  # Expected output: ['bear family', 'rabbit family', 'koala family
 See [examples/basic_usage.ipynb](examples/basic_usage.ipynb) for a complete example.
 
 ## Using with Pandas DataFrame
+`openaivec.pandas_ext` extends `pandas.Series` functions with accessor `ai.predict` or `ai.embed`.
 
 ```python
 import pandas as pd
+from openaivec import pandas_ext
 
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
 df.assign(
-    kind=lambda df: client.predict(df.name)
+    kind=lambda df: df.name.ai.predict("gpt-4o", "Answer only with 'xx family' and do not output anything else.")
 )
 ```
 
