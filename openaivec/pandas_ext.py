@@ -118,3 +118,17 @@ class OpenAIVecSeriesAccessor:
             self._obj.map(lambda x: x.model_dump() if isinstance(x, BaseModel) else {self._obj.name: x}).tolist(),
             index=self._obj.index,
         )
+
+
+@pd.api.extensions.register_dataframe_accessor("ai")
+class OpenAIVecDataFrameAccessor:
+    def __init__(self, df_obj: pd.DataFrame):
+        self._obj = df_obj
+
+    def extract(self, column: str) -> pd.DataFrame:
+        if column not in self._obj.columns:
+            raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
+
+        return self._obj.pipe(
+            lambda df: df.join(df[column].ai.extract()),
+        ).pipe(lambda df: df.drop(columns=[column], axis=1))
