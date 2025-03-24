@@ -29,7 +29,9 @@ jobs:
         run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies via Poetry
-        run: poetry install --with dev --no-interaction --no-ansi
+        run: |
+          poetry install --with dev --no-interaction --no-ansi
+          poetry run pip install pyspark==3.5.5
 
       - name: Run tests
         run: poetry run pytest

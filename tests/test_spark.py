@@ -66,19 +66,7 @@ class TestUDFBuilder(TestCase):
         self.spark.udf.register(
             "fruit",
             self.udf.completion(
-                """
-                return the color and taste of given fruit
-                #example
-                ## input
-                apple
-
-                ## output
-                {{
-                    "name": "apple",
-                    "color": "red",
-                    "taste": "sweet"
-                }}
-                """,
+                system_message="return the color and taste of given fruit",
                 response_format=Fruit,
             ),
         )

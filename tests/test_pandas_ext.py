@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+from pydantic import BaseModel
 import pandas as pd
 
 from openaivec import pandas_ext
@@ -25,3 +26,20 @@ class TestPandasExt(unittest.TestCase):
 
         # assert all values are elements of str
         self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
+
+    def test_extract(self):
+
+        class Fruit(BaseModel):
+            color: str
+            flavor: str
+            taste: str
+
+        self.df.assign(
+            fruit=lambda df: df.name.ai.predict(
+                model_name="gpt-4o-mini",
+                prompt="extract fruit information",
+                response_format=Fruit
+            )
+        ).pipe(
+            lambda df: df.ai.extract("fruit")
+        )
