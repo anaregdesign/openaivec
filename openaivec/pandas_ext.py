@@ -9,6 +9,7 @@ from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
 
 __all__ = [
+    "use",
     "use_openai",
     "use_azure_openai",
 ]
@@ -17,6 +18,14 @@ __all__ = [
 T = TypeVar("T")
 
 _client: OpenAI | None = None
+
+
+def use(client: OpenAI) -> None:
+    """
+    Set the OpenAI client to use for OpenAI.
+    """
+    global _client
+    _client = client
 
 
 def use_openai(api_key: str) -> None:
@@ -75,13 +84,13 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def predict(self, model_name: str, prompt: str, respnse_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
+    def predict(self, model_name: str, prompt: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
             model_name=model_name,
             system_message=prompt,
             is_parallel=True,
-            response_format=respnse_format,
+            response_format=response_format,
             temperature=0,
             top_p=1,
         )
