@@ -115,7 +115,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
         class MessageT(BaseModel):
             id: int
-            body: response_format
+            body: response_format # type: ignore
 
         class ResponseT(BaseModel):
             assistant_messages: List[MessageT]
