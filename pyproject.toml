@@ -18,7 +18,7 @@ pyspark = "^3.5.1"
 openai = "^1.66.3"
 httpx = {extras = ["http2"], version = "^0.28.1"}
 tiktoken = "^0.9.0"
-setuptools = "^76.0.0"
+setuptools = "^78.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
