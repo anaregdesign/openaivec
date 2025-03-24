@@ -21,7 +21,7 @@ _client: OpenAI | None = None
 
 def use_openai(api_key: str) -> None:
     """
-    Set the OpenAI API key to use for OpenAI and Azure OpenAI.
+    Set the OpenAI API key to use for OpenAI.
     """
     global _client
     _client = OpenAI(api_key=api_key)
@@ -89,6 +89,7 @@ class OpenAIVecSeriesAccessor:
         return pd.Series(
             client.predict_minibatch(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
+            name=self._obj.name,
         )
 
     def embed(self, model_name: str, batch_size: int = 128) -> pd.Series:
@@ -100,6 +101,7 @@ class OpenAIVecSeriesAccessor:
         return pd.Series(
             client.embed_minibatch(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
+            name=self._obj.name,
         )
 
     def extract(self) -> pd.DataFrame:
