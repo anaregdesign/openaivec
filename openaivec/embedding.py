@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import List
@@ -7,17 +8,29 @@ from numpy.typing import NDArray
 from openai import OpenAI, RateLimitError
 
 from openaivec.log import observe
-from openaivec.util import backoff, map_unique_minibatch
+from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
 __all__ = ["EmbeddingOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
 
+class EmbeddingLLM(metaclass=ABCMeta):
+
+    @abstractmethod
+    def embed(self, sentences: List[str]) -> List[NDArray[np.float32]]:
+        pass
+
+    @abstractmethod
+    def embed_minibatch(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
+        pass
+
+
 @dataclass(frozen=True)
-class EmbeddingOpenAI:
+class EmbeddingOpenAI(EmbeddingLLM):
     client: OpenAI
     model_name: str
+    is_parallel: bool = False
 
     @observe(_logger)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
@@ -27,4 +40,7 @@ class EmbeddingOpenAI:
 
     @observe(_logger)
     def embed_minibatch(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
-        return map_unique_minibatch(sentences, batch_size, self.embed)
+        if self.is_parallel:
+            return map_unique_minibatch_parallel(sentences, batch_size, self.embed)
+        else:
+            return map_unique_minibatch(sentences, batch_size, self.embed)

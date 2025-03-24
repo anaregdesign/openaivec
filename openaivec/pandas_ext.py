@@ -5,10 +5,11 @@ import pandas as pd
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 
-from openaivec.embedding import EmbeddingOpenAI
+from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
 
 __all__ = [
+    "use",
     "use_openai",
     "use_azure_openai",
 ]
@@ -19,9 +20,17 @@ T = TypeVar("T")
 _client: OpenAI | None = None
 
 
+def use(client: OpenAI) -> None:
+    """
+    Set the OpenAI client to use for OpenAI.
+    """
+    global _client
+    _client = client
+
+
 def use_openai(api_key: str) -> None:
     """
-    Set the OpenAI API key to use for OpenAI and Azure OpenAI.
+    Set the OpenAI API key to use for OpenAI.
     """
     global _client
     _client = OpenAI(api_key=api_key)
@@ -75,13 +84,13 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def predict(self, model_name: str, prompt: str, respnse_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
+    def predict(self, model_name: str, prompt: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
             model_name=model_name,
             system_message=prompt,
             is_parallel=True,
-            response_format=respnse_format,
+            response_format=response_format,
             temperature=0,
             top_p=1,
         )
@@ -89,10 +98,11 @@ class OpenAIVecSeriesAccessor:
         return pd.Series(
             client.predict_minibatch(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
+            name=self._obj.name,
         )
 
     def embed(self, model_name: str, batch_size: int = 128) -> pd.Series:
-        client: VectorizedLLM = EmbeddingOpenAI(
+        client: EmbeddingLLM = EmbeddingOpenAI(
             client=get_openai_client(),
             model_name=model_name,
         )
@@ -100,6 +110,7 @@ class OpenAIVecSeriesAccessor:
         return pd.Series(
             client.embed_minibatch(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
+            name=self._obj.name,
         )
 
     def extract(self) -> pd.DataFrame:
