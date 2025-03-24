@@ -5,7 +5,7 @@ import pandas as pd
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 
-from openaivec.embedding import EmbeddingOpenAI
+from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
 
 __all__ = [
@@ -92,7 +92,7 @@ class OpenAIVecSeriesAccessor:
         )
 
     def embed(self, model_name: str, batch_size: int = 128) -> pd.Series:
-        client: VectorizedLLM = EmbeddingOpenAI(
+        client: EmbeddingLLM = EmbeddingOpenAI(
             client=get_openai_client(),
             model_name=model_name,
         )
