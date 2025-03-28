@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Type, TypeVar
 
@@ -132,3 +133,17 @@ class OpenAIVecDataFrameAccessor:
         return self._obj.pipe(
             lambda df: df.join(df[column].ai.extract()),
         ).pipe(lambda df: df.drop(columns=[column], axis=1))
+
+    def predict(self, model_name: str, prompt: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
+        return self._obj.pipe(
+            lambda df: (
+                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
+                .map(lambda x: json.dumps(x, ensure_ascii=False))
+                .ai.predict(
+                    model_name=model_name,
+                    prompt=prompt,
+                    response_format=response_format,
+                    batch_size=batch_size,
+                )
+            )
+        )
