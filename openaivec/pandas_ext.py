@@ -130,9 +130,12 @@ class OpenAIVecDataFrameAccessor:
         if column not in self._obj.columns:
             raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
 
-        return self._obj.pipe(
-            lambda df: df.join(df[column].ai.extract()),
-        ).pipe(lambda df: df.drop(columns=[column], axis=1))
+        return (
+            self._obj.pipe(lambda df: df.reset_index(drop=True))
+            .pipe(lambda df: df.join(df[column].ai.extract()))
+            .pipe(lambda df: df.set_index(self._obj.index))
+            .pipe(lambda df: df.drop(columns=[column], axis=1))
+        )
 
     def predict(self, model_name: str, prompt: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
         return self._obj.pipe(
