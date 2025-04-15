@@ -15,23 +15,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+        run: uv python install 3.10
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "${{ runner.tool_cache }}/poetry"
+      - name: Install dependencies via uv
+        run: uv sync --all-extras --dev
 
-      - name: Add Poetry to PATH
-        run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
-
-      - name: Install dependencies via Poetry
-        run: |
-          poetry install --with dev --no-interaction --no-ansi
-          poetry run pip install pyspark==3.5.5
+      - name: Lint with ruff
+        run: uv run ruff check .
 
       - name: Run tests
-        run: poetry run pytest
+        run: uv run pytest
