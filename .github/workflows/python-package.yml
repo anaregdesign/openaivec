@@ -3,44 +3,28 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    environment: pypi
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+        run: uv python install 3.10
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+      - name: Install dependencies via uv
+        run: uv sync --all-extras --dev
 
-      - name: Install poetry-dynamic-versioning plugin
-        run: poetry self add poetry-dynamic-versioning
+      - name: Build with uv
+        run: uv build
 
-      - name: Configure Poetry
-        run: poetry config virtualenvs.create false
-
-      - name: Set version from Git tag
-        shell: bash
-        run: |
-          TAG=${GITHUB_REF##*/}
-          VERSION=${TAG#v}
-          echo "Detected version: $VERSION"
-          poetry version $VERSION
-
-      - name: Install dependencies and build package
-        run: poetry install && poetry build
-
-      - name: Publish package to PyPI
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
-        run: poetry publish --no-interaction --username __token__ -vvv
+      - name: Publish to PyPI
+        run: uv publish
