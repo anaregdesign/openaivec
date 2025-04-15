@@ -383,7 +383,7 @@ steps:
       )
       ```
 
-Following these steps allows you to successfully integrate and use `vectorize-openai` within Microsoft Fabric.
+Following these steps allows you to successfully integrate and use `openaivec` within Microsoft Fabric.
 
 ## Contributing
 
@@ -399,7 +399,7 @@ We welcome contributions to this project! If you would like to contribute, pleas
 To install the necessary dependencies for development, run:
 
 ```bash
-poetry install --dev
+uv sync --all-extras --dev
 ```
 
 ### Code Formatting
@@ -407,7 +407,7 @@ poetry install --dev
 To reformat the code, use the following command:
 
 ```bash
-poetry run ruff check . --fix
+uv run ruff check . --fix
 ```
 
 ## Community
