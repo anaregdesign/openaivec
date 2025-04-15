@@ -651,8 +651,7 @@ wheels = [
 
 [[package]]
 name = "openaivec"
-version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "httpx", extra = ["http2"] },
     { name = "openai" },

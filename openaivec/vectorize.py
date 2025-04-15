@@ -4,7 +4,7 @@ from logging import Logger, getLogger
 from typing import Generic, List, Type, TypeVar, cast
 
 from openai import OpenAI, RateLimitError
-from openai.types.chat import ParsedChatCompletion
+from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
@@ -110,38 +110,31 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
     @observe(_logger)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
-    def request(self, user_messages: List[Message[str]]) -> ParsedChatCompletion[Response[T]]:
+    def request(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         response_format = self.response_format
 
         class MessageT(BaseModel):
             id: int
-            body: response_format # type: ignore
+            body: response_format  # type: ignore
 
         class ResponseT(BaseModel):
             assistant_messages: List[MessageT]
 
-        completion: ParsedChatCompletion[ResponseT] = self.client.beta.chat.completions.parse(
+        completion: ParsedResponse[ResponseT] = self.client.responses.parse(
             model=self.model_name,
-            messages=[
-                {"role": "system", "content": self._vectorized_system_message},
-                {
-                    "role": "user",
-                    "content": Request(user_messages=user_messages).model_dump_json(),
-                },
-            ],
+            instructions=self._vectorized_system_message,
+            input=Request(user_messages=user_messages).model_dump_json(),
             temperature=self.temperature,
             top_p=self.top_p,
-            response_format=ResponseT,
+            text_format=ResponseT,
         )
-        return cast(ParsedChatCompletion[Response[T]], completion)
+        return cast(ParsedResponse[Response[T]], completion)
 
     @observe(_logger)
     def predict(self, user_messages: List[str]) -> List[T]:
         messages = [Message(id=i, body=message) for i, message in enumerate(user_messages)]
-        completion = self.request(messages)
-        response_dict = {
-            message.id: message.body for message in completion.choices[0].message.parsed.assistant_messages
-        }
+        responses: ParsedResponse[Response[T]] = self.request(messages)
+        response_dict = {message.id: message.body for message in responses.output_parsed.assistant_messages}
         sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses
 
