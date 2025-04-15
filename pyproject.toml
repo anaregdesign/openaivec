@@ -1,7 +1,7 @@
 [project]
 name = "openaivec"
 dynamic = ["version"]
-description = "Genarative mutation for tabular calculation"
+description = "Generative mutation for tabular calculation"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
