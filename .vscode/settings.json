@@ -8,5 +8,6 @@
     "python.linting.ruffEnabled": true,
     "python.linting.flake8Enabled": false,
     "python.formatting.provider": "ruff",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "python.envFile": "${workspaceFolder}/.env"
 }

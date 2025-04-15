@@ -18,8 +18,10 @@ dev = [
     "langdetect>=1.0.9",
     "pyarrow>=19.0.1",
     "pytest>=8.3.5",
+    "python-dotenv>=1.1.0",
     "ruff>=0.11.5",
 ]
 
 [tool.ruff]
 line-length = 120
+target-version = "py310"
