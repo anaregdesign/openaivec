@@ -1,0 +1,22 @@
+[project]
+name = "openaivec"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx[http2]>=0.28.1",
+    "openai>=1.74.0",
+    "pandas>=2.2.3",
+    "pyspark>=3.5.5",
+    "tiktoken>=0.9.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "langdetect>=1.0.9",
+    "pyarrow>=19.0.1",
+    "pytest>=8.3.5",
+    "ruff>=0.11.5",
+]
