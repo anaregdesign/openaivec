@@ -1,10 +1,13 @@
 import unittest
 
 import numpy as np
+from openai import OpenAI
 from pydantic import BaseModel
 import pandas as pd
 
 from openaivec import pandas_ext
+
+pandas_ext.use(OpenAI())
 
 
 class TestPandasExt(unittest.TestCase):
@@ -28,7 +31,6 @@ class TestPandasExt(unittest.TestCase):
         self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
 
     def test_extract(self):
-
         class Fruit(BaseModel):
             color: str
             flavor: str
@@ -36,10 +38,6 @@ class TestPandasExt(unittest.TestCase):
 
         self.df.assign(
             fruit=lambda df: df.name.ai.predict(
-                model_name="gpt-4o-mini",
-                prompt="extract fruit information",
-                response_format=Fruit
+                model_name="gpt-4o-mini", prompt="extract fruit information", response_format=Fruit
             )
-        ).pipe(
-            lambda df: df.ai.extract("fruit")
-        )
+        ).pipe(lambda df: df.ai.extract("fruit"))
