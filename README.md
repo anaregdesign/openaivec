@@ -25,8 +25,7 @@ You can mutate the column with natural language instructions.
 
 ```python
 # Translate animal names to Chinese
-animals_zh: pd.Series = animals.ai.response(instructions="Translate the animal names to Chinese.")
-print(animals_zh)
+animals.ai.response(instructions="Translate the animal names to Chinese.")
 ```
 
 and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
