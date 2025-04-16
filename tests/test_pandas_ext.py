@@ -1,3 +1,4 @@
+from typing import List
 import unittest
 
 import numpy as np
@@ -38,6 +39,14 @@ class TestPandasExt(unittest.TestCase):
             flavor: str
             taste: str
 
-        self.df.assign(
-            fruit=lambda df: df.name.ai.response(instruction="extract fruit information", response_format=Fruit)
-        ).pipe(lambda df: df.ai.extract("fruit"))
+        columns: List[str] = (
+            self.df.assign(
+                fruit=lambda df: df.name.ai.response(instruction="extract fruit information", response_format=Fruit)
+            )
+            .pipe(lambda df: df.ai.extract("fruit"))
+            .columns
+        )
+
+        # assert columns are ['name', 'color', 'flavor', 'taste']
+        for column in columns:
+            self.assertIn(column, ["name", "color", "flavor", "taste"])
