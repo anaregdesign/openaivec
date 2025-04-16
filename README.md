@@ -1,49 +1,60 @@
 # What is this?
-Define a LLM based UDF for Apache Spark with simple code!
+
+Let's dive into **Generative Mutation** for tabular data!
 
 ```python
-# Model for structured output
-class Fruit(pydantic.BaseModel):
-   name: str
-   color: str
-   taste: str
+import pandas as pd
+from openai import OpenAI
+from openaivec import pandas_ext
 
-# Prompt with example
-prompt = """
-    return the color and taste of given fruit.
+# Set OpenAI Client (optional: this is default client if environment "OPENAI_API_KEY" is set)
+pandas_ext.use(OpenAI())
 
-    #example
-
-    ## input
-    apple
-
-    ## output
-    {{
-        "name": "apple",
-        "color": "red",
-        "taste": "sweet"
-    }}
-"""
-# Simple UDF builder in openaivec
-udf = UDFBuilder.of_openai(...)
-
-# Register UDFs with structured output
-spark.udf.register("parse_fruit", udf.completion(prompt, response_format=Fruit))
-
-# Use UDFs in Spark SQL
-spark.sql("SELECT name, parse_fruit(name) from dummy").show(truncate=False)
+# Set models for responses and embeddings(optional: these are default models)
+pandas_ext.responses_model("gpt-4o-mini")
+pandas_ext.embedding_model("text-embedding-3-small")
 ```
 
-The following output is produced:
-```text
-+------+--------------------------------------------------------+
-|name  |fruit(name)                                             |
-+------+--------------------------------------------------------+
-|apple |{"name":"apple","color":"red","taste":"sweet"}          |
-|banana|{"name":"banana","color":"yellow","taste":"sweet"}      |
-|cherry|{"name":"cherry","color":"red","taste":"sweet and tart"}|
-+------+--------------------------------------------------------+
+This is a simple dummy data with `pd.Series`.
+
+```python
+animals: pd.Series = pd.Series(["panda", "koala", "python", "dog", "cat"])
 ```
+
+You can mutate the column with natural language instructions.
+
+```python
+# Translate animal names to Chinese
+animals_zh: pd.Series = animals.ai.response(instructions="Translate the animal names to Chinese.")
+print(animals_zh)
+```
+
+and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
+
+These are extremely fluent interface for data processing with pandas.
+
+```python
+df = pd.DataFrame({"animal": ["panda", "koala", "python", "dog", "cat"]})
+df.assign(
+    zh=lambda df: df.animal.ai.response("Translate the animal names to Chinese."),
+    color=lambda df: df.animal.ai.response("Translate the animal names to color."),
+    is_technical_word=lambda df: df.animal.ai.response("Is this related to python language? answer yes or no.").map(lambda x: x == "yes"),
+)
+```
+
+| animal | zh   | color           | is_technical_word |
+| ------ | ---- | --------------- | ----------------- |
+| panda  | 熊猫 | black and white | False             |
+| koala  | 考拉 | grey            | False             |
+| python | 蟒蛇 | green           | True              |
+| dog    | 狗   | brown           | False             |
+| cat    | 猫   | orange          | False             |
+
+( Personally, I expect first and second row of `is_technical_word` to be `True`...)
+
+Do you wanna use another llm model? I don't think so. OpenAI is all you need in this scenario.
+
+````python
 
 # Overview
 
@@ -71,7 +82,7 @@ Install the package with:
 
 ```bash
 pip install openaivec
-```
+````
 
 If you want to uninstall the package, you can do so with:
 
@@ -103,6 +114,7 @@ print(result)  # Expected output: ['bear family', 'rabbit family', 'koala family
 See [examples/basic_usage.ipynb](examples/basic_usage.ipynb) for a complete example.
 
 ## Using with Pandas DataFrame
+
 `openaivec.pandas_ext` extends `pandas.Series` functions with accessor `ai.predict` or `ai.embed`.
 
 ```python
@@ -112,14 +124,14 @@ from openaivec import pandas_ext
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
 df.assign(
-    kind=lambda df: df.name.ai.predict("gpt-4o", "Answer only with 'xx family' and do not output anything else.")
+    kind=lambda df: df.name.ai.response("Answer only with 'xx family' and do not output anything else.")
 )
 ```
 
 Example output:
 
 | name   | kind          |
-|--------|---------------|
+| ------ | ------------- |
 | panda  | bear family   |
 | rabbit | rabbit family |
 | koala  | koala family  |
@@ -171,7 +183,7 @@ FROM product_names;
 Example Output:
 
 | id            | product_name                         | taste     | product     |
-|---------------|--------------------------------------|-----------|-------------|
+| ------------- | ------------------------------------ | --------- | ----------- |
 | 4414732714624 | Cafe Mocha Smoothie (Trial Size)     | Mocha     | Smoothie    |
 | 4200162318339 | Dark Chocolate Tea (New Product)     | Chocolate | Tea         |
 | 4920122084098 | Cafe Mocha Protein Bar (Trial Size)  | Mocha     | Protein Bar |
@@ -193,7 +205,7 @@ and examples.
 
 ### Basic Usage
 
-`FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will 
+`FewShotPromptBuilder` requires simply a purpose, cautions, and examples, and `build` method will
 return rendered prompt with XML format.
 
 Here is an example:
@@ -352,36 +364,39 @@ This section provides instructions on how to integrate and use `vectorize-openai
 steps:
 
 1. **Create an Environment in Microsoft Fabric:**
-    - In Microsoft Fabric, click on **New item** in your workspace.
-    - Select **Environment** to create a new environment for Apache Spark.
-    - Determine the environment name, eg. `openai-environment`.
-    - ![image](https://github.com/user-attachments/assets/bd1754ef-2f58-46b4-83ed-b335b64aaa1c)
-      *Figure: Creating a new Environment in Microsoft Fabric.*
+
+   - In Microsoft Fabric, click on **New item** in your workspace.
+   - Select **Environment** to create a new environment for Apache Spark.
+   - Determine the environment name, eg. `openai-environment`.
+   - ![image](https://github.com/user-attachments/assets/bd1754ef-2f58-46b4-83ed-b335b64aaa1c)
+     _Figure: Creating a new Environment in Microsoft Fabric._
 
 2. **Add `openaivec` to the Environment from Public Library**
-    - Once your environment is set up, go to the **Custom Library** section within that environment.
-    - Click on **Add from PyPI** and search for latest version of `openaivec`.
-    - Save and publish to reflect the changes.
-    - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
-      *Figure: Add `openaivec` from PyPI to Public Library*
+
+   - Once your environment is set up, go to the **Custom Library** section within that environment.
+   - Click on **Add from PyPI** and search for latest version of `openaivec`.
+   - Save and publish to reflect the changes.
+   - ![image](https://github.com/user-attachments/assets/7b6320db-d9d6-4b89-a49d-e55b1489d1ae)
+     _Figure: Add `openaivec` from PyPI to Public Library_
 
 3. **Use the Environment from a Notebook:**
-    - Open a notebook within Microsoft Fabric.
-    - Select the environment you created in the previous steps.
-    - ![image](https://github.com/user-attachments/assets/2457c078-1691-461b-b66e-accc3989e419)
-      *Figure: Using custom environment from a notebook.*
-    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
 
-      ```python
-      from openaivec.spark import UDFBuilder
- 
-      udf = UDFBuilder(
-          api_key="<your-api-key>",
-          api_version="2024-10-21",
-          endpoint="https://<your-resource-name>.openai.azure.com",
-          model_name="<your-deployment-name>"
-      )
-      ```
+   - Open a notebook within Microsoft Fabric.
+   - Select the environment you created in the previous steps.
+   - ![image](https://github.com/user-attachments/assets/2457c078-1691-461b-b66e-accc3989e419)
+     _Figure: Using custom environment from a notebook._
+   - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
+
+     ```python
+     from openaivec.spark import UDFBuilder
+
+     udf = UDFBuilder(
+         api_key="<your-api-key>",
+         api_version="2024-10-21",
+         endpoint="https://<your-resource-name>.openai.azure.com",
+         model_name="<your-deployment-name>"
+     )
+     ```
 
 Following these steps allows you to successfully integrate and use `openaivec` within Microsoft Fabric.
 

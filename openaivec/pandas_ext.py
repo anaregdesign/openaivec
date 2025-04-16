@@ -5,12 +5,15 @@ from typing import Type, TypeVar
 import pandas as pd
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
+import tiktoken
 
 from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
 
 __all__ = [
     "use",
+    "responses_model",
+    "embedding_model",
     "use_openai",
     "use_azure_openai",
 ]
@@ -18,45 +21,66 @@ __all__ = [
 
 T = TypeVar("T")
 
-_client: OpenAI | None = None
+_CLIENT: OpenAI | None = None
+_RESPONSES_MODEL_NAME = "gpt-4o-mini"
+_EMBEDDING_MODEL_NAME = "text-embedding-3-small"
+
+_TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
 
 
 def use(client: OpenAI) -> None:
     """
     Set the OpenAI client to use for OpenAI.
     """
-    global _client
-    _client = client
+    global _CLIENT
+    _CLIENT = client
 
 
 def use_openai(api_key: str) -> None:
     """
     Set the OpenAI API key to use for OpenAI.
     """
-    global _client
-    _client = OpenAI(api_key=api_key)
+    global _CLIENT
+    _CLIENT = OpenAI(api_key=api_key)
 
 
 def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
     """
     Set the Azure OpenAI API key to use for Azure OpenAI.
     """
-    global _client
-    _client = AzureOpenAI(
+    global _CLIENT
+    _CLIENT = AzureOpenAI(
         api_key=api_key,
         azure_endpoint=endpoint,
         api_version=api_version,
     )
 
 
+def responses_model(name: str) -> None:
+    """
+    Set the OpenAI responses model name to use for OpenAI.
+    """
+    global _RESPONSES_MODEL_NAME, _TIKTOKEN_ENCODING
+    _RESPONSES_MODEL_NAME = name
+    _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
+
+
+def embedding_model(name: str) -> None:
+    """
+    Set the OpenAI embedding model name to use for OpenAI.
+    """
+    global _EMBEDDING_MODEL_NAME
+    _EMBEDDING_MODEL_NAME = name
+
+
 def get_openai_client() -> OpenAI:
-    global _client
-    if _client is not None:
-        return _client
+    global _CLIENT
+    if _CLIENT is not None:
+        return _CLIENT
 
     if "OPENAI_API_KEY" in os.environ:
-        _client = OpenAI()
-        return _client
+        _CLIENT = OpenAI()
+        return _CLIENT
 
     aoai_param_names = [
         "AZURE_OPENAI_API_KEY",
@@ -65,13 +89,13 @@ def get_openai_client() -> OpenAI:
     ]
 
     if all(param in os.environ for param in aoai_param_names):
-        _client = AzureOpenAI(
+        _CLIENT = AzureOpenAI(
             api_key=os.environ["AZURE_OPENAI_API_KEY"],
             azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version=os.environ["AZURE_OPENAI_API_VERSION"],
         )
 
-        return _client
+        return _CLIENT
 
     raise ValueError(
         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters."
@@ -85,11 +109,13 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def predict(self, model_name: str, prompt: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
+    def response(
+        self, instructions: str, response_format: Type[T] = str, model_name=_RESPONSES_MODEL_NAME, batch_size: int = 128
+    ) -> pd.Series:
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
             model_name=model_name,
-            system_message=prompt,
+            system_message=instructions,
             is_parallel=True,
             response_format=response_format,
             temperature=0,
@@ -102,7 +128,7 @@ class OpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
-    def embed(self, model_name: str, batch_size: int = 128) -> pd.Series:
+    def embed(self, model_name: str = _EMBEDDING_MODEL_NAME, batch_size: int = 128) -> pd.Series:
         client: EmbeddingLLM = EmbeddingOpenAI(
             client=get_openai_client(),
             model_name=model_name,
@@ -113,6 +139,9 @@ class OpenAIVecSeriesAccessor:
             index=self._obj.index,
             name=self._obj.name,
         )
+
+    def count_tokens(self) -> pd.Series:
+        return self._obj.map(_TIKTOKEN_ENCODING.encode).map(len).rename("num_tokens")
 
     def extract(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -137,15 +166,21 @@ class OpenAIVecDataFrameAccessor:
             .pipe(lambda df: df.drop(columns=[column], axis=1))
         )
 
-    def predict(self, model_name: str, prompt: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
+    def response(
+        self,
+        instructions: str,
+        response_format: Type[T] = str,
+        model_name: str = _RESPONSES_MODEL_NAME,
+        batch_size: int = 128,
+    ) -> pd.Series:
         return self._obj.pipe(
             lambda df: (
                 df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
                 .map(lambda x: json.dumps(x, ensure_ascii=False))
                 .ai.predict(
-                    model_name=model_name,
-                    prompt=prompt,
+                    instructions=instructions,
                     response_format=response_format,
+                    model_name=model_name,
                     batch_size=batch_size,
                 )
             )
