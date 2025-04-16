@@ -1,17 +1,24 @@
 # What is this?
 
-Let's dive into **Generative ETL** on tabular data processing!
-
-This is a simple dummy data with `pd.Series`.
+Let's dive into **Generative Mutation** for tabular data!
 
 ```python
 import pandas as pd
 from openai import OpenAI
 from openaivec import pandas_ext
 
+# Set OpenAI Client (optional: this is default client if environment "OPENAI_API_KEY" is set)
 pandas_ext.use(OpenAI())
 
-animals: pd.Series = pd.Series(["panda", "rabbit", "koala", "dog", "cat"])
+# Set models for responses and embeddings(optional: these are default models)
+pandas_ext.responses_model("gpt-4o-mini")
+pandas_ext.embedding_model("text-embedding-3-small")
+```
+
+This is a simple dummy data with `pd.Series`.
+
+```python
+animals: pd.Series = pd.Series(["panda", "koala", "python", "dog", "cat"])
 ```
 
 You can mutate the column with natural language instructions.
@@ -22,13 +29,32 @@ animals_zh: pd.Series = animals.ai.response(instructions="Translate the animal n
 print(animals_zh)
 ```
 
-and its results are `['熊猫', '兔子', '考拉', '狗', '猫']` (is it correct? I can't read Chinese).
+and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
 
-This is a extremely fuluent interface for data processing with pandas.
+These are extremely fuluent interface for data processing with pandas.
 
 ```python
-
+df = pd.DataFrame({"animal": ["panda", "koala", "python", "dog", "cat"]})
+df.assign(
+    zh=lambda df: df.animal.ai.response("Translate the animal names to Chinese."),
+    color=lambda df: df.animal.ai.response("Translate the animal names to color."),
+    is_technical_word=lambda df: df.animal.ai.response("Is this related to python language? answer yes or no.").map(lambda x: x == "yes"),
+)
 ```
+
+| animal | zh   | color           | is_technical_word |
+| ------ | ---- | --------------- | ----------------- |
+| panda  | 熊猫 | black and white | False             |
+| koala  | 考拉 | grey            | False             |
+| python | 蟒蛇 | green           | True              |
+| dog    | 狗   | brown           | False             |
+| cat    | 猫   | orange          | False             |
+
+( Personally, I expect first and second row of `is_technical_word` to be `True`...)
+
+Do you wanna use another llm model? I don't think so. OpenAI is all you need in this scenario.
+
+````python
 
 # Overview
 
@@ -56,7 +82,7 @@ Install the package with:
 
 ```bash
 pip install openaivec
-```
+````
 
 If you want to uninstall the package, you can do so with:
 
@@ -98,7 +124,7 @@ from openaivec import pandas_ext
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
 df.assign(
-    kind=lambda df: df.name.ai.predict("gpt-4o", "Answer only with 'xx family' and do not output anything else.")
+    kind=lambda df: df.name.ai.response("Answer only with 'xx family' and do not output anything else.")
 )
 ```
 
