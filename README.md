@@ -2,19 +2,6 @@
 
 Let's dive into **Generative Mutation** for tabular data!
 
-```python
-import pandas as pd
-from openai import OpenAI
-from openaivec import pandas_ext
-
-# Set OpenAI Client (optional: this is default client if environment "OPENAI_API_KEY" is set)
-pandas_ext.use(OpenAI())
-
-# Set models for responses and embeddings(optional: these are default models)
-pandas_ext.responses_model("gpt-4o-mini")
-pandas_ext.embedding_model("text-embedding-3-small")
-```
-
 This is a simple dummy data with `pd.Series`.
 
 ```python
@@ -116,7 +103,15 @@ See [examples/basic_usage.ipynb](examples/basic_usage.ipynb) for a complete exam
 
 ```python
 import pandas as pd
+from openai import OpenAI
 from openaivec import pandas_ext
+
+# Set OpenAI Client (optional: this is default client if environment "OPENAI_API_KEY" is set)
+pandas_ext.use(OpenAI())
+
+# Set models for responses and embeddings(optional: these are default models)
+pandas_ext.responses_model("gpt-4o-mini")
+pandas_ext.embedding_model("text-embedding-3-small")
 
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
