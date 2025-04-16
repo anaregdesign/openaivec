@@ -110,12 +110,12 @@ class OpenAIVecSeriesAccessor:
         self._obj = series_obj
 
     def response(
-        self, instruction: str, response_format: Type[T] = str, model_name=_RESPONSES_MODEL_NAME, batch_size: int = 128
+        self, instructions: str, response_format: Type[T] = str, model_name=_RESPONSES_MODEL_NAME, batch_size: int = 128
     ) -> pd.Series:
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
             model_name=model_name,
-            system_message=instruction,
+            system_message=instructions,
             is_parallel=True,
             response_format=response_format,
             temperature=0,
@@ -168,7 +168,7 @@ class OpenAIVecDataFrameAccessor:
 
     def response(
         self,
-        instruction: str,
+        instructions: str,
         response_format: Type[T] = str,
         model_name: str = _RESPONSES_MODEL_NAME,
         batch_size: int = 128,
@@ -178,7 +178,7 @@ class OpenAIVecDataFrameAccessor:
                 df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
                 .map(lambda x: json.dumps(x, ensure_ascii=False))
                 .ai.predict(
-                    instruction=instruction,
+                    instructions=instructions,
                     response_format=response_format,
                     model_name=model_name,
                     batch_size=batch_size,

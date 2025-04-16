@@ -41,7 +41,7 @@ class TestPandasExt(unittest.TestCase):
 
         columns: List[str] = (
             self.df.assign(
-                fruit=lambda df: df.name.ai.response(instruction="extract fruit information", response_format=Fruit)
+                fruit=lambda df: df.name.ai.response(instructions="extract fruit information", response_format=Fruit)
             )
             .pipe(lambda df: df.ai.extract("fruit"))
             .columns
