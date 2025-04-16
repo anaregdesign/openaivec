@@ -50,3 +50,9 @@ class TestPandasExt(unittest.TestCase):
         # assert columns are ['name', 'color', 'flavor', 'taste']
         for column in columns:
             self.assertIn(column, ["name", "color", "flavor", "taste"])
+
+    def test_count_tokens(self):
+        num_tokens: pd.Series = self.df.name.ai.count_tokens()
+
+        # assert all values are elements of int
+        self.assertTrue(all(isinstance(num_token, int) for num_token in num_tokens))

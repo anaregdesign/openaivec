@@ -5,6 +5,7 @@ from typing import Type, TypeVar
 import pandas as pd
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
+import tiktoken
 
 from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
 from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
@@ -23,6 +24,8 @@ T = TypeVar("T")
 _CLIENT: OpenAI | None = None
 _RESPONSES_MODEL_NAME = "gpt-4o-mini"
 _EMBEDDING_MODEL_NAME = "text-embedding-3-small"
+
+_TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
 
 
 def use(client: OpenAI) -> None:
@@ -57,8 +60,9 @@ def responses_model(name: str) -> None:
     """
     Set the OpenAI responses model name to use for OpenAI.
     """
-    global _RESPONSES_MODEL_NAME
+    global _RESPONSES_MODEL_NAME, _TIKTOKEN_ENCODING
     _RESPONSES_MODEL_NAME = name
+    _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
 
 
 def embedding_model(name: str) -> None:
@@ -135,6 +139,9 @@ class OpenAIVecSeriesAccessor:
             index=self._obj.index,
             name=self._obj.name,
         )
+
+    def count_tokens(self) -> pd.Series:
+        return self._obj.map(_TIKTOKEN_ENCODING.encode).map(len).rename("num_tokens")
 
     def extract(self) -> pd.DataFrame:
         return pd.DataFrame(
