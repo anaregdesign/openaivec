@@ -31,7 +31,7 @@ print(animals_zh)
 
 and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
 
-These are extremely fuluent interface for data processing with pandas.
+These are extremely fluent interface for data processing with pandas.
 
 ```python
 df = pd.DataFrame({"animal": ["panda", "koala", "python", "dog", "cat"]})
