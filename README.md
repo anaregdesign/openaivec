@@ -54,8 +54,6 @@ df.assign(
 
 Do you wanna use another llm model? I don't think so. OpenAI is all you need in this scenario.
 
-````python
-
 # Overview
 
 This package provides a vectorized interface for the OpenAI API, enabling you to process multiple inputs with a single
