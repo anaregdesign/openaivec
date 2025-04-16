@@ -5,6 +5,7 @@ import tiktoken
 from openai import BaseModel
 from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
+from openaivec.spark import pydantic_to_spark_schema
 from openaivec.util import (
     TextChunker,
     map_minibatch,
@@ -12,7 +13,6 @@ from openaivec.util import (
     map_unique,
     map_unique_minibatch,
     map_unique_minibatch_parallel,
-    pydantic_to_spark_schema,
     split_to_minibatch,
 )
 
