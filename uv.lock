@@ -653,18 +653,24 @@ wheels = [
 name = "openaivec"
 source = { editable = "." }
 dependencies = [
-    { name = "httpx", extra = ["http2"] },
     { name = "openai" },
     { name = "pandas" },
-    { name = "pyspark" },
     { name = "tiktoken" },
+]
+
+[package.optional-dependencies]
+spark = [
+    { name = "httpx", extra = ["http2"] },
+    { name = "pyspark" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx", extra = ["http2"] },
     { name = "ipykernel" },
     { name = "langdetect" },
     { name = "pyarrow" },
+    { name = "pyspark" },
     { name = "pytest" },
     { name = "python-dotenv" },
     { name = "ruff" },
@@ -672,18 +678,21 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
+    { name = "httpx", extras = ["http2"], marker = "extra == 'spark'", specifier = ">=0.28.1" },
     { name = "openai", specifier = ">=1.74.0" },
     { name = "pandas", specifier = ">=2.2.3" },
-    { name = "pyspark", specifier = ">=3.5.5" },
+    { name = "pyspark", marker = "extra == 'spark'", specifier = ">=3.5.5" },
     { name = "tiktoken", specifier = ">=0.9.0" },
 ]
+provides-extras = ["spark"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "httpx", extras = ["http2"], specifier = ">=0.28.1" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "langdetect", specifier = ">=1.0.9" },
     { name = "pyarrow", specifier = ">=19.0.1" },
+    { name = "pyspark", specifier = ">=3.5.5" },
     { name = "pytest", specifier = ">=8.3.5" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "ruff", specifier = ">=0.11.5" },

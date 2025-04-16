@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from logging import Logger, getLogger
-from typing import Iterator, List, Optional, Type, TypeVar
+from typing import Iterator, List, Optional, Type, TypeVar, Union, get_args, get_origin
 
 import httpx
 import pandas as pd
@@ -8,12 +8,12 @@ import tiktoken
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType
+from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
 from openaivec import EmbeddingOpenAI, VectorizedOpenAI
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
-from openaivec.util import TextChunker, pydantic_to_spark_schema
+from openaivec.util import TextChunker
 from openaivec.vectorize import VectorizedLLM
 
 __all__ = [
@@ -95,6 +95,51 @@ def _safe_cast_str(x: str) -> Optional[str]:
     except Exception as e:
         _logger.error(f"Error during casting to str: {e}")
         return None
+
+
+def python_type_to_spark(python_type):
+    origin = get_origin(python_type)
+
+    # For list types (e.g., List[int])
+    if origin is list or origin is List:
+        # Retrieve the inner type and recursively convert it
+        inner_type = get_args(python_type)[0]
+        return ArrayType(python_type_to_spark(inner_type))
+
+    # For Optional types (Union[..., None])
+    elif origin is Union:
+        non_none_args = [arg for arg in get_args(python_type) if arg is not type(None)]
+        if len(non_none_args) == 1:
+            return python_type_to_spark(non_none_args[0])
+        else:
+            raise ValueError(f"Unsupported Union type with multiple non-None types: {python_type}")
+
+    # For nested Pydantic models (to be treated as Structs)
+    elif isinstance(python_type, type) and issubclass(python_type, BaseModel):
+        return pydantic_to_spark_schema(python_type)
+
+    # Basic type mapping
+    elif python_type is int:
+        return IntegerType()
+    elif python_type is float:
+        return FloatType()
+    elif python_type is str:
+        return StringType()
+    elif python_type is bool:
+        return BooleanType()
+    else:
+        raise ValueError(f"Unsupported type: {python_type}")
+
+
+def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
+    fields = []
+    for field_name, field in model.model_fields.items():
+        field_type = field.annotation
+        # Use outer_type_ to correctly handle types like Optional
+        spark_type = python_type_to_spark(field_type)
+        # Set nullable to True (adjust logic as needed)
+        fields.append(StructField(field_name, spark_type, nullable=True))
+    return StructType(fields)
 
 
 @dataclass(frozen=True)
