@@ -71,10 +71,10 @@ def responses_model(name: str) -> None:
 
     except KeyError:
         _LOGGER.warning(
-            "The model name '%s' is not supported by tiktoken. Instead, using the default encoding for 'gpt-4o-mini'. ",
+            "The model name '%s' is not supported by tiktoken. Instead, using the 'o200k_base' encoding.",
             name,
         )
-        _TIKTOKEN_ENCODING = tiktoken.encoding_for_model("gpt-4o-mini")
+        _TIKTOKEN_ENCODING = tiktoken.get_encoding("o200k_base")
 
 
 def embedding_model(name: str) -> None:
