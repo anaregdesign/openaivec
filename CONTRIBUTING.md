@@ -23,4 +23,3 @@ To reformat the code, use the following command:
 
 ```bash
 uv run ruff check . --fix
-````
