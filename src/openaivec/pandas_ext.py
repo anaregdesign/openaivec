@@ -1,5 +1,6 @@
 import json
 import os
+import logging
 from typing import Type, TypeVar
 
 import pandas as pd
@@ -17,6 +18,8 @@ __all__ = [
     "use_openai",
     "use_azure_openai",
 ]
+
+_LOGGER = logging.getLogger(__name__)
 
 
 T = TypeVar("T")
@@ -62,7 +65,18 @@ def responses_model(name: str) -> None:
     """
     global _RESPONSES_MODEL_NAME, _TIKTOKEN_ENCODING
     _RESPONSES_MODEL_NAME = name
-    _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
+
+    try:
+        _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
+    
+    except KeyError:
+        _LOGGER.warning(
+            "The model name '%s' is not supported by tiktoken. "
+            "Instead, using the default encoding for 'gpt-4o-mini'. ",
+            name,
+        )
+        _TIKTOKEN_ENCODING = tiktoken.encoding_for_model("gpt-4o-mini")
+
 
 
 def embedding_model(name: str) -> None:
