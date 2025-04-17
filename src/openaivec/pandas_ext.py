@@ -68,15 +68,13 @@ def responses_model(name: str) -> None:
 
     try:
         _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
-    
+
     except KeyError:
         _LOGGER.warning(
-            "The model name '%s' is not supported by tiktoken. "
-            "Instead, using the default encoding for 'gpt-4o-mini'. ",
+            "The model name '%s' is not supported by tiktoken. Instead, using the default encoding for 'gpt-4o-mini'. ",
             name,
         )
         _TIKTOKEN_ENCODING = tiktoken.encoding_for_model("gpt-4o-mini")
-
 
 
 def embedding_model(name: str) -> None:
@@ -123,12 +121,10 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def response(
-        self, instructions: str, response_format: Type[T] = str, model_name=_RESPONSES_MODEL_NAME, batch_size: int = 128
-    ) -> pd.Series:
+    def response(self, instructions: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
-            model_name=model_name,
+            model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,
             is_parallel=True,
             response_format=response_format,
@@ -142,10 +138,11 @@ class OpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
-    def embed(self, model_name: str = _EMBEDDING_MODEL_NAME, batch_size: int = 128) -> pd.Series:
+    def embed(self, batch_size: int = 128) -> pd.Series:
         client: EmbeddingLLM = EmbeddingOpenAI(
             client=get_openai_client(),
-            model_name=model_name,
+            model_name=_EMBEDDING_MODEL_NAME,
+            is_parallel=True,
         )
 
         return pd.Series(
@@ -184,7 +181,6 @@ class OpenAIVecDataFrameAccessor:
         self,
         instructions: str,
         response_format: Type[T] = str,
-        model_name: str = _RESPONSES_MODEL_NAME,
         batch_size: int = 128,
     ) -> pd.Series:
         return self._obj.pipe(
@@ -194,7 +190,6 @@ class OpenAIVecDataFrameAccessor:
                 .ai.predict(
                     instructions=instructions,
                     response_format=response_format,
-                    model_name=model_name,
                     batch_size=batch_size,
                 )
             )
