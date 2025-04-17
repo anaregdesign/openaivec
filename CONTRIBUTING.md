@@ -15,9 +15,8 @@ Join our Discord community for developers: https://discord.gg/vbb83Pgn
 
 To install the necessary dependencies for development, run:
 
-````bash
-uv sync --all-extras --dev```
-
+```bash
+uv sync --all-extras --dev
 ## Running ruff
 
 To reformat the code, use the following command:
