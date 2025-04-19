@@ -1,4 +1,3 @@
-from typing import List
 import unittest
 
 import numpy as np
@@ -39,18 +38,16 @@ class TestPandasExt(unittest.TestCase):
             flavor: str
             taste: str
 
-        columns: List[str] = (
-            self.df.assign(
-                fruit=lambda df: df.name.ai.response(instructions="extract fruit information", response_format=Fruit)
-            )
-            .pipe(lambda df: df.ai.extract("fruit"))
-            .columns
-        )
+        sample_df = pd.DataFrame(
+            [
+                {"name": "apple", "fruit": Fruit(color="red", flavor="sweet", taste="crunchy")},
+                {"name": "banana", "fruit": Fruit(color="yellow", flavor="sweet", taste="soft")},
+                {"name": "cherry", "fruit": Fruit(color="red", flavor="sweet", taste="tart")},
+            ]
+        ).ai.extract("fruit")
 
-        # assert columns are ['name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
-        # extracted_field names are f{original_field_name}_{extracted_field_name}
-        for column in columns:
-            self.assertIn(column, ["name", "fruit_color", "fruit_flavor", "fruit_taste"])
+        expected_columns = ["name", "fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
 
     def test_extract_dict(self):
         sample_df = pd.DataFrame(
