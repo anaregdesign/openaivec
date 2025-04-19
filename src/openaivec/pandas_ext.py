@@ -124,9 +124,7 @@ def _extract_value(x, series_name):
     elif isinstance(x, dict):
         return x
 
-    _LOGGER.warning(f"The value '{x}' in the series is not a dict or BaseModel. Returning an empty")
-    return {}
-
+    _LOGGER.warning(f"The value '{x}' in the series is not a dict or BaseModel. Returning an empty dict.")
 
 @pd.api.extensions.register_series_accessor("ai")
 class OpenAIVecSeriesAccessor:
