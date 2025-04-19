@@ -116,6 +116,17 @@ def get_openai_client() -> OpenAI:
     )
 
 
+def _extract_value(x, series_name):
+    if x is None:
+        return {}
+    elif isinstance(x, BaseModel):
+        return x.model_dump()
+    elif isinstance(x, dict):
+        return x
+    else:
+        return {series_name: x}
+
+
 @pd.api.extensions.register_series_accessor("ai")
 class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
@@ -155,10 +166,15 @@ class OpenAIVecSeriesAccessor:
         return self._obj.map(_TIKTOKEN_ENCODING.encode).map(len).rename("num_tokens")
 
     def extract(self) -> pd.DataFrame:
-        return pd.DataFrame(
-            self._obj.map(lambda x: x.model_dump() if isinstance(x, BaseModel) else {self._obj.name: x}).tolist(),
+        extracted = pd.DataFrame(
+            self._obj.map(lambda x: _extract_value(x, self._obj.name)).tolist(),
             index=self._obj.index,
         )
+
+        if self._obj.name and all(isinstance(x, (dict, BaseModel, type(None))) for x in self._obj):
+            # If the Series has a name and all elements are dict or BaseModel, use it as the prefix for the columns
+            extracted.columns = [f"{self._obj.name}_{col}" for col in extracted.columns]
+        return extracted
 
 
 @pd.api.extensions.register_dataframe_accessor("ai")
@@ -169,6 +185,9 @@ class OpenAIVecDataFrameAccessor:
     def extract(self, column: str) -> pd.DataFrame:
         if column not in self._obj.columns:
             raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
+
+        if not all(isinstance(x, (dict, BaseModel, type(None))) for x in self._obj[column]):
+            return self._obj
 
         return (
             self._obj.pipe(lambda df: df.reset_index(drop=True))

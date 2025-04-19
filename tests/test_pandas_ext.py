@@ -47,9 +47,39 @@ class TestPandasExt(unittest.TestCase):
             .columns
         )
 
-        # assert columns are ['name', 'color', 'flavor', 'taste']
+        # assert columns are ['name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
+        # extracted_field names are f{original_field_name}_{extracted_field_name}
         for column in columns:
-            self.assertIn(column, ["name", "color", "flavor", "taste"])
+            self.assertIn(column, ["name", "fruit_color", "fruit_flavor", "fruit_taste"])
+
+    def test_extract_dict(self):
+        sample_df = pd.DataFrame(
+            [
+                {"fruit": {"name": "apple", "color": "red", "flavor": "sweet", "taste": "crunchy"}},
+                {"fruit": {"name": "banana", "color": "yellow", "flavor": "sweet", "taste": "soft"}},
+                {"fruit": {"name": "cherry", "color": "red", "flavor": "sweet", "taste": "tart"}},
+            ]
+        ).ai.extract("fruit")
+
+        # assert columns are exactly ['fruit_name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
+
+    def test_extract_dict_with_none(self):
+        sample_df = pd.DataFrame(
+            [
+                {"fruit": {"name": "apple", "color": "red", "flavor": "sweet", "taste": "crunchy"}},
+                {"fruit": None},
+                {"fruit": {"name": "cherry", "color": "red", "flavor": "sweet", "taste": "tart"}},
+            ]
+        ).ai.extract("fruit")
+
+        # assert columns are ['fruit_name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
+
+        # assert the row with None is filled with NaN
+        self.assertTrue(sample_df.iloc[1].isna().all())
 
     def test_count_tokens(self):
         num_tokens: pd.Series = self.df.name.ai.count_tokens()
