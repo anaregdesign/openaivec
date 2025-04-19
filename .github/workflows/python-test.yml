@@ -1,4 +1,4 @@
-name: Poetry test
+name: uv pytest
 
 on:
   pull_request:
