@@ -81,6 +81,18 @@ class TestPandasExt(unittest.TestCase):
         # assert the row with None is filled with NaN
         self.assertTrue(sample_df.iloc[1].isna().all())
 
+    def test_extract_with_invalid_row(self):
+        sample_df = pd.DataFrame(
+            [
+                {"fruit": {"name": "apple", "color": "red", "flavor": "sweet", "taste": "crunchy"}},
+                {"fruit": 123},
+                {"fruit": {"name": "cherry", "color": "red", "flavor": "sweet", "taste": "tart"}},
+            ]
+        )
+
+        expected_columns = ["fruit"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
+
     def test_count_tokens(self):
         num_tokens: pd.Series = self.df.name.ai.count_tokens()
 
