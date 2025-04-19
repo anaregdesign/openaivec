@@ -12,6 +12,12 @@ pandas_ext.responses_model("gpt-4o-mini")
 pandas_ext.embedding_model("text-embedding-3-small")
 
 
+class Fruit(BaseModel):
+    color: str
+    flavor: str
+    taste: str
+
+
 class TestPandasExt(unittest.TestCase):
     def setUp(self):
         self.df = pd.DataFrame(
@@ -33,11 +39,6 @@ class TestPandasExt(unittest.TestCase):
         self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
 
     def test_extract_series(self):
-        class Fruit(BaseModel):
-            color: str
-            flavor: str
-            taste: str
-
         sample_series = pd.Series(
             [
                 Fruit(color="red", flavor="sweet", taste="crunchy"),
@@ -51,11 +52,6 @@ class TestPandasExt(unittest.TestCase):
         self.assertListEqual(list(extracted_df.columns), expected_columns)
 
     def test_extract(self):
-        class Fruit(BaseModel):
-            color: str
-            flavor: str
-            taste: str
-
         sample_df = pd.DataFrame(
             [
                 {"name": "apple", "fruit": Fruit(color="red", flavor="sweet", taste="crunchy")},
