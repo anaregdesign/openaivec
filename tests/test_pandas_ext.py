@@ -76,6 +76,42 @@ class TestPandasExt(unittest.TestCase):
         expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
         self.assertListEqual(list(extracted_df.columns), expected_columns)
 
+    def test_extract_series_with_none(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                None,
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+
+        # assert columns are ['fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+        # assert the row with None is filled with NaN
+        self.assertTrue(extracted_df.iloc[1].isna().all())
+
+    def test_extract_series_with_invalid_row(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                123,  # Invalid row
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+
+        # assert columns are ['fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+        # assert the invalid row is filled with NaN
+        self.assertTrue(extracted_df.iloc[1].isna().all())
+
     def test_extract(self):
         sample_df = pd.DataFrame(
             [

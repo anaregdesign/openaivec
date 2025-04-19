@@ -123,8 +123,9 @@ def _extract_value(x, series_name):
         return x.model_dump()
     elif isinstance(x, dict):
         return x
-    else:
-        return {series_name: x}
+
+    _LOGGER.warning(f"The value '{x}' in the series is not a dict or BaseModel. Returning an empty")
+    return {}
 
 
 @pd.api.extensions.register_series_accessor("ai")
@@ -171,7 +172,7 @@ class OpenAIVecSeriesAccessor:
             index=self._obj.index,
         )
 
-        if self._obj.name and all(isinstance(x, (dict, BaseModel, type(None))) for x in self._obj):
+        if self._obj.name:
             # If the Series has a name and all elements are dict or BaseModel, use it as the prefix for the columns
             extracted.columns = [f"{self._obj.name}_{col}" for col in extracted.columns]
         return extracted
@@ -185,9 +186,6 @@ class OpenAIVecDataFrameAccessor:
     def extract(self, column: str) -> pd.DataFrame:
         if column not in self._obj.columns:
             raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
-
-        if not all(isinstance(x, (dict, BaseModel, type(None))) for x in self._obj[column]):
-            return self._obj
 
         return (
             self._obj.pipe(lambda df: df.reset_index(drop=True))
