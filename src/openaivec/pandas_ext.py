@@ -204,7 +204,7 @@ class OpenAIVecDataFrameAccessor:
             lambda df: (
                 df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
                 .map(lambda x: json.dumps(x, ensure_ascii=False))
-                .ai.predict(
+                .ai.response(
                     instructions=instructions,
                     response_format=response_format,
                     batch_size=batch_size,
