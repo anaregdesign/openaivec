@@ -51,6 +51,31 @@ class TestPandasExt(unittest.TestCase):
         expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
         self.assertListEqual(list(extracted_df.columns), expected_columns)
 
+    def test_extract_series_without_name(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+                Fruit(color="red", flavor="sweet", taste="tart"),
+            ]
+        )
+        extracted_df = sample_series.ai.extract()
+        expected_columns = ["color", "flavor", "taste"]  # without prefix
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+    def test_extract_series_dict(self):
+        sample_series = pd.Series(
+            [
+                {"color": "red", "flavor": "sweet", "taste": "crunchy"},
+                {"color": "yellow", "flavor": "sweet", "taste": "soft"},
+                {"color": "red", "flavor": "sweet", "taste": "tart"},
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
     def test_extract(self):
         sample_df = pd.DataFrame(
             [
