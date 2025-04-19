@@ -1,4 +1,3 @@
-from typing import List
 import unittest
 
 import numpy as np
@@ -11,6 +10,12 @@ from openaivec import pandas_ext
 pandas_ext.use(OpenAI())
 pandas_ext.responses_model("gpt-4o-mini")
 pandas_ext.embedding_model("text-embedding-3-small")
+
+
+class Fruit(BaseModel):
+    color: str
+    flavor: str
+    taste: str
 
 
 class TestPandasExt(unittest.TestCase):
@@ -33,23 +38,132 @@ class TestPandasExt(unittest.TestCase):
         # assert all values are elements of str
         self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
 
-    def test_extract(self):
-        class Fruit(BaseModel):
-            color: str
-            flavor: str
-            taste: str
+    def test_extract_series(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+                Fruit(color="red", flavor="sweet", taste="tart"),
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
 
-        columns: List[str] = (
-            self.df.assign(
-                fruit=lambda df: df.name.ai.response(instructions="extract fruit information", response_format=Fruit)
-            )
-            .pipe(lambda df: df.ai.extract("fruit"))
-            .columns
+    def test_extract_series_without_name(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+                Fruit(color="red", flavor="sweet", taste="tart"),
+            ]
+        )
+        extracted_df = sample_series.ai.extract()
+        expected_columns = ["color", "flavor", "taste"]  # without prefix
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+    def test_extract_series_dict(self):
+        sample_series = pd.Series(
+            [
+                {"color": "red", "flavor": "sweet", "taste": "crunchy"},
+                {"color": "yellow", "flavor": "sweet", "taste": "soft"},
+                {"color": "red", "flavor": "sweet", "taste": "tart"},
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+    def test_extract_series_with_none(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                None,
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+
+        # assert columns are ['fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+        # assert the row with None is filled with NaN
+        self.assertTrue(extracted_df.iloc[1].isna().all())
+
+    def test_extract_series_with_invalid_row(self):
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                123,  # Invalid row
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+
+        # assert columns are ['fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
+        # assert the invalid row is filled with NaN
+        self.assertTrue(extracted_df.iloc[1].isna().all())
+
+    def test_extract(self):
+        sample_df = pd.DataFrame(
+            [
+                {"name": "apple", "fruit": Fruit(color="red", flavor="sweet", taste="crunchy")},
+                {"name": "banana", "fruit": Fruit(color="yellow", flavor="sweet", taste="soft")},
+                {"name": "cherry", "fruit": Fruit(color="red", flavor="sweet", taste="tart")},
+            ]
+        ).ai.extract("fruit")
+
+        expected_columns = ["name", "fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
+
+    def test_extract_dict(self):
+        sample_df = pd.DataFrame(
+            [
+                {"fruit": {"name": "apple", "color": "red", "flavor": "sweet", "taste": "crunchy"}},
+                {"fruit": {"name": "banana", "color": "yellow", "flavor": "sweet", "taste": "soft"}},
+                {"fruit": {"name": "cherry", "color": "red", "flavor": "sweet", "taste": "tart"}},
+            ]
+        ).ai.extract("fruit")
+
+        # assert columns are exactly ['fruit_name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
+
+    def test_extract_dict_with_none(self):
+        sample_df = pd.DataFrame(
+            [
+                {"fruit": {"name": "apple", "color": "red", "flavor": "sweet", "taste": "crunchy"}},
+                {"fruit": None},
+                {"fruit": {"name": "cherry", "color": "red", "flavor": "sweet", "taste": "tart"}},
+            ]
+        ).ai.extract("fruit")
+
+        # assert columns are ['fruit_name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
+        expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
+
+        # assert the row with None is filled with NaN
+        self.assertTrue(sample_df.iloc[1].isna().all())
+
+    def test_extract_with_invalid_row(self):
+        sample_df = pd.DataFrame(
+            [
+                {"fruit": {"name": "apple", "color": "red", "flavor": "sweet", "taste": "crunchy"}},
+                {"fruit": 123},
+                {"fruit": {"name": "cherry", "color": "red", "flavor": "sweet", "taste": "tart"}},
+            ]
         )
 
-        # assert columns are ['name', 'color', 'flavor', 'taste']
-        for column in columns:
-            self.assertIn(column, ["name", "color", "flavor", "taste"])
+        expected_columns = ["fruit"]
+        self.assertListEqual(list(sample_df.columns), expected_columns)
 
     def test_count_tokens(self):
         num_tokens: pd.Series = self.df.name.ai.count_tokens()
