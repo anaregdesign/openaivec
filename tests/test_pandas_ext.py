@@ -32,6 +32,24 @@ class TestPandasExt(unittest.TestCase):
         # assert all values are elements of str
         self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
 
+    def test_extract_series(self):
+        class Fruit(BaseModel):
+            color: str
+            flavor: str
+            taste: str
+
+        sample_series = pd.Series(
+            [
+                Fruit(color="red", flavor="sweet", taste="crunchy"),
+                Fruit(color="yellow", flavor="sweet", taste="soft"),
+                Fruit(color="red", flavor="sweet", taste="tart"),
+            ],
+            name="fruit",
+        )
+        extracted_df = sample_series.ai.extract()
+        expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
+        self.assertListEqual(list(extracted_df.columns), expected_columns)
+
     def test_extract(self):
         class Fruit(BaseModel):
             color: str
