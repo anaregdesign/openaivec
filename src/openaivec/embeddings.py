@@ -1,10 +1,11 @@
 """Embedding utilities built on top of OpenAI’s embedding endpoint.
 
-This module defines an abstract base class ``EmbeddingLLM`` and a concrete
-implementation ``EmbeddingOpenAI`` that delegates the actual embedding work
-to the OpenAI SDK.  The implementation supports sequential as well as
-multiprocess execution (via ``map_unique_minibatch_parallel``) and applies a
-generic exponential‐back‑off policy when OpenAI’s rate limits are hit.
+This module defines an abstract base class ``VectorizedEmbeddings`` and a
+concrete implementation ``VectorizedEmbeddingsOpenAI`` that delegates the
+actual embedding work to the OpenAI SDK.  The implementation supports
+sequential as well as multiprocess execution (via
+``map_unique_minibatch_parallel``) and applies a generic
+exponential‑back‑off policy when OpenAI’s rate limits are hit.
 """
 
 from abc import ABCMeta, abstractmethod
@@ -28,7 +29,7 @@ class VectorizedEmbeddings(metaclass=ABCMeta):
     """Abstract interface for a sentence‑embedding backend."""
 
     @abstractmethod
-    def create(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
+    def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         """Embed a collection of sentences.
 
         Args:
@@ -62,7 +63,7 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
 
     @observe(_logger)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
-    def _embed_chunk(self, sentences: List[str]) -> List[NDArray[np.float32]]:
+    def _embed_chunk(self, inputs: List[str]) -> List[NDArray[np.float32]]:
         """Embed one minibatch of sentences.
 
         This private helper is the unit of work used by the map/parallel
@@ -75,12 +76,12 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
         Returns:
             List of embedding vectors with the same ordering as *sentences*.
         """
-        responses = self.client.embeddings.create(input=sentences, model=self.model_name)
+        responses = self.client.embeddings.create(input=inputs, model=self.model_name)
         return [np.array(d.embedding, dtype=np.float32) for d in responses.data]
 
     @observe(_logger)
-    def create(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
-        """See ``EmbeddingLLM.embed`` for contract details.
+    def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
+        """See ``VectorizedEmbeddings.create`` for contract details.
 
         The call is internally delegated to either ``map_unique_minibatch`` or
         its parallel counterpart depending on *is_parallel*.
@@ -89,6 +90,6 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
             openai.RateLimitError: Propagated if retries are exhausted.
         """
         if self.is_parallel:
-            return map_unique_minibatch_parallel(sentences, batch_size, self._embed_chunk)
+            return map_unique_minibatch_parallel(inputs, batch_size, self._embed_chunk)
         else:
-            return map_unique_minibatch(sentences, batch_size, self._embed_chunk)
+            return map_unique_minibatch(inputs, batch_size, self._embed_chunk)
