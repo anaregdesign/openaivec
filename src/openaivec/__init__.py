@@ -1,5 +1,5 @@
-from .embedding import EmbeddingOpenAI
-from .vectorize import VectorizedOpenAI
+from .embeddings import EmbeddingOpenAI
+from .responses import VectorizedOpenAI
 
 __all__ = [
     "VectorizedOpenAI",

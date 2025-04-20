@@ -14,7 +14,7 @@ from openaivec import EmbeddingOpenAI, VectorizedOpenAI
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
-from openaivec.vectorize import VectorizedLLM
+from openaivec.responses import VectorizedLLM
 
 __all__ = [
     "UDFBuilder",

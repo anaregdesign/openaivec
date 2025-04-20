@@ -25,8 +25,8 @@ from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
-from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
+from openaivec.embeddings import EmbeddingLLM, EmbeddingOpenAI
+from openaivec.responses import VectorizedLLM, VectorizedOpenAI
 
 __all__ = [
     "use",
