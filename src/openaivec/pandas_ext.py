@@ -31,7 +31,7 @@ from openaivec.responses import VectorizedResponses, VectorizedResponsesOpenAI
 __all__ = [
     "use",
     "responses_model",
-    "embedding_model",
+    "embeddings_model",
     "use_openai",
     "use_azure_openai",
 ]
@@ -43,7 +43,7 @@ T = TypeVar("T")
 
 _CLIENT: OpenAI | None = None
 _RESPONSES_MODEL_NAME = "gpt-4o-mini"
-_EMBEDDING_MODEL_NAME = "text-embedding-3-small"
+_EMBEDDINGS_MODEL_NAME = "text-embedding-3-small"
 
 _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
 
@@ -109,14 +109,14 @@ def responses_model(name: str) -> None:
         _TIKTOKEN_ENCODING = tiktoken.get_encoding("o200k_base")
 
 
-def embedding_model(name: str) -> None:
+def embeddings_model(name: str) -> None:
     """Override the model used for text embeddings.
 
     Args:
         name (str): Embedding model name, e.g. ``text-embedding-3-small``.
     """
-    global _EMBEDDING_MODEL_NAME
-    _EMBEDDING_MODEL_NAME = name
+    global _EMBEDDINGS_MODEL_NAME
+    _EMBEDDINGS_MODEL_NAME = name
 
 
 def _get_openai_client() -> OpenAI:
@@ -179,7 +179,7 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def response(
+    def responses(
         self,
         instructions: str,
         response_format: Type[T] = str,
@@ -223,7 +223,7 @@ class OpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
-    def embed(self, batch_size: int = 128) -> pd.Series:
+    def embeddings(self, batch_size: int = 128) -> pd.Series:
         """Compute OpenAI embeddings for every Series element.
 
         Example:
@@ -245,7 +245,7 @@ class OpenAIVecSeriesAccessor:
         """
         client: VectorizedEmbeddings = VectorizedEmbeddingsOpenAI(
             client=_get_openai_client(),
-            model_name=_EMBEDDING_MODEL_NAME,
+            model_name=_EMBEDDINGS_MODEL_NAME,
             is_parallel=True,
         )
 
