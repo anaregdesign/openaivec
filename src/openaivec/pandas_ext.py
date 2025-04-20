@@ -178,8 +178,7 @@ class OpenAIVecSeriesAccessor:
                 request. Defaults to ``128``.
 
         Returns:
-            pandas.Series: Series whose values are instances of
-            ``response_format``.
+            pandas.Series: Series whose values are instances of ``response_format``.
         """
         client: VectorizedLLM = VectorizedOpenAI(
             client=_get_openai_client(),
@@ -205,8 +204,7 @@ class OpenAIVecSeriesAccessor:
                 Defaults to ``128``.
 
         Returns:
-            pandas.Series: Each value is a list of floats (the embedding
-            vector).
+            pandas.Series: Each value is a list of floats (the embedding vector).
         """
         client: EmbeddingLLM = EmbeddingOpenAI(
             client=_get_openai_client(),
@@ -261,8 +259,7 @@ class OpenAIVecDataFrameAccessor:
             column (str): Column to expand.
 
         Returns:
-            pandas.DataFrame: Original DataFrame with the extracted columns;
-            the source column is dropped.
+            pandas.DataFrame: Original DataFrame with the extracted columns; the source column is dropped.
         """
         if column not in self._obj.columns:
             raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
@@ -290,8 +287,7 @@ class OpenAIVecDataFrameAccessor:
                 Defaults to ``128``.
 
         Returns:
-            pandas.Series: Responses aligned with the DataFrame’s original
-            index.
+            pandas.Series: Responses aligned with the DataFrame’s original index.
         """
         return self._obj.pipe(
             lambda df: (
