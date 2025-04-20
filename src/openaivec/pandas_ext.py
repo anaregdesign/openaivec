@@ -311,6 +311,19 @@ class OpenAIVecDataFrameAccessor:
     def extract(self, column: str) -> pd.DataFrame:
         """Flatten one column of Pydantic models/dicts into top‑level columns.
 
+        Example:
+            ```python
+            df = pd.DataFrame([
+                {"animal": {"name": "cat", "legs": 4}},
+                {"animal": {"name": "dog", "legs": 4}},
+                {"animal": {"name": "elephant", "legs": 4}},
+            ])
+            df.ai.extract("animal")
+            ```
+            This method returns a DataFrame with the same index as the original,
+            where each column corresponds to a key in the dictionaries.
+            The source column is dropped.
+
         Args:
             column (str): Column to expand.
 
@@ -334,6 +347,21 @@ class OpenAIVecDataFrameAccessor:
         batch_size: int = 128,
     ) -> pd.Series:
         """Generate a response for each row after serialising it to JSON.
+
+        Example:
+            ```python
+            df = pd.DataFrame([
+                {"name": "cat", "legs": 4},
+                {"name": "dog", "legs": 4},
+                {"name": "elephant", "legs": 4},
+            ])
+            df.ai.response("what is the animal's name?")
+            ```
+            This method returns a Series of strings, each containing the
+            assistant's response to the corresponding input.
+            Each row is serialised to JSON before being sent to the assistant.
+            The model used is set by the `responses_model` function.
+            The default model is `gpt-4o-mini`.
 
         Args:
             instructions (str): System prompt for the assistant.
