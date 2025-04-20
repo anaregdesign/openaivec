@@ -1,0 +1,13 @@
+site_name: openaivec documentation
+theme:
+  name: material
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          docstring_style: google
+          show_submodules: true

@@ -5,7 +5,7 @@ import tiktoken
 from openai import BaseModel
 from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec.spark import pydantic_to_spark_schema
+from openaivec.spark import _pydantic_to_spark_schema
 from openaivec.util import (
     TextChunker,
     map_minibatch,
@@ -122,7 +122,7 @@ class TestMappingFunctions(TestCase):
             values: List[float]
             inner: InnerModel
 
-        schema = pydantic_to_spark_schema(OuterModel)
+        schema = _pydantic_to_spark_schema(OuterModel)
 
         expected = StructType(
             [

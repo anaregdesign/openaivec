@@ -26,7 +26,7 @@ class TestVectorizedOpenAI(TestCase):
             model_name=self.model_name,
             system_message=system_message,
         )
-        response: List[str] = client.predict(["hello", "world"])
+        response: List[str] = client._predict_chunk(["hello", "world"])
 
         self.assertEqual(response, ["hello", "world"])
 
@@ -54,6 +54,6 @@ class TestVectorizedOpenAI(TestCase):
             client=self.openai_client, model_name=self.model_name, system_message=system_message, response_format=Fruit
         )
 
-        response: List[Fruit] = client.predict(["apple", "banana"])
+        response: List[Fruit] = client._predict_chunk(["apple", "banana"])
 
         self.assertTrue(all(isinstance(item, Fruit) for item in response))

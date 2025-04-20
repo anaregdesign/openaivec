@@ -221,6 +221,14 @@ _prompt: str = """
 
 
 def render_prompt(prompt: FewShotPrompt) -> str:
+    """Render a FewShotPrompt instance to its XML representation.
+
+    Args:
+        prompt (FewShotPrompt): The prompt object to render.
+
+    Returns:
+        str: The XML string representation of the prompt.
+    """
     prompt_dict = prompt.model_dump()
     root = ElementTree.Element("Prompt")
 
@@ -253,25 +261,64 @@ class FewShotPromptBuilder:
     _steps: List[Step]
 
     def __init__(self):
+        """Initialize an empty FewShotPromptBuilder."""
         self._prompt = FewShotPrompt(purpose="", cautions=[], examples=[])
 
     @classmethod
     def of(cls, prompt: FewShotPrompt) -> "FewShotPromptBuilder":
+        """Create a builder pre‑populated with an existing prompt.
+
+        Args:
+            prompt (FewShotPrompt): The prompt to start from.
+
+        Returns:
+            FewShotPromptBuilder: A new builder instance.
+        """
         builder = cls()
         builder._prompt = prompt
         return builder
 
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
+        """Set the purpose of the prompt.
+
+        Args:
+            purpose (str): A concise statement describing the prompt’s goal.
+
+        Returns:
+            FewShotPromptBuilder: The current builder instance (for chaining).
+        """
         self._prompt.purpose = purpose
         return self
 
     def caution(self, caution: str) -> "FewShotPromptBuilder":
+        """Append a cautionary note to the prompt.
+
+        Args:
+            caution (str): A caution or edge‑case description.
+
+        Returns:
+            FewShotPromptBuilder: The current builder instance.
+        """
         if self._prompt.cautions is None:
             self._prompt.cautions = []
         self._prompt.cautions.append(caution)
         return self
 
-    def example(self, input_value: str | BaseModel, output_value: str | BaseModel) -> "FewShotPromptBuilder":
+    def example(
+        self,
+        input_value: str | BaseModel,
+        output_value: str | BaseModel,
+    ) -> "FewShotPromptBuilder":
+        """Add a single input/output example.
+
+        Args:
+            input_value (str | BaseModel): Example input; if a Pydantic model is
+                provided it is serialised to JSON.
+            output_value (str | BaseModel): Expected output; serialised if needed.
+
+        Returns:
+            FewShotPromptBuilder: The current builder instance.
+        """
         if self._prompt.examples is None:
             self._prompt.examples = []
 
@@ -281,8 +328,30 @@ class FewShotPromptBuilder:
         return self
 
     def improve(
-        self, client: OpenAI, model_name: str, temperature: float = 0.0, top_p: float = 1.0
+        self,
+        client: OpenAI,
+        model_name: str,
+        temperature: float = 0.0,
+        top_p: float = 1.0,
     ) -> "FewShotPromptBuilder":
+        """Iteratively refine the prompt using an LLM.
+
+        The method calls a single LLM request that returns multiple
+        editing steps and stores each step for inspection.
+
+        Args:
+            client (openai.OpenAI): Configured OpenAI client.
+            model_name (str): Model identifier (e.g. ``gpt-4o-mini``).
+            temperature (float, optional): Sampling temperature. Defaults to 0.0.
+            top_p (float, optional): Nucleus sampling parameter. Defaults to 1.0.
+
+        Raises:
+            ValueError: If fewer than five examples are present.
+
+        Returns:
+            FewShotPromptBuilder: The current builder instance containing the
+            refined prompt and iteration history.
+        """
         # At least 5 examples are required to enhance the prompt.
         if len(self._prompt.examples) < 5:
             raise ValueError("At least 5 examples are required to enhance the prompt.")
@@ -314,6 +383,11 @@ class FewShotPromptBuilder:
         return self
 
     def explain(self) -> "FewShotPromptBuilder":
+        """Pretty‑print the diff of each improvement iteration.
+
+        Returns:
+            FewShotPromptBuilder: The current builder instance.
+        """
         for previous, current in zip(self._steps, self._steps[1:]):
             print(f"=== Iteration {current.id} ===\n")
             print(f"Instruction: {current.analysis}")
@@ -328,7 +402,13 @@ class FewShotPromptBuilder:
                 print(line)
         return self
 
-    def _validate(self):
+    def _validate(self) -> None:
+        """Validate the internal FewShotPrompt.
+
+        Raises:
+            ValueError: If required fields such as purpose or examples are
+                missing.
+        """
         # Validate that 'purpose' and 'examples' are not empty.
         if not self._prompt.purpose:
             raise ValueError("Purpose is required.")
@@ -336,17 +416,40 @@ class FewShotPromptBuilder:
             raise ValueError("At least one example is required.")
 
     def get_object(self) -> FewShotPrompt:
+        """Return the underlying FewShotPrompt object.
+
+        Returns:
+            FewShotPrompt: The validated prompt object.
+        """
         self._validate()
         return self._prompt
 
     def build(self) -> str:
+        """Build and return the prompt as XML.
+
+        Returns:
+            str: XML representation of the prompt.
+        """
         self._validate()
         return self.build_xml()
 
     def build_json(self, **kwargs) -> str:
+        """Build and return the prompt as a JSON string.
+
+        Args:
+            **kwargs: Keyword arguments forwarded to ``model_dump_json``.
+
+        Returns:
+            str: JSON representation of the prompt.
+        """
         self._validate()
         return self._prompt.model_dump_json(**kwargs)
 
     def build_xml(self) -> str:
+        """Alias for :py:meth:`build` for explicit XML generation.
+
+        Returns:
+            str: XML representation of the prompt.
+        """
         self._validate()
         return render_prompt(self._prompt)

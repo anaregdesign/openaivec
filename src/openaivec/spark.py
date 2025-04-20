@@ -31,7 +31,7 @@ _embedding_client: Optional[EmbeddingOpenAI] = None
 T = TypeVar("T")
 
 
-def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
+def _get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
     global _openai_client
     if _openai_client is None:
         if conf.endpoint is None:
@@ -49,7 +49,7 @@ def get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
     return _openai_client
 
 
-def get_vectorized_openai_client(
+def _get_vectorized_openai_client(
     conf: "UDFBuilder",
     system_message: str,
     response_format: Type[T],
@@ -60,7 +60,7 @@ def get_vectorized_openai_client(
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
-            client=get_openai_client(conf, http_client),
+            client=_get_openai_client(conf, http_client),
             model_name=conf.model_name,
             system_message=system_message,
             temperature=temperature,
@@ -71,11 +71,11 @@ def get_vectorized_openai_client(
     return _vectorized_client
 
 
-def get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> EmbeddingOpenAI:
+def _get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> EmbeddingOpenAI:
     global _embedding_client
     if _embedding_client is None:
         _embedding_client = EmbeddingOpenAI(
-            client=get_openai_client(conf, http_client),
+            client=_get_openai_client(conf, http_client),
             model_name=conf.model_name,
         )
     return _embedding_client
@@ -97,26 +97,26 @@ def _safe_cast_str(x: str) -> Optional[str]:
         return None
 
 
-def python_type_to_spark(python_type):
+def _python_type_to_spark(python_type):
     origin = get_origin(python_type)
 
     # For list types (e.g., List[int])
     if origin is list or origin is List:
         # Retrieve the inner type and recursively convert it
         inner_type = get_args(python_type)[0]
-        return ArrayType(python_type_to_spark(inner_type))
+        return ArrayType(_python_type_to_spark(inner_type))
 
     # For Optional types (Union[..., None])
     elif origin is Union:
         non_none_args = [arg for arg in get_args(python_type) if arg is not type(None)]
         if len(non_none_args) == 1:
-            return python_type_to_spark(non_none_args[0])
+            return _python_type_to_spark(non_none_args[0])
         else:
             raise ValueError(f"Unsupported Union type with multiple non-None types: {python_type}")
 
     # For nested Pydantic models (to be treated as Structs)
     elif isinstance(python_type, type) and issubclass(python_type, BaseModel):
-        return pydantic_to_spark_schema(python_type)
+        return _pydantic_to_spark_schema(python_type)
 
     # Basic type mapping
     elif python_type is int:
@@ -131,12 +131,12 @@ def python_type_to_spark(python_type):
         raise ValueError(f"Unsupported type: {python_type}")
 
 
-def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
+def _pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
     fields = []
     for field_name, field in model.model_fields.items():
         field_type = field.annotation
         # Use outer_type_ to correctly handle types like Optional
-        spark_type = python_type_to_spark(field_type)
+        spark_type = _python_type_to_spark(field_type)
         # Set nullable to True (adjust logic as needed)
         fields.append(StructField(field_name, spark_type, nullable=True))
     return StructType(fields)
@@ -144,6 +144,24 @@ def pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
 
 @dataclass(frozen=True)
 class UDFBuilder:
+    """Builder for Spark pandas‑UDFs that talk to the OpenAI / Azure OpenAI API.
+
+    An instance stores authentication parameters and batching behaviour so that
+    the same object can be reused on worker nodes.  The helper exposes factory
+    methods for creating completion‑ and embedding‑oriented UDFs while hiding
+    the low‑level HTTP and model‑selection details.
+
+    Attributes:
+        api_key: OpenAI / Azure API key.
+        endpoint: Azure endpoint base URL or ``None`` for public OpenAI.
+        api_version: Azure API version, ignored for public OpenAI.
+        model_name: Deployment (Azure) or model (OpenAI) name.
+        batch_size: Number of rows sent in one request to the backend.
+        is_parallel: Whether vectorised requests are executed concurrently.
+        http2: Enable HTTP/2 in the underlying ``httpx.Client``.
+        ssl_verify: Toggle TLS certificate verification in ``httpx``.
+    """
+
     # Params for Constructor
     api_key: str
     endpoint: Optional[str]
@@ -172,6 +190,7 @@ class UDFBuilder:
         ssl_verify: bool = False,
         is_parallel: bool = False,
     ) -> "UDFBuilder":
+        """Create a builder configured for Azure OpenAI."""
         return cls(
             api_key=api_key,
             api_version=api_version,
@@ -193,6 +212,7 @@ class UDFBuilder:
         ssl_verify: bool = False,
         is_parallel: bool = False,
     ) -> "UDFBuilder":
+        """Create a builder configured for the public OpenAI API."""
         return cls(
             api_key=api_key,
             api_version=None,
@@ -212,8 +232,21 @@ class UDFBuilder:
     def completion(
         self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
     ):
+        """Return a pandas‑UDF that produces chat completions.
+
+        Args:
+            system_message: The system prompt prepended to every request.
+            response_format: ``str`` or a *pydantic* model describing the
+                JSON structure expected from the model.
+            temperature: Sampling temperature.
+            top_p: Nucleus‑sampling parameter.
+
+        Returns:
+            A pandas UDF whose output schema is either ``StringType`` or the
+            struct derived from ``response_format``.
+        """
         if issubclass(response_format, BaseModel):
-            spark_schema = pydantic_to_spark_schema(response_format)
+            spark_schema = _pydantic_to_spark_schema(response_format)
             json_schema_string = serialize_base_model(response_format)
 
         elif issubclass(response_format, str):
@@ -230,7 +263,7 @@ class UDFBuilder:
                 cls = deserialize_base_model(json_schema_string)
 
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
-            client_vec = get_vectorized_openai_client(
+            client_vec = _get_vectorized_openai_client(
                 conf=self,
                 system_message=system_message,
                 response_format=cls,
@@ -240,14 +273,14 @@ class UDFBuilder:
             )
 
             for part in col:
-                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
         @pandas_udf(spark_schema)
         def fn_str(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
-            client_vec = get_vectorized_openai_client(
+            client_vec = _get_vectorized_openai_client(
                 conf=self,
                 system_message=system_message,
                 response_format=str,
@@ -257,7 +290,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield result.map(_safe_cast_str)
 
@@ -269,13 +302,19 @@ class UDFBuilder:
 
     @observe(_logger)
     def embedding(self):
+        """Return a pandas‑UDF that generates embedding vectors.
+
+        The UDF accepts a column of strings and yields an
+        ``ArrayType(FloatType())`` column containing model embeddings.
+        """
+
         @pandas_udf(ArrayType(FloatType()))
         def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
-            client_emb = get_vectorized_embedding_client(self, http_client)
+            client_emb = _get_vectorized_embedding_client(self, http_client)
 
             for part in col:
-                yield pd.Series(client_emb.embed_minibatch(part.tolist(), self.batch_size))
+                yield pd.Series(client_emb.embed(part.tolist(), self.batch_size))
 
         return fn
 
@@ -285,6 +324,18 @@ _tiktoken_enc: Optional[tiktoken.Encoding] = None
 
 
 def count_tokens_udf(model_name: str = "gpt-4o"):
+    """Create a pandas‑UDF that counts tokens for every string cell.
+
+    The UDF uses *tiktoken* to approximate tokenisation and caches the
+    resulting ``Encoding`` object per executor.
+
+    Args:
+        model_name: Model identifier understood by ``tiktoken``.
+
+    Returns:
+        A pandas UDF producing an ``IntegerType`` column with token counts.
+    """
+
     @pandas_udf(IntegerType())
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
         global _tiktoken_enc
@@ -298,6 +349,18 @@ def count_tokens_udf(model_name: str = "gpt-4o"):
 
 
 def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
+    """Create a pandas‑UDF that splits text into token‑bounded chunks.
+
+    Args:
+        model_name: Model identifier passed to *tiktoken*.
+        max_tokens: Maximum tokens allowed per chunk.
+        sep: Ordered list of separator strings used by ``TextChunker``.
+
+    Returns:
+        A pandas UDF producing an ``ArrayType(StringType())`` column whose
+        values are lists of chunks respecting the ``max_tokens`` limit.
+    """
+
     @pandas_udf(ArrayType(StringType()))
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
         global _tiktoken_enc
