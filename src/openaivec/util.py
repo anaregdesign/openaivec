@@ -24,7 +24,7 @@ def split_to_minibatch(b: List[T], batch_size: int) -> List[List[T]]:
 
     Returns:
         List[List[T]]: The input list divided into sub‑lists of length
-        `batch_size` (the final batch may be smaller).
+            `batch_size` (the final batch may be smaller).
     """
     return [b[i : i + batch_size] for i in range(0, len(b), batch_size)]
 
@@ -39,7 +39,7 @@ def map_minibatch(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) 
 
     Returns:
         List[U]: Flattened list obtained by concatenating the results returned
-        by ``f`` for each batch.
+            by ``f`` for each batch.
     """
     batches = split_to_minibatch(b, batch_size)
     return list(chain.from_iterable(f(batch) for batch in batches))
@@ -55,7 +55,7 @@ def map_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List[T]], L
 
     Returns:
         List[U]: Flattened list of results produced by ``f`` for every batch,
-        evaluated in parallel threads.
+            evaluated in parallel threads.
     """
     batches = split_to_minibatch(b, batch_size)
     with ThreadPoolExecutor() as executor:

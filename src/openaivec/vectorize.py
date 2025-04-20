@@ -161,7 +161,6 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
     _model_json_schema: dict = field(init=False)
 
     def __post_init__(self):
-        """Pre‑compute the expanded system prompt once because the instance is frozen."""
         object.__setattr__(
             self,
             "_vectorized_system_message",

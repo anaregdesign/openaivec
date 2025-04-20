@@ -12,26 +12,53 @@ __all__ = [
     "FewShotPromptBuilder",
 ]
 
-"""
-This is a beta version of FewShotPromptBuilder.
-Using CoT method instead of multiple callings of OpenAI API.
-"""
-
 _logger = logging.getLogger(__name__)
 
 
 class Example(BaseModel):
+    """Represents a single input/output example used in few‑shot prompts.
+
+    Attributes:
+        input (str): The input text that will be passed to the model.
+        output (str): The expected output corresponding to the given input.
+    """
+
     input: str
     output: str
 
 
 class FewShotPrompt(BaseModel):
+    """Represents a prompt definition used for few‑shot learning.
+
+    The data collected in this model is later rendered into XML and sent to a
+    large‑language model as part of the system prompt.
+
+    Attributes:
+        purpose (str): A concise, human‑readable statement describing the goal
+            of the prompt.
+        cautions (list[str]): A list of warnings, edge cases, or pitfalls that
+            the model should be aware of when generating answers.
+        examples (list[Example]): Input/output pairs demonstrating the expected
+            behaviour for a variety of scenarios.
+    """
+
     purpose: str
     cautions: List[str]
     examples: List[Example]
 
 
 class Step(BaseModel):
+    """A single refinement iteration produced by the LLM.
+
+    Attributes:
+        id (int): Sequential identifier of the iteration (``0`` for the
+            original, ``1`` for the first change, and so on).
+        analysis (str): Natural‑language explanation of the issue addressed
+            in this iteration and why the change was necessary.
+        prompt (FewShotPrompt): The updated prompt after applying the
+            described modification.
+    """
+
     id: int
     analysis: str
     prompt: FewShotPrompt
@@ -220,7 +247,7 @@ _prompt: str = """
 """
 
 
-def render_prompt(prompt: FewShotPrompt) -> str:
+def _render_prompt(prompt: FewShotPrompt) -> str:
     """Render a FewShotPrompt instance to its XML representation.
 
     Args:
@@ -277,6 +304,15 @@ class FewShotPromptBuilder:
         builder = cls()
         builder._prompt = prompt
         return builder
+
+    @classmethod
+    def of_empty(cls) -> "FewShotPromptBuilder":
+        """Create a builder.
+
+        Returns:
+            FewShotPromptBuilder: A new builder instance with an empty prompt.
+        """
+        return cls.of(FewShotPrompt(purpose="", cautions=[], examples=[]))
 
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         """Set the purpose of the prompt.
@@ -349,8 +385,7 @@ class FewShotPromptBuilder:
             ValueError: If fewer than five examples are present.
 
         Returns:
-            FewShotPromptBuilder: The current builder instance containing the
-            refined prompt and iteration history.
+            FewShotPromptBuilder: The current builder instance containing the refined prompt and iteration history.
         """
         # At least 5 examples are required to enhance the prompt.
         if len(self._prompt.examples) < 5:
@@ -392,8 +427,8 @@ class FewShotPromptBuilder:
             print(f"=== Iteration {current.id} ===\n")
             print(f"Instruction: {current.analysis}")
             diff = difflib.unified_diff(
-                render_prompt(previous.prompt).splitlines(),
-                render_prompt(current.prompt).splitlines(),
+                _render_prompt(previous.prompt).splitlines(),
+                _render_prompt(current.prompt).splitlines(),
                 fromfile="before",
                 tofile="after",
                 lineterm="",
@@ -452,4 +487,4 @@ class FewShotPromptBuilder:
             str: XML representation of the prompt.
         """
         self._validate()
-        return render_prompt(self._prompt)
+        return _render_prompt(self._prompt)
