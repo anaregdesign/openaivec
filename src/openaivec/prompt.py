@@ -273,6 +273,15 @@ class FewShotPromptBuilder:
         builder._prompt = prompt
         return builder
 
+    @classmethod
+    def of_empty(cls) -> "FewShotPromptBuilder":
+        """Create a builder.
+
+        Returns:
+            FewShotPromptBuilder: A new builder instance with an empty prompt.
+        """
+        return cls.of(FewShotPrompt(purpose="", cautions=[], examples=[]))
+
     def purpose(self, purpose: str) -> "FewShotPromptBuilder":
         """Set the purpose of the prompt.
 
@@ -344,8 +353,7 @@ class FewShotPromptBuilder:
             ValueError: If fewer than five examples are present.
 
         Returns:
-            FewShotPromptBuilder: The current builder instance containing the
-            refined prompt and iteration history.
+            FewShotPromptBuilder: The current builder instance containing the refined prompt and iteration history.
         """
         # At least 5 examples are required to enhance the prompt.
         if len(self._prompt.examples) < 5:
