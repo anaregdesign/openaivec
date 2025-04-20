@@ -42,6 +42,13 @@ dev = [
     "python-dotenv>=1.1.0",
     "ruff>=0.11.5",
 ]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-autorefs>=1.4.1",
+    "mkdocs-material>=9.6.12",
+    "mkdocstrings[python]>=0.29.1",
+    "myst-parser>=4.0.1",
+]
 
 [project.optional-dependencies]
 spark = [
