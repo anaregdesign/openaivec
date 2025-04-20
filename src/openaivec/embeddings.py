@@ -71,7 +71,8 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
         ``openai.RateLimitError`` is raised.
 
         Args:
-            sentences: Up to *batch_size* sentences.
+            inputs: Input strings to be embedded.  Duplicates are allowed; the
+                implementation may decide to de‑duplicate internally.
 
         Returns:
             List of embedding vectors with the same ordering as *sentences*.
@@ -85,6 +86,16 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
 
         The call is internally delegated to either ``map_unique_minibatch`` or
         its parallel counterpart depending on *is_parallel*.
+
+        Args:
+            inputs: A list of input strings. Duplicates are allowed; the
+                implementation may decide to de‑duplicate internally.
+            batch_size: Maximum number of sentences to be sent to the underlying
+                model in one request.
+
+        Returns:
+            A list of ``np.ndarray`` objects (dtype ``float32``) where each entry
+            is the embedding of the corresponding sentence in *sentences*.
 
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted.
