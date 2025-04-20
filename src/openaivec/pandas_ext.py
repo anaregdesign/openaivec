@@ -1,3 +1,49 @@
+"""Pandas Series / DataFrame extension for OpenAI.
+
+## Setup
+```python
+from openai import OpenAI
+from openaivec import pandas_ext
+
+# Set up the OpenAI client to use with pandas_ext
+pandas_ext.use(OpenAI())
+
+# Set up the model_name for responses and embeddings
+pandas_ext.responses_model("gpt-4.1-nano")
+pandas_ext.embedding_model("text-embedding-3-small"
+```
+
+## Usage for Series
+
+This is a simple dummy data with `pd.Series`.
+```python
+import pandas as pd
+animals: pd.Series = pd.Series(["panda", "koala", "python", "dog", "cat"])
+```
+
+You can mutate the column with natural language instructions.
+
+```python
+# Translate animal names to Chinese
+animals.ai.response(instructions="Translate the animal names to Chinese.")
+```
+
+and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
+
+Embedding is also available.
+
+```python
+animals.ai.embed()
+# 0    [-0.008575918, -0.07940717, -0.011005879, 0.00...
+# 1    [0.0008873118, -0.015903357, -0.021896126, -0....
+# 2    [-0.010200691, -0.011314859, 0.009946684, -0.0...
+# 3    [0.051125195, -0.018667098, -0.00435894, 0.072...
+# 4    [0.025523458, -0.02345273, -0.016077219, 0.039...
+# Name: animal, dtype: object
+```
+
+"""
+
 import json
 import os
 import logging
