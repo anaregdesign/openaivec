@@ -10,7 +10,7 @@ pandas_ext.use(OpenAI())
 
 # Set up the model_name for responses and embeddings
 pandas_ext.responses_model("gpt-4.1-nano")
-pandas_ext.embedding_model("text-embedding-3-small")
+pandas_ext.embeddings_model("text-embedding-3-small")
 ```
 
 """
@@ -190,7 +190,7 @@ class OpenAIVecSeriesAccessor:
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.response("translate to French")
+            animals.ai.responses("translate to French")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -229,19 +229,20 @@ class OpenAIVecSeriesAccessor:
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.embed()
+            animals.ai.embeddings()
             ```
             This method returns a Series of numpy arrays, each containing the
             embedding vector for the corresponding input.
-            The embedding model is set by the `embedding_model` function.
+            The embedding model is set by the `embeddings_model` function.
             The default embedding model is `text-embedding-3-small`.
 
         Args:
-            batch_size (int, optional): Number of inputs sent per request.
-                Defaults to ``128``.
+            batch_size (int, optional): Number of inputs grouped into a
+                single request. Defaults to ``128``.
 
         Returns:
-            pandas.Series: Each value is a list of floats (the embedding vector).
+            pandas.Series: Series whose values are ``np.ndarray`` objects
+                (dtype ``float32``).
         """
         client: VectorizedEmbeddings = VectorizedEmbeddingsOpenAI(
             client=_get_openai_client(),
