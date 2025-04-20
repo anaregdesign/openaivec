@@ -12,11 +12,6 @@ __all__ = [
     "FewShotPromptBuilder",
 ]
 
-"""
-This is a beta version of FewShotPromptBuilder.
-Using CoT method instead of multiple callings of OpenAI API.
-"""
-
 _logger = logging.getLogger(__name__)
 
 
@@ -220,7 +215,7 @@ _prompt: str = """
 """
 
 
-def render_prompt(prompt: FewShotPrompt) -> str:
+def _render_prompt(prompt: FewShotPrompt) -> str:
     """Render a FewShotPrompt instance to its XML representation.
 
     Args:
@@ -392,8 +387,8 @@ class FewShotPromptBuilder:
             print(f"=== Iteration {current.id} ===\n")
             print(f"Instruction: {current.analysis}")
             diff = difflib.unified_diff(
-                render_prompt(previous.prompt).splitlines(),
-                render_prompt(current.prompt).splitlines(),
+                _render_prompt(previous.prompt).splitlines(),
+                _render_prompt(current.prompt).splitlines(),
                 fromfile="before",
                 tofile="after",
                 lineterm="",
@@ -452,4 +447,4 @@ class FewShotPromptBuilder:
             str: XML representation of the prompt.
         """
         self._validate()
-        return render_prompt(self._prompt)
+        return _render_prompt(self._prompt)

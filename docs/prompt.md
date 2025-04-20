@@ -1,0 +1,3 @@
+# openaivec.prompt
+
+::: openaivec.prompt
