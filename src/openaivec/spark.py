@@ -275,7 +275,7 @@ class UDFBuilder:
             client_emb = get_vectorized_embedding_client(self, http_client)
 
             for part in col:
-                yield pd.Series(client_emb.embed_minibatch(part.tolist(), self.batch_size))
+                yield pd.Series(client_emb.embed(part.tolist(), self.batch_size))
 
         return fn
 

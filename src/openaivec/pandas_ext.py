@@ -158,7 +158,7 @@ class OpenAIVecSeriesAccessor:
         )
 
         return pd.Series(
-            client.embed_minibatch(self._obj.tolist(), batch_size=batch_size),
+            client.embed(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
             name=self._obj.name,
         )
