@@ -157,7 +157,7 @@ class UDFBuilder:
         api_version: Azure API version, ignored for public OpenAI.
         model_name: Deployment (Azure) or model (OpenAI) name.
         batch_size: Number of rows sent in one request to the backend.
-        is_parallel: Whether vectorised requests are executed concurrently.
+        is_parallel: Whether vectorized requests are executed concurrently.
         http2: Enable HTTP/2 in the underlying ``httpx.Client``.
         ssl_verify: Toggle TLS certificate verification in ``httpx``.
     """
