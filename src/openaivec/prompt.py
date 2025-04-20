@@ -16,17 +16,45 @@ _logger = logging.getLogger(__name__)
 
 
 class Example(BaseModel):
+    """Represents a single input/output example used in few‑shot prompts.
+
+    Attributes:
+        input (str): The input text that will be passed to the model.
+        output (str): The expected output corresponding to the given input.
+    """
+
     input: str
     output: str
 
 
 class FewShotPrompt(BaseModel):
-    purpose: str
-    cautions: List[str]
-    examples: List[Example]
+    """Represents a prompt definition used for few‑shot learning.
+
+    The data collected in this model is later rendered into XML and sent to a
+    large‑language model as part of the system prompt.
+
+    Attributes:
+        purpose (str): A concise, human‑readable statement describing the goal
+            of the prompt.
+        cautions (list[str]): A list of warnings, edge cases, or pitfalls that
+            the model should be aware of when generating answers.
+        examples (list[Example]): Input/output pairs demonstrating the expected
+            behaviour for a variety of scenarios.
+    """
 
 
 class Step(BaseModel):
+    """A single refinement iteration produced by the LLM.
+
+    Attributes:
+        id (int): Sequential identifier of the iteration (``0`` for the
+            original, ``1`` for the first change, and so on).
+        analysis (str): Natural‑language explanation of the issue addressed
+            in this iteration and why the change was necessary.
+        prompt (FewShotPrompt): The updated prompt after applying the
+            described modification.
+    """
+
     id: int
     analysis: str
     prompt: FewShotPrompt
