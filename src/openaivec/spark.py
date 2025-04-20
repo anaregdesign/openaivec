@@ -14,7 +14,7 @@ from openaivec import EmbeddingOpenAI, VectorizedOpenAI
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
-from openaivec.responses import VectorizedLLM
+from openaivec.responses import VectorizedResponses
 
 __all__ = [
     "UDFBuilder",
@@ -25,7 +25,7 @@ _logger: Logger = getLogger(__name__)
 
 # Global Singletons
 _openai_client: Optional[OpenAI] = None
-_vectorized_client: Optional[VectorizedLLM] = None
+_vectorized_client: Optional[VectorizedResponses] = None
 _embedding_client: Optional[EmbeddingOpenAI] = None
 
 T = TypeVar("T")
@@ -56,7 +56,7 @@ def _get_vectorized_openai_client(
     temperature: float,
     top_p: float,
     http_client: httpx.Client,
-) -> VectorizedLLM:
+) -> VectorizedResponses:
     global _vectorized_client
     if _vectorized_client is None:
         _vectorized_client = VectorizedOpenAI(
@@ -273,7 +273,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                predictions = client_vec.predict(part.tolist(), self.batch_size)
+                predictions = client_vec.parse(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
@@ -290,7 +290,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                predictions = client_vec.predict(part.tolist(), self.batch_size)
+                predictions = client_vec.parse(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield result.map(_safe_cast_str)
 
