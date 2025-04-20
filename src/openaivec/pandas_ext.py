@@ -13,35 +13,6 @@ pandas_ext.responses_model("gpt-4.1-nano")
 pandas_ext.embedding_model("text-embedding-3-small")
 ```
 
-## Usage for Series
-
-This is a simple dummy data with `pd.Series`.
-```python
-import pandas as pd
-animals: pd.Series = pd.Series(["panda", "koala", "python", "dog", "cat"])
-```
-
-You can mutate the column with natural language instructions.
-
-```python
-# Translate animal names to Chinese
-animals.ai.response(instructions="Translate the animal names to Chinese.")
-```
-
-and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
-
-Embedding is also available.
-
-```python
-animals.ai.embed()
-# 0    [-0.008575918, -0.07940717, -0.011005879, 0.00...
-# 1    [0.0008873118, -0.015903357, -0.021896126, -0....
-# 2    [-0.010200691, -0.011314859, 0.009946684, -0.0...
-# 3    [0.051125195, -0.018667098, -0.00435894, 0.072...
-# 4    [0.025523458, -0.02345273, -0.016077219, 0.039...
-# Name: animal, dtype: object
-```
-
 """
 
 import json
@@ -216,6 +187,16 @@ class OpenAIVecSeriesAccessor:
     ) -> pd.Series:
         """Call an LLM once for every Series element.
 
+        Example:
+            ```python
+            animals = pd.Series(["cat", "dog", "elephant"])
+            animals.ai.response("translate to French")
+            ```
+            This method returns a Series of strings, each containing the
+            assistant's response to the corresponding input.
+            The model used is set by the `responses_model` function.
+            The default model is `gpt-4o-mini`.
+
         Args:
             instructions (str): System prompt prepended to every user message.
             response_format (Type[T], optional): Pydantic model or built‑in
@@ -245,6 +226,16 @@ class OpenAIVecSeriesAccessor:
     def embed(self, batch_size: int = 128) -> pd.Series:
         """Compute OpenAI embeddings for every Series element.
 
+        Example:
+            ```python
+            animals = pd.Series(["cat", "dog", "elephant"])
+            animals.ai.embed()
+            ```
+            This method returns a Series of numpy arrays, each containing the
+            embedding vector for the corresponding input.
+            The embedding model is set by the `embedding_model` function.
+            The default embedding model is `text-embedding-3-small`.
+
         Args:
             batch_size (int, optional): Number of inputs sent per request.
                 Defaults to ``128``.
@@ -267,6 +258,14 @@ class OpenAIVecSeriesAccessor:
     def count_tokens(self) -> pd.Series:
         """Count `tiktoken` tokens per row.
 
+        Example:
+            ```python
+            animals = pd.Series(["cat", "dog", "elephant"])
+            animals.ai.count_tokens()
+            ```
+            This method uses the `tiktoken` library to count tokens based on the
+            model name set by `responses_model`.
+
         Returns:
             pandas.Series: Token counts for each element.
         """
@@ -275,7 +274,18 @@ class OpenAIVecSeriesAccessor:
     def extract(self) -> pd.DataFrame:
         """Expand a Series of Pydantic models/dicts into columns.
 
-        If the Series has a name, extracted columns are prefixed with it.
+        Example:
+            ```python
+            animals = pd.Series([
+                {"name": "cat", "legs": 4},
+                {"name": "dog", "legs": 4},
+                {"name": "elephant", "legs": 4},
+            ])
+            animals.ai.extract()
+            ```
+            This method returns a DataFrame with the same index as the Series,
+            where each column corresponds to a key in the dictionaries.
+            If the Series has a name, extracted columns are prefixed with it.
 
         Returns:
             pandas.DataFrame: Expanded representation.
@@ -301,6 +311,19 @@ class OpenAIVecDataFrameAccessor:
     def extract(self, column: str) -> pd.DataFrame:
         """Flatten one column of Pydantic models/dicts into top‑level columns.
 
+        Example:
+            ```python
+            df = pd.DataFrame([
+                {"animal": {"name": "cat", "legs": 4}},
+                {"animal": {"name": "dog", "legs": 4}},
+                {"animal": {"name": "elephant", "legs": 4}},
+            ])
+            df.ai.extract("animal")
+            ```
+            This method returns a DataFrame with the same index as the original,
+            where each column corresponds to a key in the dictionaries.
+            The source column is dropped.
+
         Args:
             column (str): Column to expand.
 
@@ -324,6 +347,21 @@ class OpenAIVecDataFrameAccessor:
         batch_size: int = 128,
     ) -> pd.Series:
         """Generate a response for each row after serialising it to JSON.
+
+        Example:
+            ```python
+            df = pd.DataFrame([
+                {"name": "cat", "legs": 4},
+                {"name": "dog", "legs": 4},
+                {"name": "elephant", "legs": 4},
+            ])
+            df.ai.response("what is the animal's name?")
+            ```
+            This method returns a Series of strings, each containing the
+            assistant's response to the corresponding input.
+            Each row is serialised to JSON before being sent to the assistant.
+            The model used is set by the `responses_model` function.
+            The default model is `gpt-4o-mini`.
 
         Args:
             instructions (str): System prompt for the assistant.

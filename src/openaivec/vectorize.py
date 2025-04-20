@@ -134,20 +134,34 @@ class VectorizedLLM(Generic[T], metaclass=ABCMeta):
 class VectorizedOpenAI(VectorizedLLM, Generic[T]):
     """Stateless façade that turns OpenAI's JSON‑mode API into a batched API.
 
-    Typical usage:
+    This wrapper allows you to submit *multiple* user prompts in one JSON‑mode
+    request and receive the answers in the original order.
 
-    ```python
-    vector_llm = VectorizedOpenAI(
-        client=openai_client,
-        model_name="gpt‑4o‑mini",
-        system_message="You are a helpful assistant."
-    )
-    answers = vector_llm.predict(questions, batch_size=32)
-    ```
+    Example:
+        ```python
+        vector_llm = VectorizedOpenAI(
+            client=openai_client,
+            model_name="gpt‑4o‑mini",
+            system_message="You are a helpful assistant."
+        )
+        answers = vector_llm.predict(questions, batch_size=32)
+        ```
 
-    All heavy lifting is done inside two private helpers:
-    `_predict_chunk` (fragment the workload and preserve ordering) and
-    `_request_llm` (single call to OpenAI).
+    Attributes:
+        client: Initialised ``openai.OpenAI`` client.
+        model_name: Name of the model (or Azure deployment) to invoke.
+        system_message: System prompt prepended to every request.
+        temperature: Sampling temperature passed to the model.
+        top_p: Nucleus‑sampling parameter.
+        response_format: Expected Pydantic type of each assistant message
+            (defaults to ``str``).
+        is_parallel: If ``True``, minibatches are executed concurrently.
+
+    Notes:
+        Internally the work is delegated to two helpers:
+
+        * ``_predict_chunk`` – fragments the workload and restores ordering.
+        * ``_request_llm`` – performs a single OpenAI API call.
     """
 
     client: OpenAI
