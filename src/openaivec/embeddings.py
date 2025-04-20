@@ -19,16 +19,16 @@ from openai import OpenAI, RateLimitError
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
-__all__ = ["EmbeddingOpenAI"]
+__all__ = ["VectorizedEmbeddingsOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
 
-class EmbeddingLLM(metaclass=ABCMeta):
+class VectorizedEmbeddings(metaclass=ABCMeta):
     """Abstract interface for a sentence‑embedding backend."""
 
     @abstractmethod
-    def embed(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
+    def create(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         """Embed a collection of sentences.
 
         Args:
@@ -45,7 +45,7 @@ class EmbeddingLLM(metaclass=ABCMeta):
 
 
 @dataclass(frozen=True)
-class EmbeddingOpenAI(EmbeddingLLM):
+class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
     """Thin wrapper around the OpenAI /embeddings endpoint.
 
     Attributes:
@@ -79,7 +79,7 @@ class EmbeddingOpenAI(EmbeddingLLM):
         return [np.array(d.embedding, dtype=np.float32) for d in responses.data]
 
     @observe(_logger)
-    def embed(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
+    def create(self, sentences: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         """See ``EmbeddingLLM.embed`` for contract details.
 
         The call is internally delegated to either ``map_unique_minibatch`` or

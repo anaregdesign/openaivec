@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec import EmbeddingOpenAI, VectorizedResponsesOpenAI
+from openaivec import VectorizedEmbeddingsOpenAI, VectorizedResponsesOpenAI
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
@@ -26,7 +26,7 @@ _logger: Logger = getLogger(__name__)
 # Global Singletons
 _openai_client: Optional[OpenAI] = None
 _vectorized_client: Optional[VectorizedResponses] = None
-_embedding_client: Optional[EmbeddingOpenAI] = None
+_embedding_client: Optional[VectorizedEmbeddingsOpenAI] = None
 
 T = TypeVar("T")
 
@@ -71,10 +71,10 @@ def _get_vectorized_openai_client(
     return _vectorized_client
 
 
-def _get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> EmbeddingOpenAI:
+def _get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> VectorizedEmbeddingsOpenAI:
     global _embedding_client
     if _embedding_client is None:
-        _embedding_client = EmbeddingOpenAI(
+        _embedding_client = VectorizedEmbeddingsOpenAI(
             client=_get_openai_client(conf, http_client),
             model_name=conf.model_name,
         )
@@ -314,7 +314,7 @@ class UDFBuilder:
             client_emb = _get_vectorized_embedding_client(self, http_client)
 
             for part in col:
-                yield pd.Series(client_emb.embed(part.tolist(), self.batch_size))
+                yield pd.Series(client_emb.create(part.tolist(), self.batch_size))
 
         return fn
 

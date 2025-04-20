@@ -25,7 +25,7 @@ from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-from openaivec.embeddings import EmbeddingLLM, EmbeddingOpenAI
+from openaivec.embeddings import VectorizedEmbeddings, VectorizedEmbeddingsOpenAI
 from openaivec.responses import VectorizedResponses, VectorizedResponsesOpenAI
 
 __all__ = [
@@ -243,14 +243,14 @@ class OpenAIVecSeriesAccessor:
         Returns:
             pandas.Series: Each value is a list of floats (the embedding vector).
         """
-        client: EmbeddingLLM = EmbeddingOpenAI(
+        client: VectorizedEmbeddings = VectorizedEmbeddingsOpenAI(
             client=_get_openai_client(),
             model_name=_EMBEDDING_MODEL_NAME,
             is_parallel=True,
         )
 
         return pd.Series(
-            client.embed(self._obj.tolist(), batch_size=batch_size),
+            client.create(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
             name=self._obj.name,
         )
