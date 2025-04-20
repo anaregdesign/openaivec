@@ -341,7 +341,7 @@ class OpenAIVecDataFrameAccessor:
             .pipe(lambda df: df.drop(columns=[column], axis=1))
         )
 
-    def response(
+    def responses(
         self,
         instructions: str,
         response_format: Type[T] = str,
@@ -356,7 +356,7 @@ class OpenAIVecDataFrameAccessor:
                 {"name": "dog", "legs": 4},
                 {"name": "elephant", "legs": 4},
             ])
-            df.ai.response("what is the animal's name?")
+            df.ai.responses("what is the animal's name?")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -378,7 +378,7 @@ class OpenAIVecDataFrameAccessor:
             lambda df: (
                 df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
                 .map(lambda x: json.dumps(x, ensure_ascii=False))
-                .ai.response(
+                .ai.responses(
                     instructions=instructions,
                     response_format=response_format,
                     batch_size=batch_size,
