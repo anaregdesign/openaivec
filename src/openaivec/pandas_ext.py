@@ -145,7 +145,7 @@ class OpenAIVecSeriesAccessor:
         )
 
         return pd.Series(
-            client.predict_minibatch(self._obj.tolist(), batch_size=batch_size),
+            client.predict(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
             name=self._obj.name,
         )

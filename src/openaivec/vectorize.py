@@ -81,11 +81,7 @@ class Response(BaseModel, Generic[T]):
 
 class VectorizedLLM(Generic[T], metaclass=ABCMeta):
     @abstractmethod
-    def predict(self, user_messages: List[str]) -> List[T]:
-        pass
-
-    @abstractmethod
-    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[T]:
+    def predict(self, user_messages: List[str], batch_size: int) -> List[T]:
         pass
 
 
@@ -110,7 +106,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
     @observe(_logger)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
-    def request(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
+    def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         response_format = self.response_format
 
         class MessageT(BaseModel):
@@ -131,16 +127,16 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
         return cast(ParsedResponse[Response[T]], completion)
 
     @observe(_logger)
-    def predict(self, user_messages: List[str]) -> List[T]:
+    def _predict_chunk(self, user_messages: List[str]) -> List[T]:
         messages = [Message(id=i, body=message) for i, message in enumerate(user_messages)]
-        responses: ParsedResponse[Response[T]] = self.request(messages)
+        responses: ParsedResponse[Response[T]] = self._request_llm(messages)
         response_dict = {message.id: message.body for message in responses.output_parsed.assistant_messages}
         sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses
 
     @observe(_logger)
-    def predict_minibatch(self, user_messages: List[str], batch_size: int) -> List[T]:
+    def predict(self, user_messages: List[str], batch_size: int) -> List[T]:
         if self.is_parallel:
-            return map_unique_minibatch_parallel(user_messages, batch_size, self.predict)
+            return map_unique_minibatch_parallel(user_messages, batch_size, self._predict_chunk)
         else:
-            return map_unique_minibatch(user_messages, batch_size, self.predict)
+            return map_unique_minibatch(user_messages, batch_size, self._predict_chunk)

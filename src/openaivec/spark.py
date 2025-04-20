@@ -240,7 +240,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield pd.DataFrame(result.map(_safe_dump).tolist())
 
@@ -257,7 +257,7 @@ class UDFBuilder:
             )
 
             for part in col:
-                predictions = client_vec.predict_minibatch(part.tolist(), self.batch_size)
+                predictions = client_vec.predict(part.tolist(), self.batch_size)
                 result = pd.Series(predictions)
                 yield result.map(_safe_cast_str)
 
