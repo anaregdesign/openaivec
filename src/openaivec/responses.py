@@ -5,7 +5,7 @@ messages to an LLM in a single request and receive the responses in the same
 order.  The trick is to embed a special system prompt – produced by
 `_vectorize_system_message` – that teaches the model how to map between an
 array‑like JSON input and output.  Public entry point for callers is
-`VectorizedOpenAI.predict(...)`.
+`VectorizedResponsesOpenAI.parse(...)`.
 
 All public call sites are documented using the Google style docstrings so IDEs
 and static analysers can pick up argument / return‑value information.
@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
-__all__ = ["VectorizedLLM", "VectorizedOpenAI"]
+__all__ = ["VectorizedResponses", "VectorizedResponsesOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
@@ -110,28 +110,28 @@ class Response(BaseModel, Generic[T]):
     assistant_messages: List[Message[T]]
 
 
-class VectorizedLLM(Generic[T], metaclass=ABCMeta):
+class VectorizedResponses(Generic[T], metaclass=ABCMeta):
     """A minimal interface for batched language models."""
 
     @abstractmethod
-    def predict(self, user_messages: List[str], batch_size: int) -> List[T]:
-        """Return model outputs for *user_messages* in their original order.
+    def parse(self, inputs: List[str], batch_size: int) -> List[T]:
+        """Return model outputs for *inputs* in their original order.
 
         Args:
-            user_messages: List of user prompt strings.  Duplicates keep their
+            inputs: List of user prompt strings.  Duplicates keep their
                 position but may be executed only once internally.
             batch_size: Maximum number of unique user messages to include in a
                 single underlying LLM call.
 
         Returns:
-            A list with the same length and ordering as *user_messages* but
+            A list with the same length and ordering as *inputs* but
             populated with model responses.
         """
         pass
 
 
 @dataclass(frozen=True)
-class VectorizedOpenAI(VectorizedLLM, Generic[T]):
+class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
     """Stateless façade that turns OpenAI's JSON‑mode API into a batched API.
 
     This wrapper allows you to submit *multiple* user prompts in one JSON‑mode
@@ -139,12 +139,12 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
     Example:
         ```python
-        vector_llm = VectorizedOpenAI(
+        vector_llm = VectorizedResponsesOpenAI(
             client=openai_client,
             model_name="gpt‑4o‑mini",
             system_message="You are a helpful assistant."
         )
-        answers = vector_llm.predict(questions, batch_size=32)
+        answers = vector_llm.parse(questions, batch_size=32)
         ```
 
     Attributes:
@@ -238,19 +238,19 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
         return sorted_responses
 
     @observe(_logger)
-    def predict(self, user_messages: List[str], batch_size: int) -> List[T]:
+    def parse(self, inputs: List[str], batch_size: int) -> List[T]:
         """Public API: batched predict with optional parallelisation.
 
         Args:
-            user_messages: All prompts that require a response.  Duplicate
+            inputs: All prompts that require a response.  Duplicate
                 entries are de‑duplicated under the hood to save tokens.
             batch_size: Maximum number of *unique* prompts per LLM call.
 
         Returns:
             A list containing the assistant responses in the same order as
-                *user_messages*.
+                *inputs*.
         """
         if self.is_parallel:
-            return map_unique_minibatch_parallel(user_messages, batch_size, self._predict_chunk)
+            return map_unique_minibatch_parallel(inputs, batch_size, self._predict_chunk)
         else:
-            return map_unique_minibatch(user_messages, batch_size, self._predict_chunk)
+            return map_unique_minibatch(inputs, batch_size, self._predict_chunk)

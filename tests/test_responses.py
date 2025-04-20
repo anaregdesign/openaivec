@@ -5,14 +5,14 @@ from unittest import TestCase
 from openai import OpenAI
 from pydantic import BaseModel
 
-from openaivec import VectorizedOpenAI
+from openaivec import VectorizedResponsesOpenAI
 
 _h: Handler = StreamHandler()
 
 basicConfig(handlers=[_h], level="DEBUG")
 
 
-class TestVectorizedOpenAI(TestCase):
+class TestVectorizedResponsesOpenAI(TestCase):
     def setUp(self):
         self.openai_client = OpenAI()
         self.model_name = "gpt-4o-mini"
@@ -21,7 +21,7 @@ class TestVectorizedOpenAI(TestCase):
         system_message = """
         just repeat the user message
         """.strip()
-        client = VectorizedOpenAI(
+        client = VectorizedResponsesOpenAI(
             client=self.openai_client,
             model_name=self.model_name,
             system_message=system_message,
@@ -50,7 +50,7 @@ class TestVectorizedOpenAI(TestCase):
             color: str
             taste: str
 
-        client = VectorizedOpenAI(
+        client = VectorizedResponsesOpenAI(
             client=self.openai_client, model_name=self.model_name, system_message=system_message, response_format=Fruit
         )
 

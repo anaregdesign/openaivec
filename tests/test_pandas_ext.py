@@ -9,7 +9,7 @@ from openaivec import pandas_ext
 
 pandas_ext.use(OpenAI())
 pandas_ext.responses_model("gpt-4o-mini")
-pandas_ext.embedding_model("text-embedding-3-small")
+pandas_ext.embeddings_model("text-embedding-3-small")
 
 
 class Fruit(BaseModel):
@@ -26,17 +26,23 @@ class TestPandasExt(unittest.TestCase):
             }
         )
 
-    def test_embed(self):
-        embeddings: pd.Series = self.df["name"].ai.embed()
+    def test_embeddings(self):
+        embeddings: pd.Series = self.df["name"].ai.embeddings()
 
         # assert all values are elements of np.ndarray
         self.assertTrue(all(isinstance(embedding, np.ndarray) for embedding in embeddings))
 
-    def test_predict(self):
-        names_fr: pd.Series = self.df["name"].ai.response("translate to French")
+    def test_responses(self):
+        names_fr: pd.Series = self.df["name"].ai.responses("translate to French")
 
         # assert all values are elements of str
-        self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
+        self.assertTrue(all(isinstance(x, str) for x in names_fr))
+
+    def test_responses_dataframe(self):
+        names_fr: pd.Series = self.df.ai.responses("translate to French")
+
+        # assert all values are elements of str
+        self.assertTrue(all(isinstance(x, str) for x in names_fr))
 
     def test_extract_series(self):
         sample_series = pd.Series(

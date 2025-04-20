@@ -10,7 +10,7 @@ pandas_ext.use(OpenAI())
 
 # Set up the model_name for responses and embeddings
 pandas_ext.responses_model("gpt-4.1-nano")
-pandas_ext.embedding_model("text-embedding-3-small")
+pandas_ext.embeddings_model("text-embedding-3-small")
 ```
 
 """
@@ -25,13 +25,13 @@ from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-from openaivec.embedding import EmbeddingLLM, EmbeddingOpenAI
-from openaivec.vectorize import VectorizedLLM, VectorizedOpenAI
+from openaivec.embeddings import VectorizedEmbeddings, VectorizedEmbeddingsOpenAI
+from openaivec.responses import VectorizedResponses, VectorizedResponsesOpenAI
 
 __all__ = [
     "use",
     "responses_model",
-    "embedding_model",
+    "embeddings_model",
     "use_openai",
     "use_azure_openai",
 ]
@@ -43,7 +43,7 @@ T = TypeVar("T")
 
 _CLIENT: OpenAI | None = None
 _RESPONSES_MODEL_NAME = "gpt-4o-mini"
-_EMBEDDING_MODEL_NAME = "text-embedding-3-small"
+_EMBEDDINGS_MODEL_NAME = "text-embedding-3-small"
 
 _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
 
@@ -109,14 +109,14 @@ def responses_model(name: str) -> None:
         _TIKTOKEN_ENCODING = tiktoken.get_encoding("o200k_base")
 
 
-def embedding_model(name: str) -> None:
+def embeddings_model(name: str) -> None:
     """Override the model used for text embeddings.
 
     Args:
         name (str): Embedding model name, e.g. ``text-embedding-3-small``.
     """
-    global _EMBEDDING_MODEL_NAME
-    _EMBEDDING_MODEL_NAME = name
+    global _EMBEDDINGS_MODEL_NAME
+    _EMBEDDINGS_MODEL_NAME = name
 
 
 def _get_openai_client() -> OpenAI:
@@ -155,11 +155,11 @@ def _extract_value(x, series_name):
 
     Args:
         x: Single element taken from the Series.
-        series_name (str): Name of the Series (only used for logging).
+            series_name (str): Name of the Series (only used for logging).
 
     Returns:
         dict: A dictionary representation or an empty ``dict`` if ``x`` cannot
-        be coerced.
+            be coerced.
     """
     if x is None:
         return {}
@@ -179,7 +179,7 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def response(
+    def responses(
         self,
         instructions: str,
         response_format: Type[T] = str,
@@ -190,7 +190,7 @@ class OpenAIVecSeriesAccessor:
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.response("translate to French")
+            animals.ai.responses("translate to French")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -207,7 +207,7 @@ class OpenAIVecSeriesAccessor:
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
         """
-        client: VectorizedLLM = VectorizedOpenAI(
+        client: VectorizedResponses = VectorizedResponsesOpenAI(
             client=_get_openai_client(),
             model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,
@@ -218,39 +218,40 @@ class OpenAIVecSeriesAccessor:
         )
 
         return pd.Series(
-            client.predict(self._obj.tolist(), batch_size=batch_size),
+            client.parse(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
             name=self._obj.name,
         )
 
-    def embed(self, batch_size: int = 128) -> pd.Series:
+    def embeddings(self, batch_size: int = 128) -> pd.Series:
         """Compute OpenAI embeddings for every Series element.
 
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.embed()
+            animals.ai.embeddings()
             ```
             This method returns a Series of numpy arrays, each containing the
             embedding vector for the corresponding input.
-            The embedding model is set by the `embedding_model` function.
+            The embedding model is set by the `embeddings_model` function.
             The default embedding model is `text-embedding-3-small`.
 
         Args:
-            batch_size (int, optional): Number of inputs sent per request.
-                Defaults to ``128``.
+            batch_size (int, optional): Number of inputs grouped into a
+                single request. Defaults to ``128``.
 
         Returns:
-            pandas.Series: Each value is a list of floats (the embedding vector).
+            pandas.Series: Series whose values are ``np.ndarray`` objects
+                (dtype ``float32``).
         """
-        client: EmbeddingLLM = EmbeddingOpenAI(
+        client: VectorizedEmbeddings = VectorizedEmbeddingsOpenAI(
             client=_get_openai_client(),
-            model_name=_EMBEDDING_MODEL_NAME,
+            model_name=_EMBEDDINGS_MODEL_NAME,
             is_parallel=True,
         )
 
         return pd.Series(
-            client.embed(self._obj.tolist(), batch_size=batch_size),
+            client.create(self._obj.tolist(), batch_size=batch_size),
             index=self._obj.index,
             name=self._obj.name,
         )
@@ -340,7 +341,7 @@ class OpenAIVecDataFrameAccessor:
             .pipe(lambda df: df.drop(columns=[column], axis=1))
         )
 
-    def response(
+    def responses(
         self,
         instructions: str,
         response_format: Type[T] = str,
@@ -355,7 +356,7 @@ class OpenAIVecDataFrameAccessor:
                 {"name": "dog", "legs": 4},
                 {"name": "elephant", "legs": 4},
             ])
-            df.ai.response("what is the animal's name?")
+            df.ai.responses("what is the animal's name?")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -375,9 +376,9 @@ class OpenAIVecDataFrameAccessor:
         """
         return self._obj.pipe(
             lambda df: (
-                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
+                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index, name="record"))
                 .map(lambda x: json.dumps(x, ensure_ascii=False))
-                .ai.response(
+                .ai.responses(
                     instructions=instructions,
                     response_format=response_format,
                     batch_size=batch_size,
