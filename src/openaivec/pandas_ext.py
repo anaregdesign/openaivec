@@ -10,7 +10,7 @@ pandas_ext.use(OpenAI())
 
 # Set up the model_name for responses and embeddings
 pandas_ext.responses_model("gpt-4.1-nano")
-pandas_ext.embedding_model("text-embedding-3-small"
+pandas_ext.embedding_model("text-embedding-3-small")
 ```
 
 ## Usage for Series
