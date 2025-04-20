@@ -1,6 +1,8 @@
 # What is this?
 
-Let's dive into **Generative Mutation** for tabular data!
+Let's dive into **Generative Mutation** for tabular data! 
+
+Full API reference is available at [openaivec](https://anaregdesign.github.io/openaivec/).
 
 This is a simple dummy data with `pd.Series`.
 
