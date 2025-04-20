@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
-__all__ = ["VectorizedResponses", "VectorizedOpenAI"]
+__all__ = ["VectorizedResponses", "VectorizedResponsesOpenAI"]
 
 _logger: Logger = getLogger(__name__)
 
@@ -131,7 +131,7 @@ class VectorizedResponses(Generic[T], metaclass=ABCMeta):
 
 
 @dataclass(frozen=True)
-class VectorizedOpenAI(VectorizedResponses, Generic[T]):
+class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
     """Stateless façade that turns OpenAI's JSON‑mode API into a batched API.
 
     This wrapper allows you to submit *multiple* user prompts in one JSON‑mode
@@ -139,12 +139,12 @@ class VectorizedOpenAI(VectorizedResponses, Generic[T]):
 
     Example:
         ```python
-        vector_llm = VectorizedOpenAI(
+        vector_llm = VectorizedResponsesOpenAI(
             client=openai_client,
             model_name="gpt‑4o‑mini",
             system_message="You are a helpful assistant."
         )
-        answers = vector_llm.predict(questions, batch_size=32)
+        answers = vector_llm.parse(questions, batch_size=32)
         ```
 
     Attributes:

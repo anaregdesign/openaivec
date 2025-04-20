@@ -26,7 +26,7 @@ from pydantic import BaseModel
 import tiktoken
 
 from openaivec.embeddings import EmbeddingLLM, EmbeddingOpenAI
-from openaivec.responses import VectorizedResponses, VectorizedOpenAI
+from openaivec.responses import VectorizedResponses, VectorizedResponsesOpenAI
 
 __all__ = [
     "use",
@@ -207,7 +207,7 @@ class OpenAIVecSeriesAccessor:
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
         """
-        client: VectorizedResponses = VectorizedOpenAI(
+        client: VectorizedResponses = VectorizedResponsesOpenAI(
             client=_get_openai_client(),
             model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,

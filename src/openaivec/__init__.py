@@ -1,7 +1,7 @@
 from .embeddings import EmbeddingOpenAI
-from .responses import VectorizedOpenAI
+from .responses import VectorizedResponsesOpenAI
 
 __all__ = [
-    "VectorizedOpenAI",
+    "VectorizedResponsesOpenAI",
     "EmbeddingOpenAI",
 ]
