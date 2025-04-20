@@ -155,11 +155,11 @@ def _extract_value(x, series_name):
 
     Args:
         x: Single element taken from the Series.
-        series_name (str): Name of the Series (only used for logging).
+            series_name (str): Name of the Series (only used for logging).
 
     Returns:
         dict: A dictionary representation or an empty ``dict`` if ``x`` cannot
-        be coerced.
+            be coerced.
     """
     if x is None:
         return {}

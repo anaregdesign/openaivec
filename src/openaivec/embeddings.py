@@ -95,7 +95,7 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
 
         Returns:
             A list of ``np.ndarray`` objects (dtype ``float32``) where each entry
-            is the embedding of the corresponding sentence in *sentences*.
+                is the embedding of the corresponding sentence in *sentences*.
 
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted.
