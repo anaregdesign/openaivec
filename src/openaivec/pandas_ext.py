@@ -376,7 +376,7 @@ class OpenAIVecDataFrameAccessor:
         """
         return self._obj.pipe(
             lambda df: (
-                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
+                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index, name="record"))
                 .map(lambda x: json.dumps(x, ensure_ascii=False))
                 .ai.responses(
                     instructions=instructions,

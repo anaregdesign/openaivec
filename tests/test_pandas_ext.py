@@ -36,7 +36,13 @@ class TestPandasExt(unittest.TestCase):
         names_fr: pd.Series = self.df["name"].ai.responses("translate to French")
 
         # assert all values are elements of str
-        self.assertTrue(all(isinstance(name_fr, str) for name_fr in names_fr))
+        self.assertTrue(all(isinstance(x, str) for x in names_fr))
+
+    def test_responses_dataframe(self):
+        names_fr: pd.Series = self.df.ai.responses("translate to French")
+
+        # assert all values are elements of str
+        self.assertTrue(all(isinstance(x, str) for x in names_fr))
 
     def test_extract_series(self):
         sample_series = pd.Series(
