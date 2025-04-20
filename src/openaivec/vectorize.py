@@ -234,7 +234,7 @@ class VectorizedOpenAI(VectorizedLLM, Generic[T]):
 
         Returns:
             A list containing the assistant responses in the same order as
-            *user_messages*.
+                *user_messages*.
         """
         if self.is_parallel:
             return map_unique_minibatch_parallel(user_messages, batch_size, self._predict_chunk)

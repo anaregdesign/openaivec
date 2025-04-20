@@ -243,7 +243,7 @@ class UDFBuilder:
 
         Returns:
             A pandas UDF whose output schema is either ``StringType`` or the
-            struct derived from ``response_format``.
+                struct derived from ``response_format``.
         """
         if issubclass(response_format, BaseModel):
             spark_schema = _pydantic_to_spark_schema(response_format)
@@ -358,7 +358,7 @@ def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
 
     Returns:
         A pandas UDF producing an ``ArrayType(StringType())`` column whose
-        values are lists of chunks respecting the ``max_tokens`` limit.
+            values are lists of chunks respecting the ``max_tokens`` limit.
     """
 
     @pandas_udf(ArrayType(StringType()))
