@@ -10,3 +10,4 @@ plugins:
           paths:
             - src
           docstring_style: google
+          show_submodules: true
