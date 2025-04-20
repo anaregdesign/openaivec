@@ -42,6 +42,10 @@ class FewShotPrompt(BaseModel):
             behaviour for a variety of scenarios.
     """
 
+    purpose: str
+    cautions: List[str]
+    examples: List[Example]
+
 
 class Step(BaseModel):
     """A single refinement iteration produced by the LLM.
