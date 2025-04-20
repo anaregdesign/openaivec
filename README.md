@@ -12,7 +12,7 @@ You can mutate the column with natural language instructions.
 
 ```python
 # Translate animal names to Chinese
-animals.ai.response(instructions="Translate the animal names to Chinese.")
+animals.ai.responses("Translate the animal names to Chinese.")
 ```
 
 and its results are `['熊猫', '考拉', '蟒蛇', '狗', '猫']` (Not sure that's right, I can't read Chinese).
@@ -22,9 +22,9 @@ These are extremely fluent interface for data processing with pandas.
 ```python
 df = pd.DataFrame({"animal": ["panda", "koala", "python", "dog", "cat"]})
 df.assign(
-    zh=lambda df: df.animal.ai.response("Translate the animal names to Chinese."),
-    color=lambda df: df.animal.ai.response("Translate the animal names to color."),
-    is_technical_word=lambda df: df.animal.ai.response("Is this related to python language? answer yes or no.").map(lambda x: x == "yes"),
+    zh=lambda df: df.animal.ai.responses("Translate the animal names to Chinese."),
+    color=lambda df: df.animal.ai.responses("Translate the animal names to color."),
+    is_technical_word=lambda df: df.animal.ai.responses("Is this related to python language? answer yes or no.").eq("yes"),
 )
 ```
 
@@ -66,7 +66,7 @@ Install the package with:
 
 ```bash
 pip install openaivec
-````
+```
 
 If you want to uninstall the package, you can do so with:
 
@@ -79,11 +79,11 @@ pip uninstall openaivec
 ```python
 import os
 from openai import OpenAI
-from openaivec import VectorizedOpenAI
+from openaivec import VectorizedResponsesOpenAI
 
 
 # Initialize the vectorized client with your system message and parameters
-client = VectorizedOpenAI(
+client = VectorizedResponsesOpenAI(
     client=OpenAI(),
     temperature=0.0,
     top_p=1.0,
@@ -91,7 +91,7 @@ client = VectorizedOpenAI(
     system_message="Please answer only with 'xx family' and do not output anything else."
 )
 
-result = client.predict(["panda", "rabbit", "koala"])
+result = client.parse(["panda", "rabbit", "koala"])
 print(result)  # Expected output: ['bear family', 'rabbit family', 'koala family']
 ```
 
@@ -111,7 +111,7 @@ pandas_ext.use(OpenAI())
 
 # Set models for responses and embeddings(optional: these are default models)
 pandas_ext.responses_model("gpt-4o-mini")
-pandas_ext.embedding_model("text-embedding-3-small")
+pandas_ext.embeddings_model("text-embedding-3-small")
 
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
