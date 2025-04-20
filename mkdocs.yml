@@ -1,4 +1,5 @@
 site_name: openaivec documentation
+site_url: https://anaregdesign.github.io/openaivec/
 theme:
   name: material
 
