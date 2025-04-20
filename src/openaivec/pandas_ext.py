@@ -32,24 +32,41 @@ _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
 
 
 def use(client: OpenAI) -> None:
-    """
-    Set the OpenAI client to use for OpenAI.
+    """Register a custom ``openai.OpenAI``‑compatible client.
+
+    Parameters
+    ----------
+    client : OpenAI
+        An already configured OpenAI/AzureOpenAI client instance that will be
+        reused by every helper in this module.
     """
     global _CLIENT
     _CLIENT = client
 
 
 def use_openai(api_key: str) -> None:
-    """
-    Set the OpenAI API key to use for OpenAI.
+    """Create and register a default ``openai.OpenAI`` client.
+
+    Parameters
+    ----------
+    api_key : str
+        Value passed to the ``api_key`` argument of ``openai.OpenAI``.
     """
     global _CLIENT
     _CLIENT = OpenAI(api_key=api_key)
 
 
 def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
-    """
-    Set the Azure OpenAI API key to use for Azure OpenAI.
+    """Create and register an ``openai.AzureOpenAI`` client.
+
+    Parameters
+    ----------
+    api_key : str
+        Azure OpenAI subscription key.
+    endpoint : str
+        Resource endpoint (e.g. ``https://<resource>.openai.azure.com``).
+    api_version : str
+        REST API version such as ``2024‑02‑15-preview``.
     """
     global _CLIENT
     _CLIENT = AzureOpenAI(
@@ -60,8 +77,12 @@ def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
 
 
 def responses_model(name: str) -> None:
-    """
-    Set the OpenAI responses model name to use for OpenAI.
+    """Override the model used for text responses.
+
+    Parameters
+    ----------
+    name : str
+        Model name listed in the OpenAI API (e.g. ``gpt-4o-mini``).
     """
     global _RESPONSES_MODEL_NAME, _TIKTOKEN_ENCODING
     _RESPONSES_MODEL_NAME = name
@@ -78,14 +99,32 @@ def responses_model(name: str) -> None:
 
 
 def embedding_model(name: str) -> None:
-    """
-    Set the OpenAI embedding model name to use for OpenAI.
+    """Override the model used for text embeddings.
+
+    Parameters
+    ----------
+    name : str
+        Embedding model name such as ``text-embedding-3-small``.
     """
     global _EMBEDDING_MODEL_NAME
     _EMBEDDING_MODEL_NAME = name
 
 
 def get_openai_client() -> OpenAI:
+    """Return a configured OpenAI client.
+
+    The priority is:
+
+    1. A client registered via :func:`use`, :func:`use_openai`,
+       or :func:`use_azure_openai`.
+    2. Environment variable ``OPENAI_API_KEY`` (plain OpenAI).
+    3. Environment variables ``AZURE_OPENAI_*`` (Azure OpenAI).
+
+    Raises
+    ------
+    ValueError
+        If no credentials are found.
+    """
     global _CLIENT
     if _CLIENT is not None:
         return _CLIENT
@@ -117,6 +156,21 @@ def get_openai_client() -> OpenAI:
 
 
 def _extract_value(x, series_name):
+    """Convert heterogeneous objects in a Series to a homogeneous ``dict``.
+
+    Parameters
+    ----------
+    x :
+        Individual element of the Series.
+    series_name : str
+        Name of the Series – used only for logging.
+
+    Returns
+    -------
+    dict
+        Dictionary representation or an empty dict when the value cannot be
+        coerced.
+    """
     if x is None:
         return {}
     elif isinstance(x, BaseModel):
@@ -130,10 +184,33 @@ def _extract_value(x, series_name):
 
 @pd.api.extensions.register_series_accessor("ai")
 class OpenAIVecSeriesAccessor:
+    """pandas ``Series`` accessor that adds OpenAI helpers (``.ai``)."""
+
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def response(self, instructions: str, response_format: Type[T] = str, batch_size: int = 128) -> pd.Series:
+    def response(
+        self,
+        instructions: str,
+        response_format: Type[T] = str,
+        batch_size: int = 128,
+    ) -> pd.Series:
+        """Call an LLM for every element of the Series.
+
+        Parameters
+        ----------
+        instructions : str
+            System prompt placed before each user message.
+        response_format : Type[T], default ``str``
+            Pydantic model or builtin type the assistant should return.
+        batch_size : int, default ``128``
+            Number of prompts submitted in a single request.
+
+        Returns
+        -------
+        pandas.Series
+            Series whose values are of type ``response_format``.
+        """
         client: VectorizedLLM = VectorizedOpenAI(
             client=get_openai_client(),
             model_name=_RESPONSES_MODEL_NAME,
@@ -151,6 +228,18 @@ class OpenAIVecSeriesAccessor:
         )
 
     def embed(self, batch_size: int = 128) -> pd.Series:
+        """Compute OpenAI embeddings for every element.
+
+        Parameters
+        ----------
+        batch_size : int, default ``128``
+            Number of inputs sent in one embedding request.
+
+        Returns
+        -------
+        pandas.Series
+            Series of ``list[float]`` (one embedding vector per element).
+        """
         client: EmbeddingLLM = EmbeddingOpenAI(
             client=get_openai_client(),
             model_name=_EMBEDDING_MODEL_NAME,
@@ -164,9 +253,14 @@ class OpenAIVecSeriesAccessor:
         )
 
     def count_tokens(self) -> pd.Series:
+        """Return the number of tokens in each row using *tiktoken*."""
         return self._obj.map(_TIKTOKEN_ENCODING.encode).map(len).rename("num_tokens")
 
     def extract(self) -> pd.DataFrame:
+        """Expand a Series of Pydantic models/dicts into a DataFrame.
+
+        When the Series has a name, extracted column names are prefixed with it.
+        """
         extracted = pd.DataFrame(
             self._obj.map(lambda x: _extract_value(x, self._obj.name)).tolist(),
             index=self._obj.index,
@@ -180,10 +274,25 @@ class OpenAIVecSeriesAccessor:
 
 @pd.api.extensions.register_dataframe_accessor("ai")
 class OpenAIVecDataFrameAccessor:
+    """pandas ``DataFrame`` accessor that adds OpenAI helpers (``.ai``)."""
+
     def __init__(self, df_obj: pd.DataFrame):
         self._obj = df_obj
 
     def extract(self, column: str) -> pd.DataFrame:
+        """Flatten one column of Pydantic models/dicts into top‑level columns.
+
+        Parameters
+        ----------
+        column : str
+            Name of the column to expand.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Original DataFrame plus the extracted columns (source column
+            removed).
+        """
         if column not in self._obj.columns:
             raise ValueError(f"Column '{column}' does not exist in the DataFrame.")
 
@@ -200,6 +309,22 @@ class OpenAIVecDataFrameAccessor:
         response_format: Type[T] = str,
         batch_size: int = 128,
     ) -> pd.Series:
+        """Generate a response for each row after serialising it to JSON.
+
+        Parameters
+        ----------
+        instructions : str
+            System prompt for the assistant.
+        response_format : Type[T], default ``str``
+            Desired return type.
+        batch_size : int, default ``128``
+            Request batch size.
+
+        Returns
+        -------
+        pandas.Series
+            Series of responses aligned with the original index.
+        """
         return self._obj.pipe(
             lambda df: (
                 df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index))
