@@ -32,6 +32,5 @@ jobs:
           body: |
             This PR updates the `uv.lock` file by running `uv lock -U`.
           branch: "chore/update-uv-lock"
-          branch-suffix: none
           delete-branch: true
           labels: dependencies
