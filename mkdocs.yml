@@ -12,3 +12,6 @@ plugins:
             - src
           docstring_style: google
           show_submodules: true
+
+markdown_extensions:
+  - pymdownx.superfences
