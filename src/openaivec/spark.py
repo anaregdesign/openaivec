@@ -1,3 +1,82 @@
+"""Spark UDFs for the OpenAI and Azure OpenAI APIs.
+
+This module provides a builder class for creating Spark UDFs that
+communicate with either the public OpenAI API or Azure OpenAI. It
+supports UDFs for generating responses, creating embeddings,
+and counting tokens.  The UDFs operate on Spark DataFrames and are
+optimised for processing large data volumes.
+
+First, obtain a Spark session:
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+```
+
+Next, instantiate a UDF builder with your OpenAI API key and model
+name, then register the desired UDFs:
+
+```python
+import os
+from openaivec.spark import UDFBuilder
+from pydantic import BaseModel
+
+udf = UDFBuilder.of_openai(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model_name="gpt-4.1-nano",
+)
+
+class Translation(BaseModel):
+    en: str
+    fr: str
+    ja: str
+    es: str
+    de: str
+    it: str
+    pt: str
+    ru: str
+
+spark.udf.register(
+    "translate",
+    udf.responses(
+        system_message=(
+            "Translate the following text to English, French, Japanese, "
+            "Spanish, German, Italian, Portuguese, and Russian."
+        ),
+        response_format=Translation,
+    ),
+)
+```
+
+You can now invoke the UDF from Spark SQL:
+
+```sql
+SELECT
+    name,
+    translate(name) AS t,
+    t.en,
+    t.fr,
+    t.ja,
+    t.es,
+    t.de,
+    t.it,
+    t.pt,
+    t.ru
+FROM fruits;
+```
+
+A sample result looks like this:
+
+| name       | t                          | en         | fr     | ja         | es       | de        | it       | pt       | ru        |
+|------------|----------------------------|------------|--------|------------|----------|-----------|----------|----------|-----------|
+| apple      | {apple, pomme, リン…}      | apple      | pomme  | リンゴ     | manzana  | Apfel     | mela     | maçã     | яблоко    |
+| banana     | {banana, banane, …}        | banana     | banane | バナナ     | plátano  | Banane    | banana   | banana   | банан     |
+| cherry     | {cherry, cerise, …}        | cherry     | cerise | さくらんぼ | cereza   | Kirsche   | ciliegia | cereja   | вишня     |
+| mango      | {mango, mangue, マ…}       | mango      | mangue | マンゴー   | mango    | Mango     | mango    | manga    | манго     |
+| orange     | {orange, orange, …}        | orange     | orange | オレンジ   | naranja  | Orange    | arancia  | laranja  | апельсин  |
+"""
+
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import Iterator, List, Optional, Type, TypeVar, Union, get_args, get_origin
