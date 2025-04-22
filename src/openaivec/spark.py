@@ -40,9 +40,8 @@ class Translation(BaseModel):
 spark.udf.register(
     "translate",
     udf.responses(
-        system_message=(
-            "Translate the following text to English, French, Japanese, "
-            "Spanish, German, Italian, Portuguese, and Russian."
+        instructions=(
+            "Translate the following text to English, French, Japanese, Spanish, German, Italian, Portuguese, and Russian."
         ),
         response_format=Translation,
     ),
@@ -309,12 +308,12 @@ class UDFBuilder:
 
     @observe(_logger)
     def responses(
-        self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
+        self, instructions: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
     ):
         """Return a pandas‑UDF that produces chat completions.
 
         Args:
-            system_message: The system prompt prepended to every request.
+            instructions: The system prompt prepended to every request.
             response_format: ``str`` or a *pydantic* model describing the
                 JSON structure expected from the model.
             temperature: Sampling temperature.
@@ -344,7 +343,7 @@ class UDFBuilder:
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = _get_vectorized_openai_client(
                 conf=self,
-                system_message=system_message,
+                system_message=instructions,
                 response_format=cls,
                 temperature=temperature,
                 top_p=top_p,
@@ -361,7 +360,7 @@ class UDFBuilder:
             http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
             client_vec = _get_vectorized_openai_client(
                 conf=self,
-                system_message=system_message,
+                system_message=instructions,
                 response_format=str,
                 temperature=temperature,
                 top_p=top_p,
