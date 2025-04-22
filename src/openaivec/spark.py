@@ -229,7 +229,7 @@ class UDFBuilder:
         assert self.model_name, "model_name must be set"
 
     @observe(_logger)
-    def completion(
+    def responses(
         self, system_message: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
     ):
         """Return a pandas‑UDF that produces chat completions.
@@ -301,7 +301,7 @@ class UDFBuilder:
             return fn_struct
 
     @observe(_logger)
-    def embedding(self):
+    def embeddings(self):
         """Return a pandas‑UDF that generates embedding vectors.
 
         The UDF accepts a column of strings and yields an
