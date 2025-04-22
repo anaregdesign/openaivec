@@ -101,7 +101,7 @@ See [examples/basic_usage.ipynb](examples/basic_usage.ipynb) for a complete exam
 
 ## Using with Pandas DataFrame
 
-`openaivec.pandas_ext` extends `pandas.Series` functions with accessor `ai.predict` or `ai.embed`.
+`openaivec.pandas_ext` extends `pandas.Series` with accessors `ai.responses` and `ai.embeddings`.
 
 ```python
 import pandas as pd
@@ -118,7 +118,7 @@ pandas_ext.embeddings_model("text-embedding-3-small")
 df = pd.DataFrame({"name": ["panda", "rabbit", "koala"]})
 
 df.assign(
-    kind=lambda df: df.name.ai.response("Answer only with 'xx family' and do not output anything else.")
+    kind=lambda df: df.name.ai.responses("Answer only with 'xx family' and do not output anything else.")
 )
 ```
 
@@ -146,7 +146,7 @@ udf = UDFBuilder.of_azureopenai(
 )
 
 # Register UDFs (e.g., to extract flavor or product type from product names)
-spark.udf.register("parse_taste", udf.completion("""
+spark.udf.register("parse_taste", udf.responses("""
 - Extract flavor-related information from the product name. Return only the concise flavor name with no extra text.
 - Minimize unnecessary adjectives related to the flavor.
     - Example:
@@ -155,7 +155,7 @@ spark.udf.register("parse_taste", udf.completion("""
 """))
 
 # Register UDFs (e.g., to extract product type from product names)
-spark.udf.register("parse_product", udf.completion("""
+spark.udf.register("parse_product", udf.responses("""
 - Extract the type of food from the product name. Return only the food category with no extra text.
 - Example output:
     - Smoothie

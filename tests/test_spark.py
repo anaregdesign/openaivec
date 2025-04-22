@@ -39,10 +39,10 @@ class TestUDFBuilder(TestCase):
         if self.spark:
             self.spark.stop()
 
-    def test_completion(self):
+    def test_responses(self):
         self.spark.udf.register(
             "repeat",
-            self.udf.completion(
+            self.udf.responses(
                 """
                 Repeat twice input string.
                 """,
@@ -57,7 +57,7 @@ class TestUDFBuilder(TestCase):
             """
         ).show()
 
-    def test_completion_structured(self):
+    def test_responses_structured(self):
         class Fruit(BaseModel):
             name: str
             color: str
@@ -65,8 +65,8 @@ class TestUDFBuilder(TestCase):
 
         self.spark.udf.register(
             "fruit",
-            self.udf.completion(
-                system_message="return the color and taste of given fruit",
+            self.udf.responses(
+                instructions="return the color and taste of given fruit",
                 response_format=Fruit,
             ),
         )

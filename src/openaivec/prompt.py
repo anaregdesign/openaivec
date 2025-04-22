@@ -1,3 +1,47 @@
+"""
+This module provides a builder for creating few‑shot prompts, which are
+used to train large language models (LLMs) by providing them with
+examples of input/output pairs. The builder allows for the
+construction of a prompt in a structured way, including setting the
+purpose, adding cautions, and providing examples.
+
+```python
+from openaivec.prompt import FewShotPromptBuilder
+
+prompt_str: str = (
+    FewShotPromptBuilder()
+    .purpose("some purpose")
+    .caution("some caution")
+    .caution("some other caution")
+    .example("some input", "some output")
+    .example("some other input", "some other output")
+    .build()
+)
+print(prompt_str)
+```
+this will produce an XML string that looks like this:
+```xml
+<Prompt>
+    <Purpose>some purpose</Purpose>
+    <Cautions>
+        <Caution>some caution</Caution>
+        <Caution>some other caution</Caution>
+    </Cautions>
+    <Examples>
+        <Example>
+            <Input>some input</Input>
+            <Output>some output</Output>
+        </Example>
+        <Example>
+            <Input>some other input</Input>
+            <Output>some other output</Output>
+        </Example>
+    </Examples>
+</Prompt>
+```
+
+"""
+
 import difflib
 import logging
 from typing import List
