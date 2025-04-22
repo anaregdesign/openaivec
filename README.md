@@ -2,7 +2,7 @@
 
 Let's dive into **Generative Mutation** for tabular data! 
 
-Full API reference is available at [openaivec](https://anaregdesign.github.io/openaivec/).
+Full API reference is available at [API Reference](https://openaivec.anareg.design/).
 
 This is a simple dummy data with `pd.Series`.
 

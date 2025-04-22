@@ -61,7 +61,7 @@ line-length = 120
 target-version = "py310"
 
 [project.urls]
-Homepage = "https://anaregdesign.github.io/openaivec/"
+Homepage = "https://openaivec.anareg.design/"
 Repository = "https://github.com/anaregdesign/openaivec"
 
 [build-system]
