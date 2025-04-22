@@ -66,7 +66,7 @@ class TestUDFBuilder(TestCase):
         self.spark.udf.register(
             "fruit",
             self.udf.responses(
-                system_message="return the color and taste of given fruit",
+                instructions="return the color and taste of given fruit",
                 response_format=Fruit,
             ),
         )
