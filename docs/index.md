@@ -1,5 +1,7 @@
 # Getting Started
 
+Welcome to **openaivec**! This library simplifies using **OpenAI**'s powerful models for text vectorization and processing directly within your **Pandas** and **Apache Spark** data workflows.
+
 ## Install
 ```bash
 pip install openaivec

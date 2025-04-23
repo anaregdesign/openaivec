@@ -1,5 +1,7 @@
 # What is this?
 
+**openaivec** is a Python library designed for efficient text processing using the OpenAI API, with seamless integration for both **Pandas** DataFrames and **Apache Spark**. It allows you to leverage the power of **OpenAI** models for tasks like generating embeddings or text responses directly within your data processing workflows.
+
 Let's dive into **Generative Mutation** for tabular data! 
 
 Full API reference is available at [API Reference](https://openaivec.anareg.design/).
