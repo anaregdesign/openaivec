@@ -1,5 +1,7 @@
 site_name: openaivec documentation
-site_url: https://anaregdesign.github.io/openaivec/
+site_url: https://openaivec.anareg.design
+site_description: Library for processing data using OpenAI, compatible with Pandas and Spark DataFrames.
+keywords: Python, OpenAI, Pandas, Apache Spark, vectorization, embeddings, NLP
 theme:
   name: material
 
