@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from unittest import TestCase
 
 from openai import BaseModel
@@ -10,8 +9,6 @@ from openaivec.spark import UDFBuilder, count_tokens_udf
 
 class TestUDFBuilder(TestCase):
     def setUp(self):
-        project_root = Path(__file__).parent.parent
-        policy_path = project_root / "spark.policy"
         self.udf = UDFBuilder.of_openai(
             api_key=os.environ.get("OPENAI_API_KEY"),
             model_name="gpt-4o-mini",
