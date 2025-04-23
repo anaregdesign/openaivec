@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from unittest import TestCase
 
 from openai import BaseModel
@@ -10,29 +9,12 @@ from openaivec.spark import UDFBuilder, count_tokens_udf
 
 class TestUDFBuilder(TestCase):
     def setUp(self):
-        project_root = Path(__file__).parent.parent
-        policy_path = project_root / "spark.policy"
         self.udf = UDFBuilder.of_openai(
             api_key=os.environ.get("OPENAI_API_KEY"),
             model_name="gpt-4o-mini",
             batch_size=8,
         )
-        self.spark: SparkSession = (
-            SparkSession.builder.appName("test")
-            .master("local[*]")
-            .config("spark.ui.enabled", "false")
-            .config("spark.driver.bindAddress", "127.0.0.1")
-            .config("spark.sql.execution.arrow.pyspark.enabled", "true")
-            .config(
-                "spark.driver.extraJavaOptions",
-                "-Djava.security.manager "
-                + f"-Djava.security.policy=file://{policy_path} "
-                + "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED "
-                + "--add-opens=java.base/java.nio=ALL-UNNAMED "
-                + "-Darrow.enable_unsafe=true",
-            )
-            .getOrCreate()
-        )
+        self.spark: SparkSession = SparkSession.builder.getOrCreate()
         self.spark.sparkContext.setLogLevel("INFO")
 
     def tearDown(self):
