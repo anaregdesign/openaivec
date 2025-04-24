@@ -234,24 +234,24 @@ The output will be:
     </Cautions>
     <Examples>
         <Example>
-            <Source>Apple</Source>
-            <Result>Fruit</Result>
+            <Input>Apple</Input>
+            <Output>Fruit</Output>
         </Example>
         <Example>
-            <Source>Car</Source>
-            <Result>Vehicle</Result>
+            <Input>Car</Input>
+            <Output>Vehicle</Output>
         </Example>
         <Example>
-            <Source>Tokyo</Source>
-            <Result>City</Result>
+            <Input>Tokyo</Input>
+            <Output>City</Output>
         </Example>
         <Example>
-            <Source>Keiichi Sogabe</Source>
-            <Result>Musician</Result>
+            <Input>Keiichi Sogabe</Input>
+            <Output>Musician</Output>
         </Example>
         <Example>
-            <Source>America</Source>
-            <Result>Country</Result>
+            <Input>America</Input>
+            <Output>Country</Output>
         </Example>
     </Examples>
 </Prompt>
@@ -307,44 +307,44 @@ Then we will get the improved prompt with extra examples, improved purpose, and 
     </Cautions>
     <Examples>
         <Example>
-            <Source>Apple (as a fruit)</Source>
-            <Result>Fruit</Result>
+            <Input>Apple (as a fruit)</Input>
+            <Output>Fruit</Output>
         </Example>
         <Example>
-            <Source>Apple (as a tech company)</Source>
-            <Result>Technology</Result>
+            <Input>Apple (as a tech company)</Input>
+            <Output>Technology</Output>
         </Example>
         <Example>
-            <Source>Java (as a programming language)</Source>
-            <Result>Technology</Result>
+            <Input>Java (as a programming language)</Input>
+            <Output>Technology</Output>
         </Example>
         <Example>
-            <Source>Java (as an island)</Source>
-            <Result>Geography</Result>
+            <Input>Java (as an island)</Input>
+            <Output>Geography</Output>
         </Example>
         <Example>
-            <Source>Mercury (as a planet)</Source>
-            <Result>Astronomy</Result>
+            <Input>Mercury (as a planet)</Input>
+            <Output>Astronomy</Output>
         </Example>
         <Example>
-            <Source>Mercury (as an element)</Source>
-            <Result>Chemistry</Result>
+            <Input>Mercury (as an element)</Input>
+            <Output>Chemistry</Output>
         </Example>
         <Example>
-            <Source>Bark (as a sound made by a dog)</Source>
-            <Result>Animal Behavior</Result>
+            <Input>Bark (as a sound made by a dog)</Input>
+            <Output>Animal Behavior</Output>
         </Example>
         <Example>
-            <Source>Bark (as the outer covering of a tree)</Source>
-            <Result>Botany</Result>
+            <Input>Bark (as the outer covering of a tree)</Input>
+            <Output>Botany</Output>
         </Example>
         <Example>
-            <Source>Bass (as a type of fish)</Source>
-            <Result>Aquatic Life</Result>
+            <Input>Bass (as a type of fish)</Input>
+            <Output>Aquatic Life</Output>
         </Example>
         <Example>
-            <Source>Bass (as a low-frequency sound)</Source>
-            <Result>Music</Result>
+            <Input>Bass (as a low-frequency sound)</Input>
+            <Output>Music</Output>
         </Example>
     </Examples>
 </Prompt>
