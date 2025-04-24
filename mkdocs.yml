@@ -7,6 +7,20 @@ theme:
   name: material
   features:
     - social
+    - navigation.expand
+    - navigation.sections
+
+nav:
+  - Home: index.md
+  - Examples:
+      - pandas: example/pandas.ipynb
+  - API Reference:
+      - openaivec.md
+      - openaivec::
+          - pandas_ext: pandas_ext.md
+          - spark: spark.md
+          - prompt: prompt.md
+          - util: util.md
 
 extra_files:
   - robots.txt
@@ -18,6 +32,7 @@ extra:
 
 plugins:
   - search
+  - mkdocs-jupyter
   - mkdocstrings:
       handlers:
         python:
