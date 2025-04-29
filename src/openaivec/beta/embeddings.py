@@ -91,6 +91,7 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
         """
         return await map_unique_minibatch_async(inputs, batch_size, self._embed_chunk)
 
+    @observe(_LOGGER)
     def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         """Synchronous public API: generate embeddings for a list of inputs.
 
