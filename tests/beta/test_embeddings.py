@@ -15,7 +15,7 @@ class TestEmbeddingsOpenAI(TestCase):
             model_name=self.model_name,
             is_parallel=False,
         )
-        response = client.create(["apple", "banana", "orange", "pinapple"], batch_size=1)
+        response = client.create(["apple", "banana", "orange", "pineapple"], batch_size=1)
 
         self.assertEqual(len(response), 4)
         for embedding in response:
