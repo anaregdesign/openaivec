@@ -1,11 +1,9 @@
 """Embedding utilities built on top of OpenAI’s embedding endpoint.
 
-This module defines an abstract base class ``VectorizedEmbeddings`` and a
-concrete implementation ``VectorizedEmbeddingsOpenAI`` that delegates the
-actual embedding work to the OpenAI SDK.  The implementation supports
-sequential as well as multiprocess execution (via
-``map_unique_minibatch_parallel``) and applies a generic
-exponential‑back‑off policy when OpenAI’s rate limits are hit.
+This module provides ``VectorizedEmbeddingsOpenAI``, a concrete implementation
+of the ``VectorizedEmbeddings`` abstract base class. It leverages the OpenAI
+SDK for embedding generation, supporting both sequential and asynchronous
+execution with concurrency control and exponential back-off for rate limits.
 """
 
 import asyncio
@@ -28,17 +26,20 @@ _LOGGER: Logger = getLogger(__name__)
 
 @dataclass(frozen=True)
 class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
-    """Thin wrapper around the OpenAI /embeddings endpoint.
+    """Thin wrapper around the OpenAI /embeddings endpoint using async operations.
+
+    This class provides an asynchronous interface for generating embeddings using
+    OpenAI models. It manages concurrency and handles rate limits automatically.
 
     Attributes:
-        client: An already‑configured ``openai.OpenAI`` client.
+        client: An already‑configured ``openai.AsyncOpenAI`` client.
         model_name: The model identifier, e.g. ``"text-embedding-3-small"``.
         max_concurrency: Maximum number of concurrent requests to the OpenAI API.
     """
 
     client: AsyncOpenAI
     model_name: str
-    max_concurrency: int = 10  # Default concurrency limit
+    max_concurrency: int = 8  # Default concurrency limit
     _semaphore: asyncio.Semaphore = field(init=False, repr=False)
 
     def __post_init__(self):
@@ -49,18 +50,21 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
     @observe(_LOGGER)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
     async def _embed_chunk(self, inputs: List[str]) -> List[NDArray[np.float32]]:
-        """Embed one minibatch of sentences.
+        """Embed one minibatch of sentences asynchronously, respecting concurrency limits.
 
-        This private helper is the unit of work used by the map/parallel
-        utilities.  Exponential back‑off is applied automatically when
-        ``openai.RateLimitError`` is raised. It also respects the concurrency limit.
+        This private helper handles the actual API call for a batch of inputs.
+        Exponential back-off is applied automatically when ``openai.RateLimitError``
+        is raised.
 
         Args:
-            inputs: Input strings to be embedded.  Duplicates are allowed; the
-                implementation may decide to de‑duplicate internally.
+            inputs: Input strings to be embedded. Duplicates are allowed.
 
         Returns:
-            List of embedding vectors with the same ordering as *sentences*.
+            List of embedding vectors (``np.ndarray`` with dtype ``float32``)
+            in the same order as *inputs*.
+
+        Raises:
+            openai.RateLimitError: Propagated if retries are exhausted.
         """
         # Acquire semaphore before making the API call
         async with self._semaphore:
@@ -69,43 +73,38 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
 
     @observe(_LOGGER)
     async def create_async(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
-        """See ``VectorizedEmbeddings.create`` for contract details.
+        """Asynchronous public API: generate embeddings for a list of inputs.
 
-        The call is internally delegated to either ``map_unique_minibatch`` or
-        its parallel counterpart depending on *is_parallel*.
+        Uses ``map_unique_minibatch_async`` to efficiently handle batching and
+        de-duplication.
 
         Args:
-            inputs: A list of input strings. Duplicates are allowed; the
-                implementation may decide to de‑duplicate internally.
-            batch_size: Maximum number of sentences to be sent to the underlying
-                model in one request.
+            inputs: A list of input strings. Duplicates are handled efficiently.
+            batch_size: Maximum number of unique inputs per API call.
 
         Returns:
             A list of ``np.ndarray`` objects (dtype ``float32``) where each entry
-                is the embedding of the corresponding sentence in *sentences*.
+            is the embedding of the corresponding string in *inputs*.
 
         Raises:
-            openai.RateLimitError: Propagated if retries are exhausted.
+            openai.RateLimitError: Propagated if retries are exhausted during API calls.
         """
         return await map_unique_minibatch_async(inputs, batch_size, self._embed_chunk)
 
     def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
-        """See ``VectorizedEmbeddings.create`` for contract details.
+        """Synchronous public API: generate embeddings for a list of inputs.
 
-        The call is internally delegated to either ``map_unique_minibatch`` or
-        its parallel counterpart depending on *is_parallel*.
+        This method wraps the asynchronous ``create_async`` method using ``asyncio.run``.
 
         Args:
-            inputs: A list of input strings. Duplicates are allowed; the
-                implementation may decide to de‑duplicate internally.
-            batch_size: Maximum number of sentences to be sent to the underlying
-                model in one request.
+            inputs: A list of input strings. Duplicates are handled efficiently.
+            batch_size: Maximum number of unique inputs per API call.
 
         Returns:
             A list of ``np.ndarray`` objects (dtype ``float32``) where each entry
-                is the embedding of the corresponding sentence in *sentences*.
+            is the embedding of the corresponding string in *inputs*.
 
         Raises:
-            openai.RateLimitError: Propagated if retries are exhausted.
+            openai.RateLimitError: Propagated if retries are exhausted during API calls.
         """
         return asyncio.run(self.create_async(inputs, batch_size))
