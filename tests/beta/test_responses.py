@@ -26,9 +26,9 @@ class TestVectorizedResponsesOpenAI(TestCase):
             model_name=self.model_name,
             system_message=system_message,
         )
-        response: List[str] = client.parse(["apple", "orange", "banana", "pinapple"], batch_size=1)
+        response: List[str] = client.parse(["apple", "orange", "banana", "pineapple"], batch_size=1)
 
-        self.assertListEqual(response, ["apple", "orange", "banana", "pinapple"])
+        self.assertListEqual(response, ["apple", "orange", "banana", "pineapple"])
 
     def test_parse_structured(self):
         system_message = """
