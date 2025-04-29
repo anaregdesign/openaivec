@@ -40,7 +40,6 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
 
     client: AsyncOpenAI
     model_name: str
-    is_parallel: bool = False
 
     @observe(_LOGGER)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)

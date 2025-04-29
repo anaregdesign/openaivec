@@ -18,6 +18,31 @@ _LOGGER = getLogger(__name__)
 
 @dataclass(frozen=True)
 class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
+    """Stateless façade that turns OpenAI's JSON-mode API into a batched API (Async version).
+
+    This wrapper allows you to submit *multiple* user prompts in one JSON-mode
+    request and receive the answers in the original order asynchronously.
+
+    Example:
+        ```python
+        vector_llm = VectorizedResponsesOpenAI(
+            client=openai_async_client,
+            model_name="gpt-4o-mini",
+            system_message="You are a helpful assistant."
+        )
+        answers = await vector_llm.parse(questions, batch_size=32)
+        ```
+
+    Attributes:
+        client: Initialised `openai.AsyncOpenAI` client.
+        model_name: Name of the model (or Azure deployment) to invoke.
+        system_message: System prompt prepended to every request.
+        temperature: Sampling temperature passed to the model.
+        top_p: Nucleus-sampling parameter.
+        response_format: Expected Pydantic type of each assistant message
+            (defaults to `str`).
+    """
+
     client: AsyncOpenAI
     model_name: str  # it would be the name of deployment for Azure
     system_message: str
@@ -37,6 +62,21 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
     @observe(_LOGGER)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
     async def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
+        """Make a single async call to the OpenAI *JSON mode* endpoint.
+
+        Args:
+            user_messages: Sequence of `Message[str]` objects representing the
+                prompts for this minibatch. Each message carries a unique `id`
+                so we can restore ordering later.
+
+        Returns:
+            ParsedResponse containing `Response[T]` which in turn holds the
+            assistant messages in arbitrary order.
+
+        Raises:
+            openai.RateLimitError: Transparently re-raised after the
+                exponential back-off decorator exhausts all retries.
+        """
         response_format = self.response_format
 
         class MessageT(BaseModel):
@@ -59,6 +99,16 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
 
     @observe(_LOGGER)
     async def _predict_chunk(self, user_messages: List[str]) -> List[T]:
+        """Helper executed asynchronously for every unique minibatch.
+
+        This method:
+        1. Converts plain strings into `Message[str]` with stable indices.
+        2. Delegates the request to `_request_llm`.
+        3. Reorders the responses so they match the original indices.
+
+        The function is *pure* – it has no side-effects and the result depends
+        only on its arguments.
+        """
         messages = [Message(id=i, body=message) for i, message in enumerate(user_messages)]
         responses: ParsedResponse[Response[T]] = await self._request_llm(messages)
         response_dict = {message.id: message.body for message in responses.output_parsed.assistant_messages}
@@ -67,6 +117,17 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
 
     @observe(_LOGGER)
     def parse(self, inputs: List[str], batch_size: int) -> List[T]:
+        """Public API: batched predict using asyncio.
+
+        Args:
+            inputs: All prompts that require a response. Duplicate
+                entries are de-duplicated under the hood to save tokens.
+            batch_size: Maximum number of *unique* prompts per LLM call.
+
+        Returns:
+            A list containing the assistant responses in the same order as
+                *inputs*.
+        """
         return asyncio.run(
             map_unique_minibatch_async(
                 inputs,

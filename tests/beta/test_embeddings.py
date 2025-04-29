@@ -13,7 +13,6 @@ class TestEmbeddingsOpenAI(TestCase):
         client = VectorizedEmbeddingsOpenAI(
             client=self.openai_client,
             model_name=self.model_name,
-            is_parallel=False,
         )
         response = client.create(["apple", "banana", "orange", "pinapple"], batch_size=1)
 
