@@ -1,10 +1,11 @@
+import asyncio
 import functools
 import re
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
 from itertools import chain
-from typing import Callable, List, Optional, TypeVar
+from typing import Awaitable, Callable, List, Optional, TypeVar
 
 import numpy as np
 import tiktoken
@@ -43,6 +44,23 @@ def map_minibatch(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) 
     """
     batches = split_to_minibatch(b, batch_size)
     return list(chain.from_iterable(f(batch) for batch in batches))
+
+
+async def map_minibatch_async(b: List[T], batch_size: int, f: Callable[[List[T]], Awaitable[List[U]]]) -> List[U]:
+    """Asynchronous version of :func:`map_minibatch`.
+
+    Args:
+        b (List[T]): Input list.
+        batch_size (int): Batch size passed to :func:`split_to_minibatch`.
+        f (Callable[[List[T]], Awaitable[List[U]]): Asynchronous function executed on every batch.
+
+    Returns:
+        List[U]: Flattened list obtained by concatenating the results returned
+            by ``f`` for each batch, gathered concurrently.
+    """
+    batches: List[List[T]] = split_to_minibatch(b, batch_size)
+    results: List[List[U]] = await asyncio.gather(*[f(batch) for batch in batches])
+    return list(chain.from_iterable(results))
 
 
 def map_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
@@ -95,6 +113,27 @@ def map_unique_minibatch(b: List[T], batch_size: int, f: Callable[[List[T]], Lis
         List[U]: Result list aligned with the original order of ``b``.
     """
     return map_unique(b, lambda x: map_minibatch(x, batch_size, f))
+
+
+async def map_unique_minibatch_async(
+    b: List[T], batch_size: int, f: Callable[[List[T]], Awaitable[List[U]]]
+) -> List[U]:
+    """Asynchronous version of :func:`map_unique_minibatch`.
+
+    Applies an asynchronous function `f` concurrently to mini-batches of unique values from `b`.
+
+    Args:
+        b (List[T]): Input list that may contain duplicates.
+        batch_size (int): Batch size for mini-batch processing.
+        f (Callable[[List[T]], Awaitable[List[U]]): Asynchronous function to apply to unique values.
+
+    Returns:
+        List[U]: Result list aligned with the original order of ``b``.
+    """
+    unique_values = list(dict.fromkeys(b))
+    value_to_index = {v: i for i, v in enumerate(unique_values)}
+    unique_results: List[U] = await map_minibatch_async(unique_values, batch_size, f)
+    return [unique_results[value_to_index[value]] for value in b]
 
 
 def map_unique_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
