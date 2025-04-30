@@ -25,7 +25,7 @@ _LOGGER: Logger = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
+class VectorizedEmbeddingsOpenAI:
     """Thin wrapper around the OpenAI /embeddings endpoint using async operations.
 
     This class provides an asynchronous interface for generating embeddings using

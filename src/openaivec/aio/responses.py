@@ -17,7 +17,7 @@ _LOGGER = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
+class VectorizedResponsesOpenAI(Generic[T]):
     """Stateless façade that turns OpenAI's JSON-mode API into a batched API (Async version).
 
     This wrapper allows you to submit *multiple* user prompts in one JSON-mode
