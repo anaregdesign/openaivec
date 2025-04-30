@@ -15,7 +15,6 @@ import numpy as np
 from numpy.typing import NDArray
 from openai import AsyncOpenAI, RateLimitError
 
-from openaivec.embeddings import VectorizedEmbeddings
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch_async
 

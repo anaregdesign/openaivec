@@ -7,7 +7,7 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.responses import Message, Request, Response, VectorizedResponses, _vectorize_system_message
+from openaivec.responses import Message, Request, Response, _vectorize_system_message
 from openaivec.util import backoff, map_unique_minibatch_async
 
 __all__ = ["VectorizedResponsesOpenAI"]
