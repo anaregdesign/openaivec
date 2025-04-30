@@ -87,7 +87,3 @@ class TestMinibatchUtil(TestCase):
 
         self.assertIn("Number of unique inputs", str(cm.exception))
         self.assertIn("does not match number of unique outputs", str(cm.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()
