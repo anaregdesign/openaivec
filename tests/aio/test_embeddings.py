@@ -1,7 +1,7 @@
 from unittest import TestCase
 from openai import AsyncOpenAI
 
-from openaivec.aio.embeddings import VectorizedEmbeddingsOpenAI
+from openaivec.aio.embeddings import AsyncBatchEmbeddings
 
 
 class TestEmbeddingsOpenAI(TestCase):
@@ -10,7 +10,7 @@ class TestEmbeddingsOpenAI(TestCase):
         self.model_name = "text-embedding-3-small"
 
     def test_create(self):
-        client = VectorizedEmbeddingsOpenAI(
+        client = AsyncBatchEmbeddings(
             client=self.openai_client,
             model_name=self.model_name,
         )

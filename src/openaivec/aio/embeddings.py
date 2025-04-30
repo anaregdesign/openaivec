@@ -18,13 +18,13 @@ from openai import AsyncOpenAI, RateLimitError
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch_async
 
-__all__ = ["VectorizedEmbeddingsOpenAI"]
+__all__ = ["AsyncBatchEmbeddings"]
 
 _LOGGER: Logger = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class VectorizedEmbeddingsOpenAI:
+class AsyncBatchEmbeddings:
     """Thin wrapper around the OpenAI /embeddings endpoint using async operations.
 
     This class provides an asynchronous interface for generating embeddings using
