@@ -72,6 +72,10 @@ class TestMinibatchUtil(TestCase):
         self.assertEqual(self.minibatch_util.hash_outputs[hash(1)], 2)
         self.assertEqual(self.minibatch_util.hash_outputs[hash(2)], 4)
         self.assertEqual(self.minibatch_util.hash_outputs[hash(3)], 6)
+        self.assertListEqual(
+            self.minibatch_util.outputs,
+            [2, 4, 2, 6, 4],
+        )
 
     def test_map_value_error_on_invalid_output_count(self):
         """Test that ValueError is raised when calling map with a function that returns an incorrect number of outputs"""

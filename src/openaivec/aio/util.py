@@ -7,7 +7,7 @@ U = TypeVar("U")
 
 
 @dataclass
-class MinibatchUtil(Generic[T], Generic[U]):
+class MinibatchUtil(Generic[T, U]):
     """Utility class for applying an asynchronous function to a list of inputs in minibatches.
 
     This class helps manage batching and asynchronous execution of a function `f`
