@@ -5,7 +5,7 @@ from unittest import TestCase
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
-from openaivec.beta.responses import VectorizedResponsesOpenAI
+from openaivec.aio.responses import VectorizedResponsesOpenAI
 
 _h: Handler = StreamHandler()
 

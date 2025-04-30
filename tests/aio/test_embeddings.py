@@ -1,7 +1,7 @@
 from unittest import TestCase
 from openai import AsyncOpenAI
 
-from openaivec.beta.embeddings import VectorizedEmbeddingsOpenAI
+from openaivec.aio.embeddings import VectorizedEmbeddingsOpenAI
 
 
 class TestEmbeddingsOpenAI(TestCase):
@@ -14,7 +14,7 @@ class TestEmbeddingsOpenAI(TestCase):
             client=self.openai_client,
             model_name=self.model_name,
         )
-        response = client.create(["apple", "banana", "orange", "pineapple"], batch_size=1)
+        response = client.create(["apple", "banana", "orange", "pinapple"], batch_size=1)
 
         self.assertEqual(len(response), 4)
         for embedding in response:
