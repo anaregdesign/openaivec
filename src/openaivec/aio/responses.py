@@ -8,16 +8,17 @@ from pydantic import BaseModel
 
 from openaivec.log import observe
 from openaivec.responses import Message, Request, Response, _vectorize_system_message
-from openaivec.util import backoff, map_unique_minibatch_async
+from openaivec.util import backoff
+from openaivec.aio import map
 
-__all__ = ["VectorizedResponsesOpenAI"]
+__all__ = ["AsyncBatchResponses"]
 
 T = TypeVar("T")
 _LOGGER = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class VectorizedResponsesOpenAI(Generic[T]):
+class AsyncBatchResponses(Generic[T]):
     """Stateless façade that turns OpenAI's JSON-mode API into a batched API (Async version).
 
     This wrapper allows you to submit *multiple* user prompts in one JSON-mode
@@ -131,7 +132,7 @@ class VectorizedResponsesOpenAI(Generic[T]):
         return sorted_responses
 
     @observe(_LOGGER)
-    async def parse_async(self, inputs: List[str], batch_size: int) -> List[T]:
+    async def parse(self, inputs: List[str], batch_size: int) -> List[T]:
         """Asynchronous public API: batched predict.
 
         Args:
@@ -143,25 +144,8 @@ class VectorizedResponsesOpenAI(Generic[T]):
             A list containing the assistant responses in the same order as
                 *inputs*.
         """
-        return await map_unique_minibatch_async(
-            inputs,
-            batch_size,
-            self._predict_chunk,
+        return await map(
+            inputs=inputs,
+            f=self._predict_chunk,
+            batch_size=batch_size,  # Use the batch_size argument passed to the method
         )
-
-    @observe(_LOGGER)
-    def parse(self, inputs: List[str], batch_size: int) -> List[T]:
-        """Synchronous public API: batched predict.
-
-        This method wraps the asynchronous `parse_async` method using `asyncio.run`.
-
-        Args:
-            inputs: All prompts that require a response. Duplicate
-                entries are de-duplicated under the hood to save tokens.
-            batch_size: Maximum number of *unique* prompts per LLM call.
-
-        Returns:
-            A list containing the assistant responses in the same order as
-                *inputs*.
-        """
-        return asyncio.run(self.parse_async(inputs, batch_size))
