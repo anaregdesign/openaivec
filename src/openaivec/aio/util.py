@@ -24,7 +24,7 @@ async def map(inputs: List[T], f: Callable[[List[T]], Awaitable[List[U]]], batch
     Returns:
         List[U]: List of outputs corresponding to the original inputs, in order.
     """
-    original_hashes: List[int] = [v.__hash__() for v in inputs]
+    original_hashes: List[int] = [hash(v) for v in inputs]
     hash_inputs: Dict[int, T] = {k: v for k, v in zip(original_hashes, inputs)}
     unique_hashes: List[int] = list(hash_inputs.keys())
     unique_inputs: List[T] = list(hash_inputs.values())
