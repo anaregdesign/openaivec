@@ -164,7 +164,7 @@ def test_extract_series_model_with_none(sample_series_fruit_model_with_none):
     extracted_df = sample_series_fruit_model_with_none.ai.extract()
     expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
-    assert extracted_df.iloc[1].isna().all()  # Check row with None is NaN
+    assert extracted_df.iloc[1].isna().all()
     assert extracted_df.shape == (3, 3)
 
 
@@ -172,7 +172,7 @@ def test_extract_series_model_with_invalid(sample_series_fruit_model_with_invali
     extracted_df = sample_series_fruit_model_with_invalid.ai.extract()
     expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
-    assert extracted_df.iloc[1].isna().all()  # Check invalid row is NaN
+    assert extracted_df.iloc[1].isna().all()
     assert extracted_df.shape == (3, 3)
 
 
@@ -214,7 +214,7 @@ def test_extract_dataframe_dict_with_none(sample_df_extract_dict_with_none):
     extracted_df = sample_df_extract_dict_with_none.ai.extract("fruit")
     expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
-    assert extracted_df.iloc[1].isna().all()  # Check row with None is NaN
+    assert extracted_df.iloc[1].isna().all()
     assert extracted_df.shape == (3, 4)
 
 
@@ -224,7 +224,7 @@ def test_extract_dataframe_with_invalid(sample_df_extract_with_invalid):
     extracted_df = sample_df_extract_with_invalid.ai.extract("fruit")
     expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
-    assert extracted_df.iloc[1].isna().all()  # Check invalid row results in NaNs
+    assert extracted_df.iloc[1].isna().all()
     assert extracted_df.shape == (3, 4)
 
 
