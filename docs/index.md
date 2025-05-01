@@ -2,6 +2,11 @@
 
 Welcome to **openaivec**! This library simplifies using **OpenAI**'s powerful models for text vectorization and processing directly within your **Pandas** and **Apache Spark** data workflows.
 
+Example:
+```python
+fruits_fr: pd.Series = fruits.ai.responses("Translate this fruit name into French.") 
+```
+
 ## Install
 ```bash
 pip install openaivec
