@@ -16,7 +16,8 @@ from numpy.typing import NDArray
 from openai import AsyncOpenAI, RateLimitError
 
 from openaivec.log import observe
-from openaivec.util import backoff, map_unique_minibatch_async
+from openaivec.util import backoff
+from openaivec.aio import map
 
 __all__ = ["AsyncBatchEmbeddings"]
 
@@ -71,11 +72,10 @@ class AsyncBatchEmbeddings:
             return [np.array(d.embedding, dtype=np.float32) for d in responses.data]
 
     @observe(_LOGGER)
-    async def create_async(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
+    async def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         """Asynchronous public API: generate embeddings for a list of inputs.
 
-        Uses ``map_unique_minibatch_async`` to efficiently handle batching and
-        de-duplication.
+        Uses ``openaivec.aio.map`` to efficiently handle batching and de-duplication.
 
         Args:
             inputs: A list of input strings. Duplicates are handled efficiently.
@@ -88,23 +88,4 @@ class AsyncBatchEmbeddings:
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted during API calls.
         """
-        return await map_unique_minibatch_async(inputs, batch_size, self._embed_chunk)
-
-    @observe(_LOGGER)
-    def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
-        """Synchronous public API: generate embeddings for a list of inputs.
-
-        This method wraps the asynchronous ``create_async`` method using ``asyncio.run``.
-
-        Args:
-            inputs: A list of input strings. Duplicates are handled efficiently.
-            batch_size: Maximum number of unique inputs per API call.
-
-        Returns:
-            A list of ``np.ndarray`` objects (dtype ``float32``) where each entry
-            is the embedding of the corresponding string in *inputs*.
-
-        Raises:
-            openai.RateLimitError: Propagated if retries are exhausted during API calls.
-        """
-        return asyncio.run(self.create_async(inputs, batch_size))
+        return await map(inputs, self._embed_chunk, batch_size)
