@@ -39,6 +39,7 @@ dev = [
     "pyarrow>=19.0.1",
     "pyspark>=3.5.5",
     "pytest>=8.3.5",
+    "pytest-asyncio",
     "python-dotenv>=1.1.0",
     "ruff>=0.11.5",
 ]
