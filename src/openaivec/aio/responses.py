@@ -7,30 +7,37 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.responses import Message, Request, Response, VectorizedResponses, _vectorize_system_message
-from openaivec.util import backoff, map_unique_minibatch_async
+from openaivec.responses import Message, Request, Response, _vectorize_system_message
+from openaivec.util import backoff
+from openaivec.aio import map
 
-__all__ = ["VectorizedResponsesOpenAI"]
+__all__ = ["AsyncBatchResponses"]
 
 T = TypeVar("T")
 _LOGGER = getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
+class AsyncBatchResponses(Generic[T]):
     """Stateless façade that turns OpenAI's JSON-mode API into a batched API (Async version).
 
     This wrapper allows you to submit *multiple* user prompts in one JSON-mode
-    request and receive the answers in the original order asynchronously.
+    request and receive the answers in the original order asynchronously. It also
+    controls the maximum number of concurrent requests to the OpenAI API.
 
     Example:
         ```python
         vector_llm = VectorizedResponsesOpenAI(
             client=openai_async_client,
             model_name="gpt-4o-mini",
-            system_message="You are a helpful assistant."
+            system_message="You are a helpful assistant.",
+            max_concurrency=5  # Limit concurrent requests
         )
-        answers = await vector_llm.parse(questions, batch_size=32)
+        # Asynchronous call
+        answers_async = await vector_llm.parse_async(questions, batch_size=32)
+        # Synchronous call
+        answers_sync = vector_llm.parse(questions, batch_size=32)
+
         ```
 
     Attributes:
@@ -41,6 +48,7 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
         top_p: Nucleus-sampling parameter.
         response_format: Expected Pydantic type of each assistant message
             (defaults to `str`).
+        max_concurrency: Maximum number of concurrent requests to the OpenAI API.
     """
 
     client: AsyncOpenAI
@@ -49,8 +57,10 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
     temperature: float = 0.0
     top_p: float = 1.0
     response_format: Type[T] = str
+    max_concurrency: int = 8  # Default concurrency limit
     _vectorized_system_message: str = field(init=False)
     _model_json_schema: dict = field(init=False)
+    _semaphore: asyncio.Semaphore = field(init=False, repr=False)
 
     def __post_init__(self):
         object.__setattr__(
@@ -58,11 +68,14 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
             "_vectorized_system_message",
             _vectorize_system_message(self.system_message),
         )
+        # Initialize the semaphore after the object is created
+        # Use object.__setattr__ because the dataclass is frozen
+        object.__setattr__(self, "_semaphore", asyncio.Semaphore(self.max_concurrency))
 
     @observe(_LOGGER)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
     async def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
-        """Make a single async call to the OpenAI *JSON mode* endpoint.
+        """Make a single async call to the OpenAI *JSON mode* endpoint, respecting concurrency limits.
 
         Args:
             user_messages: Sequence of `Message[str]` objects representing the
@@ -86,16 +99,18 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
         class ResponseT(BaseModel):
             assistant_messages: List[MessageT]
 
-        # Directly await the async call instead of using asyncio.run()
-        completion: ParsedResponse[ResponseT] = await self.client.responses.parse(
-            model=self.model_name,
-            instructions=self._vectorized_system_message,
-            input=Request(user_messages=user_messages).model_dump_json(),
-            temperature=self.temperature,
-            top_p=self.top_p,
-            text_format=ResponseT,
-        )
-        return cast(ParsedResponse[Response[T]], completion)
+        # Acquire semaphore before making the API call
+        async with self._semaphore:
+            # Directly await the async call instead of using asyncio.run()
+            completion: ParsedResponse[ResponseT] = await self.client.responses.parse(
+                model=self.model_name,
+                instructions=self._vectorized_system_message,
+                input=Request(user_messages=user_messages).model_dump_json(),
+                temperature=self.temperature,
+                top_p=self.top_p,
+                text_format=ResponseT,
+            )
+            return cast(ParsedResponse[Response[T]], completion)
 
     @observe(_LOGGER)
     async def _predict_chunk(self, user_messages: List[str]) -> List[T]:
@@ -112,12 +127,13 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
         messages = [Message(id=i, body=message) for i, message in enumerate(user_messages)]
         responses: ParsedResponse[Response[T]] = await self._request_llm(messages)
         response_dict = {message.id: message.body for message in responses.output_parsed.assistant_messages}
-        sorted_responses = [response_dict.get(m.id, None) for m in messages]
+        # Ensure None is returned for missing IDs, though this shouldn't happen in normal operation
+        sorted_responses = [response_dict.get(m.id) for m in messages]
         return sorted_responses
 
     @observe(_LOGGER)
-    def parse(self, inputs: List[str], batch_size: int) -> List[T]:
-        """Public API: batched predict using asyncio.
+    async def parse(self, inputs: List[str], batch_size: int) -> List[T]:
+        """Asynchronous public API: batched predict.
 
         Args:
             inputs: All prompts that require a response. Duplicate
@@ -128,10 +144,8 @@ class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
             A list containing the assistant responses in the same order as
                 *inputs*.
         """
-        return asyncio.run(
-            map_unique_minibatch_async(
-                inputs,
-                batch_size,
-                self._predict_chunk,
-            )
+        return await map(
+            inputs=inputs,
+            f=self._predict_chunk,
+            batch_size=batch_size,  # Use the batch_size argument passed to the method
         )
