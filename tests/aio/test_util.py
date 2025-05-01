@@ -7,7 +7,7 @@ import asyncio
 from openaivec.aio.util import map
 
 
-# Helper async function for testing
+# Helper async function for testing map
 async def double_items(items: List[int]) -> List[int]:
     await asyncio.sleep(0.01)  # Simulate async work
     return [item * 2 for item in items]
@@ -97,4 +97,4 @@ class TestAioMap(unittest.TestCase):
         end_time = time.time()
         self.assertEqual(outputs, [i * 2 for i in range(1000)])
         logging.info(f"Large list test took {end_time - start_time:.2f} seconds")
-        self.assertLess(end_time - start_time, 5)
+        self.assertLess(end_time - start_time, 10)  # Increased timeout

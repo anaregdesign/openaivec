@@ -1,8 +1,7 @@
 import asyncio
-from functools import wraps
 from typing import Awaitable, Callable, Dict, List, TypeVar, Coroutine, Any
 
-__all__ = ["map", "as_sync"]  # Corrected __all__
+__all__ = ["map"]
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -42,32 +41,3 @@ async def map(inputs: List[T], f: Callable[[List[T]], Awaitable[List[U]]], batch
     hash_outputs: Dict[int, U] = {k: v for k, v in zip(unique_hashes, unique_outputs)}
     outputs: List[U] = [hash_outputs[k] for k in original_hashes]
     return outputs
-
-
-def as_sync(func: Callable[..., Coroutine[Any, Any, S]]) -> Callable[..., S]:
-    """Decorator to run an async function synchronously.
-
-    This decorator wraps an asynchronous function, allowing it to be called
-    from synchronous code. It attempts to use the existing running event loop
-    if one exists, otherwise it creates a new event loop using `asyncio.run`.
-
-    Args:
-        func: The asynchronous function to wrap.
-
-    Returns:
-        A synchronous wrapper function that executes the original async function
-        and returns its result.
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs) -> S:
-        try:
-            loop = asyncio.get_running_loop()
-
-        except RuntimeError:
-            return asyncio.run(func(*args, **kwargs))
-
-        else:
-            return loop.run_until_complete(func(*args, **kwargs))
-
-    return wrapper
