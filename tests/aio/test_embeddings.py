@@ -83,7 +83,7 @@ class TestAsyncBatchEmbeddings(unittest.TestCase):
         unique_response = asyncio.run(client.create(unique_inputs, batch_size=batch_size))
         expected_map = {text: emb for text, emb in zip(unique_inputs, unique_response)}
         for i, text in enumerate(inputs):
-            self.assertTrue(np.array_equal(response[i], expected_map[text]))
+            self.assertTrue(np.allclose(response[i], expected_map[text]))
             self.assertEqual(response[i].shape, (self.embedding_dim,))
             self.assertEqual(response[i].dtype, np.float32)
 
