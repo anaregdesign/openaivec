@@ -97,4 +97,4 @@ class TestAioMap(unittest.TestCase):
         end_time = time.time()
         self.assertEqual(outputs, [i * 2 for i in range(1000)])
         logging.info(f"Large list test took {end_time - start_time:.2f} seconds")
-        self.assertLess(end_time - start_time, 10)  # Increased timeout
+        self.assertLess(end_time - start_time, 10)

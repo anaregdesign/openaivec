@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable, Callable, Dict, List, TypeVar, Coroutine, Any
+from typing import Awaitable, Callable, Dict, List, TypeVar
 
 __all__ = ["map"]
 
