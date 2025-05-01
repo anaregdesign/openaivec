@@ -95,5 +95,5 @@ class TestAioMap(unittest.TestCase):
         outputs = asyncio.run(map(inputs, double_items, batch_size=50))
         end_time = time.time()
         self.assertEqual(outputs, [i * 2 for i in range(1000)])
-        print(f"Large list test took {end_time - start_time:.2f} seconds")
+        logging.info(f"Large list test took {end_time - start_time:.2f} seconds")
         self.assertLess(end_time - start_time, 5)
