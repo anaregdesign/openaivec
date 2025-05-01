@@ -41,7 +41,7 @@ _LOGGER = logging.getLogger(__name__)
 T = TypeVar("T")
 
 _CLIENT: AsyncOpenAI | None = None
-_RESPONSES_MODEL_NAME = "gpt-4.1-mini"
+_RESPONSES_MODEL_NAME = "gpt-4o-mini"
 _EMBEDDINGS_MODEL_NAME = "text-embedding-3-small"
 
 _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
@@ -182,18 +182,19 @@ class OpenAIVecSeriesAccessor:
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
 
-    def responses(
+    async def responses(
         self,
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
     ) -> pd.Series:
-        """Call an LLM once for every Series element.
+        """Call an LLM once for every Series element (asynchronously).
 
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.responses("translate to French")
+            # Must be awaited
+            results = await animals.ai.responses("translate to French")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -209,30 +210,36 @@ class OpenAIVecSeriesAccessor:
 
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
+
+        Note:
+            This is an asynchronous method and must be awaited.
         """
         client: AsyncBatchResponses = AsyncBatchResponses(
             client=_get_openai_client(),
             model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,
-            is_parallel=True,
             response_format=response_format,
             temperature=0,
             top_p=1,
         )
 
+        # Await the async operation
+        results = await client.parse(self._obj.tolist(), batch_size=batch_size)
+
         return pd.Series(
-            client.parse(self._obj.tolist(), batch_size=batch_size),
+            results,
             index=self._obj.index,
             name=self._obj.name,
         )
 
-    def embeddings(self, batch_size: int = 128) -> pd.Series:
-        """Compute OpenAI embeddings for every Series element.
+    async def embeddings(self, batch_size: int = 128) -> pd.Series:
+        """Compute OpenAI embeddings for every Series element (asynchronously).
 
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.embeddings()
+            # Must be awaited
+            embeddings = await animals.ai.embeddings()
             ```
             This method returns a Series of numpy arrays, each containing the
             embedding vector for the corresponding input.
@@ -246,15 +253,20 @@ class OpenAIVecSeriesAccessor:
         Returns:
             pandas.Series: Series whose values are ``np.ndarray`` objects
                 (dtype ``float32``).
+
+        Note:
+            This is an asynchronous method and must be awaited.
         """
         client: AsyncBatchEmbeddings = AsyncBatchEmbeddings(
             client=_get_openai_client(),
             model_name=_EMBEDDINGS_MODEL_NAME,
-            is_parallel=True,
         )
 
+        # Await the async operation
+        results = await client.create(self._obj.tolist(), batch_size=batch_size)
+
         return pd.Series(
-            client.create(self._obj.tolist(), batch_size=batch_size),
+            results,
             index=self._obj.index,
             name=self._obj.name,
         )
@@ -344,13 +356,13 @@ class OpenAIVecDataFrameAccessor:
             .pipe(lambda df: df.drop(columns=[column], axis=1))
         )
 
-    def responses(
+    async def responses(
         self,
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
     ) -> pd.Series:
-        """Generate a response for each row after serialising it to JSON.
+        """Generate a response for each row after serialising it to JSON (asynchronously).
 
         Example:
             ```python
@@ -359,7 +371,8 @@ class OpenAIVecDataFrameAccessor:
                 {"name": "dog", "legs": 4},
                 {"name": "elephant", "legs": 4},
             ])
-            df.ai.responses("what is the animal's name?")
+            # Must be awaited
+            results = await df.ai.responses("what is the animal's name?")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -376,15 +389,20 @@ class OpenAIVecDataFrameAccessor:
 
         Returns:
             pandas.Series: Responses aligned with the DataFrame’s original index.
+
+        Note:
+            This is an asynchronous method and must be awaited.
         """
-        return self._obj.pipe(
+        series_of_json = self._obj.pipe(
             lambda df: (
-                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index, name="record"))
-                .map(lambda x: json.dumps(x, ensure_ascii=False))
-                .ai.responses(
-                    instructions=instructions,
-                    response_format=response_format,
-                    batch_size=batch_size,
+                pd.Series(df.to_dict(orient="records"), index=df.index, name="record").map(
+                    lambda x: json.dumps(x, ensure_ascii=False)
                 )
             )
+        )
+        # Await the call to the async Series method
+        return await series_of_json.ai.responses(
+            instructions=instructions,
+            response_format=response_format,
+            batch_size=batch_size,
         )
