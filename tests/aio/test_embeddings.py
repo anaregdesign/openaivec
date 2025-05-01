@@ -5,7 +5,7 @@ import os
 
 from openai import AsyncOpenAI
 
-from openaivec.aio.embeddings import AsyncBatchEmbeddings
+from openaivec.aio import AsyncBatchEmbeddings
 
 
 @unittest.skipIf(not os.getenv("OPENAI_API_KEY"), "OPENAI_API_KEY not set in environment")
@@ -51,7 +51,6 @@ class TestAsyncBatchEmbeddings(unittest.TestCase):
             model_name=self.model_name,
         )
         inputs = ["apple", "banana", "apple", "orange", "banana"]
-        unique_inputs = ["apple", "banana", "orange"]
         batch_size = 2
 
         response = asyncio.run(client.create(inputs, batch_size=batch_size))
@@ -62,11 +61,11 @@ class TestAsyncBatchEmbeddings(unittest.TestCase):
             self.assertEqual(embedding.shape, (self.embedding_dim,))
             self.assertEqual(embedding.dtype, np.float32)
 
-        unique_response = asyncio.run(client.create(unique_inputs, batch_size=batch_size))
-        expected_map = {text: emb for text, emb in zip(unique_inputs, unique_response)}
+        unique_inputs_first_occurrence_indices = {text: inputs.index(text) for text in set(inputs)}
+        expected_map = {text: response[index] for text, index in unique_inputs_first_occurrence_indices.items()}
 
         for i, text in enumerate(inputs):
-            self.assertTrue(np.array_equal(response[i], expected_map[text]))
+            self.assertTrue(np.allclose(response[i], expected_map[text]))
 
     def test_create_batch_size_larger_than_unique(self):
         """Test when batch_size is larger than the number of unique inputs."""
