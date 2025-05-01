@@ -3,9 +3,8 @@ import unittest
 from typing import List, Any
 import time
 import asyncio
-from functools import wraps  # Ensure wraps is imported
 
-from openaivec.aio.util import map, as_sync
+from openaivec.aio.util import map
 
 
 # Helper async function for testing

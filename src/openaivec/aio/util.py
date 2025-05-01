@@ -1,7 +1,6 @@
 import asyncio
 from functools import wraps
 from typing import Awaitable, Callable, Dict, List, TypeVar, Coroutine, Any
-import time  # Added for potential sleep fallback
 
 __all__ = ["map", "as_sync"]  # Corrected __all__
 
