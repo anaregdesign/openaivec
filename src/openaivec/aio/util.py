@@ -3,6 +3,7 @@ from typing import Awaitable, Callable, Dict, List, TypeVar
 
 __all__ = ["map"]
 
+S = TypeVar("S")
 T = TypeVar("T")
 U = TypeVar("U")
 
@@ -24,12 +25,14 @@ async def map(inputs: List[T], f: Callable[[List[T]], Awaitable[List[U]]], batch
     Returns:
         List[U]: List of outputs corresponding to the original inputs, in order.
     """
-    original_hashes: List[int] = [hash(v) for v in inputs]
+    original_hashes: List[int] = [hash(str(v)) for v in inputs]  # Use str(v) for hash if T is not hashable
     hash_inputs: Dict[int, T] = {k: v for k, v in zip(original_hashes, inputs)}
     unique_hashes: List[int] = list(hash_inputs.keys())
     unique_inputs: List[T] = list(hash_inputs.values())
     input_batches: List[List[T]] = [unique_inputs[i : i + batch_size] for i in range(0, len(unique_inputs), batch_size)]
-    output_batches: List[List[U]] = await asyncio.gather(*[f(batch) for batch in input_batches])
+    # Ensure f is awaited correctly within gather
+    tasks = [f(batch) for batch in input_batches]
+    output_batches: List[List[U]] = await asyncio.gather(*tasks)
     unique_outputs: List[U] = [u for batch in output_batches for u in batch]
     if len(unique_hashes) != len(unique_outputs):
         raise ValueError(

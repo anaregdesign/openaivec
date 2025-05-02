@@ -1,11 +1,3 @@
-"""Embedding utilities built on top of OpenAI’s embedding endpoint.
-
-This module provides ``VectorizedEmbeddingsOpenAI``, a concrete implementation
-of the ``VectorizedEmbeddings`` abstract base class. It leverages the OpenAI
-SDK for embedding generation, supporting both sequential and asynchronous
-execution with concurrency control and exponential back-off for rate limits.
-"""
-
 import asyncio
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
@@ -17,7 +9,7 @@ from openai import AsyncOpenAI, RateLimitError
 
 from openaivec.log import observe
 from openaivec.util import backoff
-from openaivec.aio import map
+from openaivec.aio.util import map
 
 __all__ = ["AsyncBatchEmbeddings"]
 
@@ -29,7 +21,39 @@ class AsyncBatchEmbeddings:
     """Thin wrapper around the OpenAI /embeddings endpoint using async operations.
 
     This class provides an asynchronous interface for generating embeddings using
-    OpenAI models. It manages concurrency and handles rate limits automatically.
+    OpenAI models. It manages concurrency, handles rate limits automatically,
+    and efficiently processes batches of inputs, including de-duplication.
+
+    Example:
+        ```python
+        import asyncio
+        import numpy as np
+        from openai import AsyncOpenAI
+        from openaivec.aio.embeddings import AsyncBatchEmbeddings
+
+        # Assuming openai_async_client is an initialized AsyncOpenAI client
+        openai_async_client = AsyncOpenAI() # Replace with your actual client initialization
+
+        embedder = AsyncBatchEmbeddings(
+            client=openai_async_client,
+            model_name="text-embedding-3-small",
+            max_concurrency=8  # Limit concurrent requests
+        )
+        texts = ["This is the first document.", "This is the second document.", "This is the first document."]
+
+        # Asynchronous call
+        async def main():
+            embeddings = await embedder.create(texts, batch_size=128)
+            # embeddings will be a list of numpy arrays (float32)
+            # The embedding for the third text will be identical to the first
+            # due to automatic de-duplication.
+            print(f"Generated {len(embeddings)} embeddings.")
+            print(f"Shape of first embedding: {embeddings[0].shape}")
+            assert np.array_equal(embeddings[0], embeddings[2])
+
+        # Run the async function
+        asyncio.run(main())
+        ```
 
     Attributes:
         client: An already‑configured ``openai.AsyncOpenAI`` client.

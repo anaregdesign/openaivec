@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.responses import Message, Request, Response, _vectorize_system_message
 from openaivec.util import backoff
-from openaivec.aio import map
+from openaivec.aio.util import map
 
 __all__ = ["AsyncBatchResponses"]
 
@@ -27,17 +27,27 @@ class AsyncBatchResponses(Generic[T]):
 
     Example:
         ```python
-        vector_llm = VectorizedResponsesOpenAI(
+        import asyncio
+        from openai import AsyncOpenAI
+        from openaivec.aio.responses import AsyncBatchResponses
+
+        # Assuming openai_async_client is an initialized AsyncOpenAI client
+        openai_async_client = AsyncOpenAI() # Replace with your actual client initialization
+
+        vector_llm = AsyncBatchResponses(
             client=openai_async_client,
             model_name="gpt-4o-mini",
             system_message="You are a helpful assistant.",
             max_concurrency=5  # Limit concurrent requests
         )
+        questions = ["What is the capital of France?", "Explain quantum physics simply."]
         # Asynchronous call
-        answers_async = await vector_llm.parse_async(questions, batch_size=32)
-        # Synchronous call
-        answers_sync = vector_llm.parse(questions, batch_size=32)
+        async def main():
+            answers = await vector_llm.parse(questions, batch_size=32)
+            print(answers)
 
+        # Run the async function
+        asyncio.run(main())
         ```
 
     Attributes:
