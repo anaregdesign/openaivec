@@ -61,7 +61,7 @@ class TestResponsesUDFBuilder(TestCase):
         df = self.spark.sql(
             """
             with t as (SELECT fruit(name) as info from dummy)
-            select name, info.name, info.color, info.taste from t
+            select info.name, info.color, info.taste from t
             """
         )
 
