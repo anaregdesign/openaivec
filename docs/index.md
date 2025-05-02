@@ -4,6 +4,7 @@ Welcome to **openaivec**! This library simplifies using [**OpenAI**](https://ope
 
 ## Example
 ```python
+fruits: pd.Series = pd.Series(["apple", "banana", "orange", "grape", "kiwi", "mango", "peach", "pear", "pineapple", "strawberry"])
 fruits.ai.responses("Translate this fruit name into French.") 
 ```
 
