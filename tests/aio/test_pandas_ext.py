@@ -131,29 +131,33 @@ def sample_df_extract_with_invalid():
 
 
 async def test_embeddings(sample_df):
-    embeddings: pd.Series = await sample_df["name"].ai.embeddings()
+    # Use .aio for the async embeddings method
+    embeddings: pd.Series = await sample_df["name"].aio.embeddings()
     assert all(isinstance(embedding, np.ndarray) for embedding in embeddings)
     assert embeddings.shape == (3,)
     assert embeddings.index.equals(sample_df.index)
 
 
 async def test_responses_series(sample_df):
-    names_fr: pd.Series = await sample_df["name"].ai.responses("translate to French")
+    # Use .aio for the async responses method
+    names_fr: pd.Series = await sample_df["name"].aio.responses("translate to French")
     assert all(isinstance(x, str) for x in names_fr)
     assert names_fr.shape == (3,)
     assert names_fr.index.equals(sample_df.index)
 
 
 async def test_responses_dataframe(sample_df):
-    # Test DataFrame.ai.responses
-    names_fr: pd.Series = await sample_df.ai.responses("translate the 'name' field to French")
+    # Test DataFrame.aio.responses
+    # Use .aio for the async responses method
+    names_fr: pd.Series = await sample_df.aio.responses("translate the 'name' field to French")
     assert all(isinstance(x, str) for x in names_fr)
     assert names_fr.shape == (3,)
     assert names_fr.index.equals(sample_df.index)
 
 
 def test_extract_series_model(sample_series_fruit_model):
-    extracted_df = sample_series_fruit_model.ai.extract()
+    # Use .aio for extract method
+    extracted_df = sample_series_fruit_model.aio.extract()
     expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.shape == (3, 3)
@@ -161,7 +165,8 @@ def test_extract_series_model(sample_series_fruit_model):
 
 
 def test_extract_series_model_with_none(sample_series_fruit_model_with_none):
-    extracted_df = sample_series_fruit_model_with_none.ai.extract()
+    # Use .aio for extract method
+    extracted_df = sample_series_fruit_model_with_none.aio.extract()
     expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.iloc[1].isna().all()
@@ -169,7 +174,8 @@ def test_extract_series_model_with_none(sample_series_fruit_model_with_none):
 
 
 def test_extract_series_model_with_invalid(sample_series_fruit_model_with_invalid):
-    extracted_df = sample_series_fruit_model_with_invalid.ai.extract()
+    # Use .aio for extract method
+    extracted_df = sample_series_fruit_model_with_invalid.aio.extract()
     expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.iloc[1].isna().all()
@@ -177,7 +183,8 @@ def test_extract_series_model_with_invalid(sample_series_fruit_model_with_invali
 
 
 def test_extract_series_dict(sample_series_dict):
-    extracted_df = sample_series_dict.ai.extract()
+    # Use .aio for extract method
+    extracted_df = sample_series_dict.aio.extract()
     expected_columns = ["fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.shape == (3, 3)
@@ -188,14 +195,16 @@ def test_extract_series_without_name(sample_series_fruit_model):
     # Test extraction when Series has no name
     series_no_name = sample_series_fruit_model.copy()
     series_no_name.name = None
-    extracted_df = series_no_name.ai.extract()
+    # Use .aio for extract method
+    extracted_df = series_no_name.aio.extract()
     expected_columns = ["color", "flavor", "taste"]  # No prefix
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.shape == (3, 3)
 
 
 def test_extract_dataframe(sample_df_extract):
-    extracted_df = sample_df_extract.ai.extract("fruit")
+    # Use .aio for extract method
+    extracted_df = sample_df_extract.aio.extract("fruit")
     expected_columns = ["name", "fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.shape == (3, 4)
@@ -203,7 +212,8 @@ def test_extract_dataframe(sample_df_extract):
 
 
 def test_extract_dataframe_dict(sample_df_extract_dict):
-    extracted_df = sample_df_extract_dict.ai.extract("fruit")
+    # Use .aio for extract method
+    extracted_df = sample_df_extract_dict.aio.extract("fruit")
     expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.shape == (3, 4)
@@ -211,7 +221,8 @@ def test_extract_dataframe_dict(sample_df_extract_dict):
 
 
 def test_extract_dataframe_dict_with_none(sample_df_extract_dict_with_none):
-    extracted_df = sample_df_extract_dict_with_none.ai.extract("fruit")
+    # Use .aio for extract method
+    extracted_df = sample_df_extract_dict_with_none.aio.extract("fruit")
     expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.iloc[1].isna().all()
@@ -219,9 +230,10 @@ def test_extract_dataframe_dict_with_none(sample_df_extract_dict_with_none):
 
 
 def test_extract_dataframe_with_invalid(sample_df_extract_with_invalid):
-    # Test DataFrame.ai.extract with a column containing non-dict/BaseModel data
+    # Test DataFrame.aio.extract with a column containing non-dict/BaseModel data
     # It should raise a warning but produce NaNs for the invalid row's extracted columns
-    extracted_df = sample_df_extract_with_invalid.ai.extract("fruit")
+    # Use .aio for extract method
+    extracted_df = sample_df_extract_with_invalid.aio.extract("fruit")
     expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
     assert list(extracted_df.columns) == expected_columns
     assert extracted_df.iloc[1].isna().all()
@@ -229,7 +241,8 @@ def test_extract_dataframe_with_invalid(sample_df_extract_with_invalid):
 
 
 def test_count_tokens(sample_df):
-    num_tokens: pd.Series = sample_df.name.ai.count_tokens()
+    # Use .aio for count_tokens method
+    num_tokens: pd.Series = sample_df.name.aio.count_tokens()
     assert all(isinstance(num_token, int) for num_token in num_tokens)
     assert num_tokens.name == "num_tokens"
     assert num_tokens.shape == (3,)

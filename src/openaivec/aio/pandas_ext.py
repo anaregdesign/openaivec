@@ -175,9 +175,9 @@ def _extract_value(x, series_name):
     return {}
 
 
-@pd.api.extensions.register_series_accessor("ai")
+@pd.api.extensions.register_series_accessor("aio")
 class OpenAIVecSeriesAccessor:
-    """pandas Series accessor (``.ai``) that adds OpenAI helpers."""
+    """pandas Series accessor (``.aio``) that adds OpenAI helpers."""
 
     def __init__(self, series_obj: pd.Series):
         self._obj = series_obj
@@ -194,7 +194,7 @@ class OpenAIVecSeriesAccessor:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
             # Must be awaited
-            results = await animals.ai.responses("translate to French")
+            results = await animals.aio.responses("translate to French")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -239,7 +239,7 @@ class OpenAIVecSeriesAccessor:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
             # Must be awaited
-            embeddings = await animals.ai.embeddings()
+            embeddings = await animals.aio.embeddings()
             ```
             This method returns a Series of numpy arrays, each containing the
             embedding vector for the corresponding input.
@@ -277,7 +277,10 @@ class OpenAIVecSeriesAccessor:
         Example:
             ```python
             animals = pd.Series(["cat", "dog", "elephant"])
-            animals.ai.count_tokens()
+            # Note: count_tokens is synchronous and remains under the .ai accessor
+            # if the synchronous pandas_ext is imported.
+            # If only aio.pandas_ext is imported, this method is available under .aio
+            animals.aio.count_tokens()
             ```
             This method uses the `tiktoken` library to count tokens based on the
             model name set by `responses_model`.
@@ -297,7 +300,10 @@ class OpenAIVecSeriesAccessor:
                 {"name": "dog", "legs": 4},
                 {"name": "elephant", "legs": 4},
             ])
-            animals.ai.extract()
+            # Note: extract is synchronous and remains under the .ai accessor
+            # if the synchronous pandas_ext is imported.
+            # If only aio.pandas_ext is imported, this method is available under .aio
+            animals.aio.extract()
             ```
             This method returns a DataFrame with the same index as the Series,
             where each column corresponds to a key in the dictionaries.
@@ -317,9 +323,9 @@ class OpenAIVecSeriesAccessor:
         return extracted
 
 
-@pd.api.extensions.register_dataframe_accessor("ai")
+@pd.api.extensions.register_dataframe_accessor("aio")
 class OpenAIVecDataFrameAccessor:
-    """pandas DataFrame accessor (``.ai``) that adds OpenAI helpers."""
+    """pandas DataFrame accessor (``.aio``) that adds OpenAI helpers."""
 
     def __init__(self, df_obj: pd.DataFrame):
         self._obj = df_obj
@@ -334,7 +340,10 @@ class OpenAIVecDataFrameAccessor:
                 {"animal": {"name": "dog", "legs": 4}},
                 {"animal": {"name": "elephant", "legs": 4}},
             ])
-            df.ai.extract("animal")
+            # Note: extract is synchronous and remains under the .ai accessor
+            # if the synchronous pandas_ext is imported.
+            # If only aio.pandas_ext is imported, this method is available under .aio
+            df.aio.extract("animal")
             ```
             This method returns a DataFrame with the same index as the original,
             where each column corresponds to a key in the dictionaries.
@@ -351,7 +360,8 @@ class OpenAIVecDataFrameAccessor:
 
         return (
             self._obj.pipe(lambda df: df.reset_index(drop=True))
-            .pipe(lambda df: df.join(df[column].ai.extract()))
+            # Use .aio.extract here as we are within the aio accessor class
+            .pipe(lambda df: df.join(df[column].aio.extract()))
             .pipe(lambda df: df.set_index(self._obj.index))
             .pipe(lambda df: df.drop(columns=[column], axis=1))
         )
@@ -372,7 +382,7 @@ class OpenAIVecDataFrameAccessor:
                 {"name": "elephant", "legs": 4},
             ])
             # Must be awaited
-            results = await df.ai.responses("what is the animal's name?")
+            results = await df.aio.responses("what is the animal's name?")
             ```
             This method returns a Series of strings, each containing the
             assistant's response to the corresponding input.
@@ -400,8 +410,8 @@ class OpenAIVecDataFrameAccessor:
                 )
             )
         )
-        # Await the call to the async Series method
-        return await series_of_json.ai.responses(
+        # Await the call to the async Series method using .aio
+        return await series_of_json.aio.responses(
             instructions=instructions,
             response_format=response_format,
             batch_size=batch_size,
