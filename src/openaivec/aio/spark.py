@@ -220,7 +220,7 @@ class EmbeddingsUDFBuilder:
 
         Returns:
             A Spark pandas UDF configured to generate embeddings asynchronously,
-            returning an ArrayType(FloatType()).
+                returning an ArrayType(FloatType()).
         """
 
         @pandas_udf(returnType=ArrayType(FloatType()))
