@@ -74,14 +74,13 @@ class TestAsyncBatchEmbeddings(unittest.TestCase):
             model_name=self.model_name,
         )
         inputs = ["apple", "banana", "orange", "apple"]
-        unique_inputs = ["apple", "banana", "orange"]
         batch_size = 5
 
         response = asyncio.run(client.create(inputs, batch_size=batch_size))
 
         self.assertEqual(len(response), len(inputs))
-        unique_response = asyncio.run(client.create(unique_inputs, batch_size=batch_size))
-        expected_map = {text: emb for text, emb in zip(unique_inputs, unique_response)}
+        unique_inputs_first_occurrence_indices = {text: inputs.index(text) for text in set(inputs)}
+        expected_map = {text: response[index] for text, index in unique_inputs_first_occurrence_indices.items()}
         for i, text in enumerate(inputs):
             self.assertTrue(np.allclose(response[i], expected_map[text]))
             self.assertEqual(response[i].shape, (self.embedding_dim,))
