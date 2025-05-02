@@ -1,7 +1,6 @@
 site_name: openaivec, A Pandas and Spark extension for OpenAI
 site_url: https://openaivec.anareg.design
 site_description: Library for processing data using OpenAI, compatible with Pandas and Spark DataFrames.
-keywords: Python, OpenAI, Pandas, Apache Spark, vectorization, embeddings, NLP
 site_author: anaregdesign
 theme:
   name: material
@@ -17,6 +16,7 @@ nav:
       - examples/spark.ipynb
       - examples/prompt.ipynb
       - examples/generate_faq.ipynb
+      - examples/aio.ipynb
   - API Reference:
       - openaivec::
           - pandas_ext: api/pandas_ext.md
@@ -28,10 +28,15 @@ nav:
               - embeddings: api/aio/embeddings.md
               - pandas_ext: api/aio/pandas_ext.md
 
-extra_files:
-  - robots.txt
-
 extra:
+  tags:
+    - Python
+    - OpenAI
+    - Pandas
+    - Apache Spark
+    - vectorization
+    - embeddings
+    - NLP
   analytics:
     provider: google
     property: G-J7N4M1XMRZ

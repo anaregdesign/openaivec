@@ -1,6 +1,6 @@
 # Getting Started
 
-Welcome to **openaivec**! This library simplifies using **OpenAI**'s powerful models for text vectorization and processing directly within your **Pandas** and **Apache Spark** data workflows.
+Welcome to **openaivec**! This library simplifies using [**OpenAI**](https://openai.com/)'s powerful models for text vectorization and processing directly within your [**Pandas**](https://pandas.pydata.org/) and [**Apache Spark**](https://spark.apache.org/) data workflows.
 
 ## Example
 ```python
