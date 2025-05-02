@@ -18,12 +18,15 @@ nav:
       - examples/prompt.ipynb
       - examples/generate_faq.ipynb
   - API Reference:
-      - openaivec.md
       - openaivec::
-          - pandas_ext: pandas_ext.md
-          - spark: spark.md
-          - prompt: prompt.md
-          - util: util.md
+          - pandas_ext: api/pandas_ext.md
+          - spark: api/spark.md
+          - prompt: api/prompt.md
+          - util: api/util.md
+          - aio:
+              - responses: api/aio/responses.md
+              - embeddings: api/aio/embeddings.md
+              - pandas_ext: api/aio/pandas_ext.md
 
 extra_files:
   - robots.txt
