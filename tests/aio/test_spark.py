@@ -1,7 +1,7 @@
 import os
 from unittest import TestCase
 
-from openai import BaseModel
+from pydantic import BaseModel
 from pyspark.sql.session import SparkSession
 
 from openaivec.aio.spark import EmbeddingsUDFBuilder, ResponsesUDFBuilder
