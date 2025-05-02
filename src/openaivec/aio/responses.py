@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.responses import Message, Request, Response, _vectorize_system_message
 from openaivec.util import backoff
-from openaivec.aio import map
+from openaivec.aio.util import map
 
 __all__ = ["AsyncBatchResponses"]
 

@@ -9,7 +9,7 @@ from openai import AsyncOpenAI, RateLimitError
 
 from openaivec.log import observe
 from openaivec.util import backoff
-from openaivec.aio import map
+from openaivec.aio.util import map
 
 __all__ = ["AsyncBatchEmbeddings"]
 
