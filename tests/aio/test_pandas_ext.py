@@ -7,8 +7,6 @@ import pandas as pd
 # Import the module to test
 from openaivec.aio import pandas_ext
 
-# Mark all tests in this module as asyncio
-pytestmark = pytest.mark.asyncio
 
 # Setup the async client and models for testing
 # Ensure you have OPENAI_API_KEY set in your environment or use pandas_ext.use()
@@ -130,6 +128,7 @@ def sample_df_extract_with_invalid():
     )
 
 
+@pytest.mark.asyncio
 async def test_embeddings(sample_df):
     # Use .aio for the async embeddings method
     embeddings: pd.Series = await sample_df["name"].aio.embeddings()
@@ -138,6 +137,7 @@ async def test_embeddings(sample_df):
     assert embeddings.index.equals(sample_df.index)
 
 
+@pytest.mark.asyncio
 async def test_responses_series(sample_df):
     # Use .aio for the async responses method
     names_fr: pd.Series = await sample_df["name"].aio.responses("translate to French")
@@ -146,6 +146,7 @@ async def test_responses_series(sample_df):
     assert names_fr.index.equals(sample_df.index)
 
 
+@pytest.mark.asyncio
 async def test_responses_dataframe(sample_df):
     # Test DataFrame.aio.responses
     # Use .aio for the async responses method
