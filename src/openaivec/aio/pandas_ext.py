@@ -437,15 +437,12 @@ class OpenAIVecDataFrameAccessor:
 
     async def assign(self, **kwargs):
         for key, value in kwargs.items():
-            if inspect.iscoroutinefunction(value):
-                result: T = await value(self._obj)
-                self._obj = self._obj.assign(**{key: result})
-
-            elif callable(value):
+            if callable(value):
                 result = value(self._obj)
                 if inspect.isawaitable(result):
-                    result = await result
-                self._obj = self._obj.assign(**{key: result})
+                    self._obj = self._obj.assign(**{key: await result})
+                else:
+                    self._obj = self._obj.assign(**{key: result})
 
             else:
                 self._obj = self._obj.assign(**{key: value})
