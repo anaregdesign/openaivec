@@ -101,7 +101,14 @@ class ResponsesUDFBuilder:
         """
         return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name)
 
-    def build(self, instructions: str, response_format: Type[T] = str, batch_size: int = 256) -> UserDefinedFunction:
+    def build(
+        self,
+        instructions: str,
+        response_format: Type[T] = str,
+        batch_size: int = 256,
+        temperature: float = 0.0,
+        top_p: float = 1.0,
+    ) -> UserDefinedFunction:
         """Builds the asynchronous pandas UDF for generating responses.
 
         Args:
@@ -110,6 +117,8 @@ class ResponsesUDFBuilder:
                 or a Pydantic `BaseModel` for structured JSON output.
             batch_size: The number of rows to process in each asynchronous batch
                 passed to the underlying pandas extension.
+            temperature: The sampling temperature for the model.
+            top_p: The nucleus sampling parameter for the model.
 
         Returns:
             A Spark pandas UDF configured to generate responses asynchronously.
@@ -132,6 +141,8 @@ class ResponsesUDFBuilder:
                             instructions=instructions,
                             response_format=deserialize_base_model(json_schema_string),
                             batch_size=batch_size,
+                            temperature=temperature,
+                            top_p=top_p,
                         )
                     )
                     yield pd.DataFrame(predictions.map(_safe_dump).tolist())
@@ -151,6 +162,8 @@ class ResponsesUDFBuilder:
                             instructions=instructions,
                             response_format=str,
                             batch_size=batch_size,
+                            temperature=temperature,
+                            top_p=top_p,
                         )
                     )
                     yield predictions.map(_safe_cast_str)
