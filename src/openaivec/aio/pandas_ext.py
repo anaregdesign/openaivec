@@ -452,11 +452,15 @@ class OpenAIVecDataFrameAccessor:
             return result
 
     async def assign(self, **kwargs):
-        """Asynchronously assign new columns to the DataFrame.
+        """Asynchronously assign new columns to the DataFrame, evaluating sequentially.
 
         This method extends pandas' `assign` method by supporting asynchronous
-        functions as column values. For each key-value pair in `kwargs`:
-        - If the value is a callable, it is invoked with the DataFrame as an argument.
+        functions as column values and evaluating assignments sequentially, allowing
+        later assignments to refer to columns created earlier in the same call.
+
+        For each key-value pair in `kwargs`:
+        - If the value is a callable, it is invoked with the current state of the DataFrame
+          (including columns created in previous steps of this `assign` call).
           If the result is awaitable, it is awaited; otherwise, it is used directly.
         - If the value is not callable, it is assigned directly to the new column.
 
@@ -467,9 +471,18 @@ class OpenAIVecDataFrameAccessor:
                 await asyncio.sleep(1)
                 return df["existing_column"] * 2
 
+            async def use_new_column(df):
+                # Access the column created in the previous step
+                await asyncio.sleep(1)
+                return df["new_column"] + 5
+
+
             df = pd.DataFrame({"existing_column": [1, 2, 3]})
             # Must be awaited
-            df = await df.aio.assign(new_column=compute_column)
+            df = await df.aio.assign(
+                new_column=compute_column,
+                another_column=use_new_column
+            )
             ```
 
         Args:
@@ -482,15 +495,17 @@ class OpenAIVecDataFrameAccessor:
         Note:
             This is an asynchronous method and must be awaited.
         """
-        new_columns = {}
+        df_current = self._obj.copy()
         for key, value in kwargs.items():
             if callable(value):
-                result = value(self._obj)
+                result = value(df_current)
                 if inspect.isawaitable(result):
-                    new_columns[key] = await result
+                    column_data = await result
                 else:
-                    new_columns[key] = result
+                    column_data = result
             else:
-                new_columns[key] = value
+                column_data = value
 
-        return self._obj.assign(**new_columns)
+            df_current = df_current.assign(**{key: column_data})
+
+        return df_current
