@@ -452,6 +452,36 @@ class OpenAIVecDataFrameAccessor:
             return result
 
     async def assign(self, **kwargs):
+        """Asynchronously assign new columns to the DataFrame.
+
+        This method extends pandas' `assign` method by supporting asynchronous
+        functions as column values. For each key-value pair in `kwargs`:
+        - If the value is a callable, it is invoked with the DataFrame as an argument.
+          If the result is awaitable, it is awaited; otherwise, it is used directly.
+        - If the value is not callable, it is assigned directly to the new column.
+
+        Example:
+            ```python
+            async def compute_column(df):
+                # Simulate an asynchronous computation
+                await asyncio.sleep(1)
+                return df["existing_column"] * 2
+
+            df = pd.DataFrame({"existing_column": [1, 2, 3]})
+            # Must be awaited
+            df = await df.aio.assign(new_column=compute_column)
+            ```
+
+        Args:
+            **kwargs: Column names as keys and either static values or callables
+                (synchronous or asynchronous) as values.
+
+        Returns:
+            pandas.DataFrame: A new DataFrame with the assigned columns.
+
+        Note:
+            This is an asynchronous method and must be awaited.
+        """
         new_columns = {}
         for key, value in kwargs.items():
             if callable(value):
