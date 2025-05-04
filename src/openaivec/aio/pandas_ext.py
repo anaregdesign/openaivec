@@ -187,8 +187,8 @@ class OpenAIVecSeriesAccessor:
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
-        temperature: float = 0,
-        top_p: float = 1,
+        temperature: float = 0.0,
+        top_p: float = 1.0,
     ) -> pd.Series:
         """Call an LLM once for every Series element (asynchronously).
 
@@ -375,8 +375,8 @@ class OpenAIVecDataFrameAccessor:
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
-        temperature: float = 0,
-        top_p: float = 1,
+        temperature: float = 0.0,
+        top_p: float = 1.0,
     ) -> pd.Series:
         """Generate a response for each row after serialising it to JSON (asynchronously).
 
