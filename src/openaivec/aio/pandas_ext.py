@@ -429,15 +429,22 @@ class OpenAIVecDataFrameAccessor:
         )
 
     async def pipe(self, func: Callable[[pd.DataFrame], Awaitable[T] | T]) -> T:
-        if inspect.iscoroutinefunction(func):
-            return await func(self._obj)
+        result = func(self._obj)
+        if inspect.isawaitable(result):
+            return await result
         else:
-            return func(self._obj)
+            return result
 
     async def assign(self, **kwargs):
         for key, value in kwargs.items():
             if inspect.iscoroutinefunction(value):
                 result: T = await value(self._obj)
+                self._obj = self._obj.assign(**{key: result})
+
+            elif callable(value):
+                result = value(self._obj)
+                if inspect.isawaitable(result):
+                    result = await result
                 self._obj = self._obj.assign(**{key: result})
 
             else:
