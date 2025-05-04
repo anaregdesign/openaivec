@@ -436,15 +436,16 @@ class OpenAIVecDataFrameAccessor:
             return result
 
     async def assign(self, **kwargs):
+        new_columns = {}
         for key, value in kwargs.items():
             if callable(value):
                 result = value(self._obj)
                 if inspect.isawaitable(result):
-                    self._obj = self._obj.assign(**{key: await result})
+                    new_columns[key] = await result
                 else:
-                    self._obj = self._obj.assign(**{key: result})
-
+                    new_columns[key] = result
             else:
-                self._obj = self._obj.assign(**{key: value})
+                new_columns[key] = value
 
+        self._obj = self._obj.assign(**new_columns)
         return self._obj
