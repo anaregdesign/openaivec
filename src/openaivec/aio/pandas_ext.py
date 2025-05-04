@@ -506,6 +506,6 @@ class OpenAIVecDataFrameAccessor:
             else:
                 column_data = value
 
-            df_current = df_current.assign(**{key: column_data})
+            df_current[key] = column_data
 
         return df_current
