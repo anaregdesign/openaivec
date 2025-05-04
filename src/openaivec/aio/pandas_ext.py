@@ -15,10 +15,11 @@ pandas_ext.embeddings_model("text-embedding-3-small")
 
 """
 
+import inspect
 import json
 import os
 import logging
-from typing import Type, TypeVar
+from typing import Awaitable, Callable, Type, TypeVar
 
 import pandas as pd
 from openai import AsyncAzureOpenAI, AsyncOpenAI
@@ -426,3 +427,70 @@ class OpenAIVecDataFrameAccessor:
             temperature=temperature,
             top_p=top_p,
         )
+
+    async def pipe(self, func: Callable[[pd.DataFrame], Awaitable[T] | T]) -> T:
+        """
+        Apply a function to the DataFrame, supporting both synchronous and asynchronous functions.
+
+        This method allows chaining operations on the DataFrame, similar to pandas' `pipe` method,
+        but with support for asynchronous functions.
+
+        Args:
+            func (Callable[[pd.DataFrame], Awaitable[T] | T]): A function that takes a DataFrame
+                as input and returns either a result or an awaitable result.
+
+        Returns:
+            T: The result of applying the function, either directly or after awaiting it.
+
+        Note:
+            This is an asynchronous method and must be awaited if the function returns an awaitable.
+        """
+        result = func(self._obj)
+        if inspect.isawaitable(result):
+            return await result
+        else:
+            return result
+
+    async def assign(self, **kwargs):
+        """Asynchronously assign new columns to the DataFrame.
+
+        This method extends pandas' `assign` method by supporting asynchronous
+        functions as column values. For each key-value pair in `kwargs`:
+        - If the value is a callable, it is invoked with the DataFrame as an argument.
+          If the result is awaitable, it is awaited; otherwise, it is used directly.
+        - If the value is not callable, it is assigned directly to the new column.
+
+        Example:
+            ```python
+            async def compute_column(df):
+                # Simulate an asynchronous computation
+                await asyncio.sleep(1)
+                return df["existing_column"] * 2
+
+            df = pd.DataFrame({"existing_column": [1, 2, 3]})
+            # Must be awaited
+            df = await df.aio.assign(new_column=compute_column)
+            ```
+
+        Args:
+            **kwargs: Column names as keys and either static values or callables
+                (synchronous or asynchronous) as values.
+
+        Returns:
+            pandas.DataFrame: A new DataFrame with the assigned columns.
+
+        Note:
+            This is an asynchronous method and must be awaited.
+        """
+        new_columns = {}
+        for key, value in kwargs.items():
+            if callable(value):
+                result = value(self._obj)
+                if inspect.isawaitable(result):
+                    new_columns[key] = await result
+                else:
+                    new_columns[key] = result
+            else:
+                new_columns[key] = value
+
+        return self._obj.assign(**new_columns)
