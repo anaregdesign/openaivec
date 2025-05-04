@@ -447,5 +447,4 @@ class OpenAIVecDataFrameAccessor:
             else:
                 new_columns[key] = value
 
-        self._obj = self._obj.assign(**new_columns)
-        return self._obj
+        return self._obj.assign(**new_columns)
