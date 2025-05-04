@@ -187,6 +187,8 @@ class OpenAIVecSeriesAccessor:
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
+        temperature: float = 0.0,
+        top_p: float = 1.0,
     ) -> pd.Series:
         """Call an LLM once for every Series element (asynchronously).
 
@@ -207,6 +209,8 @@ class OpenAIVecSeriesAccessor:
                 type the assistant should return. Defaults to ``str``.
             batch_size (int, optional): Number of prompts grouped into a single
                 request. Defaults to ``128``.
+            temperature (float, optional): Sampling temperature. Defaults to ``0``.
+            top_p (float, optional): Nucleus sampling parameter. Defaults to ``1``.
 
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
@@ -219,8 +223,8 @@ class OpenAIVecSeriesAccessor:
             model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,
             response_format=response_format,
-            temperature=0,
-            top_p=1,
+            temperature=temperature,
+            top_p=top_p,
         )
 
         # Await the async operation
@@ -371,6 +375,8 @@ class OpenAIVecDataFrameAccessor:
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
+        temperature: float = 0.0,
+        top_p: float = 1.0,
     ) -> pd.Series:
         """Generate a response for each row after serialising it to JSON (asynchronously).
 
@@ -396,6 +402,8 @@ class OpenAIVecDataFrameAccessor:
                 responses. Defaults to ``str``.
             batch_size (int, optional): Number of requests sent in one batch.
                 Defaults to ``128``.
+            temperature (float, optional): Sampling temperature. Defaults to ``0``.
+            top_p (float, optional): Nucleus sampling parameter. Defaults to ``1``.
 
         Returns:
             pandas.Series: Responses aligned with the DataFrame’s original index.
@@ -415,4 +423,6 @@ class OpenAIVecDataFrameAccessor:
             instructions=instructions,
             response_format=response_format,
             batch_size=batch_size,
+            temperature=temperature,
+            top_p=top_p,
         )
