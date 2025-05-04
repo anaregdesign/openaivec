@@ -248,3 +248,50 @@ def test_count_tokens(sample_df):
     assert num_tokens.name == "num_tokens"
     assert num_tokens.shape == (3,)
     assert num_tokens.index.equals(sample_df.index)
+
+
+@pytest.mark.asyncio
+async def test_async_pipe(sample_df):
+    # Use .aio for async pipe method
+    async def dummy_func(df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
+    result = await sample_df.aio.pipe(dummy_func)
+    assert isinstance(result, pd.DataFrame)
+    assert result.shape == sample_df.shape
+    assert result.index.equals(sample_df.index)
+
+
+@pytest.mark.asyncio
+async def test_async_pipe_with_sync(sample_df):
+    # Use .aio for async pipe method with a sync function
+    def dummy_func(df: pd.DataFrame) -> pd.DataFrame:
+        return df
+
+    result = await sample_df.aio.pipe(dummy_func)
+    assert isinstance(result, pd.DataFrame)
+    assert result.shape == sample_df.shape
+    assert result.index.equals(sample_df.index)
+
+
+@pytest.mark.asyncio
+async def test_async_assign(sample_df):
+    # Use .aio for async assign method
+    async def dummy_func(df: pd.DataFrame) -> pd.Series:
+        return df["name"].str.upper()
+
+    async def static_value_func(df: pd.DataFrame) -> str:
+        return "static_value"
+
+    result = await sample_df.aio.assign(
+        upper_name=dummy_func,
+        static_value=static_value_func,
+        first_letter=lambda df: df["name"].map(lambda x: x[0]),
+    )
+    assert isinstance(result, pd.DataFrame)
+    assert "upper_name" in result.columns
+    assert "first_letter" in result.columns
+    assert "static_value" in result.columns
+    assert result["upper_name"].equals(sample_df["name"].str.upper())
+    assert result["first_letter"].equals(sample_df["name"].map(lambda x: x[0]))
+    assert result["static_value"].equals(pd.Series(["static_value"] * len(sample_df)))

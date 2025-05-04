@@ -15,10 +15,11 @@ pandas_ext.embeddings_model("text-embedding-3-small")
 
 """
 
+import inspect
 import json
 import os
 import logging
-from typing import Type, TypeVar
+from typing import Awaitable, Callable, Type, TypeVar
 
 import pandas as pd
 from openai import AsyncAzureOpenAI, AsyncOpenAI
@@ -426,3 +427,20 @@ class OpenAIVecDataFrameAccessor:
             temperature=temperature,
             top_p=top_p,
         )
+
+    async def pipe(self, func: Callable[[pd.DataFrame], Awaitable[T] | T]) -> T:
+        if inspect.iscoroutinefunction(func):
+            return await func(self._obj)
+        else:
+            return func(self._obj)
+
+    async def assign(self, **kwargs):
+        for key, value in kwargs.items():
+            if inspect.iscoroutinefunction(value):
+                result: T = await value(self._obj)
+                self._obj = self._obj.assign(**{key: result})
+
+            else:
+                self._obj = self._obj.assign(**{key: value})
+
+        return self._obj
