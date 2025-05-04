@@ -429,6 +429,22 @@ class OpenAIVecDataFrameAccessor:
         )
 
     async def pipe(self, func: Callable[[pd.DataFrame], Awaitable[T] | T]) -> T:
+        """
+        Apply a function to the DataFrame, supporting both synchronous and asynchronous functions.
+
+        This method allows chaining operations on the DataFrame, similar to pandas' `pipe` method,
+        but with support for asynchronous functions.
+
+        Args:
+            func (Callable[[pd.DataFrame], Awaitable[T] | T]): A function that takes a DataFrame
+                as input and returns either a result or an awaitable result.
+
+        Returns:
+            T: The result of applying the function, either directly or after awaiting it.
+
+        Note:
+            This is an asynchronous method and must be awaited if the function returns an awaitable.
+        """
         result = func(self._obj)
         if inspect.isawaitable(result):
             return await result
