@@ -80,14 +80,16 @@ pip uninstall openaivec
 
 ## Basic Usage
 
+**Synchronous:**
+
 ```python
 import os
 from openai import OpenAI
-from openaivec import VectorizedResponsesOpenAI
+from openaivec import BatchResponses
 
 
-# Initialize the vectorized client with your system message and parameters
-client = VectorizedResponsesOpenAI(
+# Initialize the batch client with your system message and parameters
+client = BatchResponses(
     client=OpenAI(),
     temperature=0.0,
     top_p=1.0,

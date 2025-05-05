@@ -88,11 +88,10 @@ from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec import VectorizedEmbeddingsOpenAI, VectorizedResponsesOpenAI
+from openaivec import BatchEmbeddings, BatchResponses
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
-from openaivec.responses import VectorizedResponses
 
 __all__ = [
     "UDFBuilder",
@@ -103,8 +102,8 @@ _logger: Logger = getLogger(__name__)
 
 # Global Singletons
 _openai_client: Optional[OpenAI] = None
-_vectorized_client: Optional[VectorizedResponses] = None
-_embedding_client: Optional[VectorizedEmbeddingsOpenAI] = None
+_vectorized_client: Optional[BatchResponses] = None
+_embedding_client: Optional[BatchEmbeddings] = None
 
 T = TypeVar("T")
 
@@ -134,25 +133,24 @@ def _get_vectorized_openai_client(
     temperature: float,
     top_p: float,
     http_client: httpx.Client,
-) -> VectorizedResponses:
+) -> BatchResponses:
     global _vectorized_client
     if _vectorized_client is None:
-        _vectorized_client = VectorizedResponsesOpenAI(
+        _vectorized_client = BatchResponses(
             client=_get_openai_client(conf, http_client),
             model_name=conf.model_name,
             system_message=system_message,
             temperature=temperature,
             top_p=top_p,
             response_format=response_format,
-            is_parallel=conf.is_parallel,
         )
     return _vectorized_client
 
 
-def _get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> VectorizedEmbeddingsOpenAI:
+def _get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> BatchEmbeddings:
     global _embedding_client
     if _embedding_client is None:
-        _embedding_client = VectorizedEmbeddingsOpenAI(
+        _embedding_client = BatchEmbeddings(
             client=_get_openai_client(conf, http_client),
             model_name=conf.model_name,
         )
@@ -266,7 +264,6 @@ class UDFBuilder:
         batch_size: int = 256,
         http2: bool = True,
         ssl_verify: bool = False,
-        is_parallel: bool = False,
     ) -> "UDFBuilder":
         """Create a builder configured for Azure OpenAI."""
         return cls(
@@ -277,7 +274,6 @@ class UDFBuilder:
             batch_size=batch_size,
             http2=http2,
             ssl_verify=ssl_verify,
-            is_parallel=is_parallel,
         )
 
     @classmethod
@@ -288,7 +284,6 @@ class UDFBuilder:
         batch_size: int = 256,
         http2: bool = True,
         ssl_verify: bool = False,
-        is_parallel: bool = False,
     ) -> "UDFBuilder":
         """Create a builder configured for the public OpenAI API."""
         return cls(
@@ -299,7 +294,6 @@ class UDFBuilder:
             batch_size=batch_size,
             http2=http2,
             ssl_verify=ssl_verify,
-            is_parallel=is_parallel,
         )
 
     def __post_init__(self):
