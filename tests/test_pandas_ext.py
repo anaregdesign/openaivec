@@ -1,13 +1,15 @@
 import unittest
+import asyncio
 
 import numpy as np
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 from pydantic import BaseModel
 import pandas as pd
 
 from openaivec import pandas_ext
 
 pandas_ext.use(OpenAI())
+pandas_ext.use_async(AsyncOpenAI())
 pandas_ext.responses_model("gpt-4o-mini")
 pandas_ext.embeddings_model("text-embedding-3-small")
 
@@ -32,17 +34,44 @@ class TestPandasExt(unittest.TestCase):
         # assert all values are elements of np.ndarray
         self.assertTrue(all(isinstance(embedding, np.ndarray) for embedding in embeddings))
 
+    def test_aio_embeddings(self):
+        async def run():
+            return await self.df["name"].aio.embeddings()
+
+        embeddings: pd.Series = asyncio.run(run())
+        self.assertTrue(all(isinstance(embedding, np.ndarray) for embedding in embeddings))
+        self.assertEqual(embeddings.shape, (3,))
+        self.assertTrue(embeddings.index.equals(self.df.index))
+
     def test_responses(self):
         names_fr: pd.Series = self.df["name"].ai.responses("translate to French")
 
         # assert all values are elements of str
         self.assertTrue(all(isinstance(x, str) for x in names_fr))
 
+    def test_aio_responses(self):
+        async def run():
+            return await self.df["name"].aio.responses("translate to French")
+
+        names_fr: pd.Series = asyncio.run(run())
+        self.assertTrue(all(isinstance(x, str) for x in names_fr))
+        self.assertEqual(names_fr.shape, (3,))
+        self.assertTrue(names_fr.index.equals(self.df.index))
+
     def test_responses_dataframe(self):
         names_fr: pd.Series = self.df.ai.responses("translate to French")
 
         # assert all values are elements of str
         self.assertTrue(all(isinstance(x, str) for x in names_fr))
+
+    def test_aio_responses_dataframe(self):
+        async def run():
+            return await self.df.aio.responses("translate the 'name' field to French")
+
+        names_fr: pd.Series = asyncio.run(run())
+        self.assertTrue(all(isinstance(x, str) for x in names_fr))
+        self.assertEqual(names_fr.shape, (3,))
+        self.assertTrue(names_fr.index.equals(self.df.index))
 
     def test_extract_series(self):
         sample_series = pd.Series(
@@ -139,7 +168,6 @@ class TestPandasExt(unittest.TestCase):
             ]
         ).ai.extract("fruit")
 
-        # assert columns are exactly ['fruit_name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
         expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
         self.assertListEqual(list(sample_df.columns), expected_columns)
 
@@ -152,7 +180,6 @@ class TestPandasExt(unittest.TestCase):
             ]
         ).ai.extract("fruit")
 
-        # assert columns are ['fruit_name', 'fruit_color', 'fruit_flavor', 'fruit_taste']
         expected_columns = ["fruit_name", "fruit_color", "fruit_flavor", "fruit_taste"]
         self.assertListEqual(list(sample_df.columns), expected_columns)
 
