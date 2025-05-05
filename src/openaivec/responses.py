@@ -20,7 +20,7 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
+from openaivec.util import backoff, map_unique_minibatch
 
 __all__ = ["BatchResponses"]
 
