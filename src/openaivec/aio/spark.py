@@ -91,7 +91,7 @@ from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.udf import UserDefinedFunction
 from pyspark.sql.types import StringType, ArrayType, FloatType
 from openai import AsyncOpenAI, AsyncAzureOpenAI
-from openaivec.aio import pandas_ext
+from openaivec import pandas_ext
 import pandas as pd
 from pydantic import BaseModel
 
