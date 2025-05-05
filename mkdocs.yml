@@ -23,11 +23,6 @@ nav:
           - spark: api/spark.md
           - prompt: api/prompt.md
           - util: api/util.md
-          - aio:
-              - responses: api/aio/responses.md
-              - embeddings: api/aio/embeddings.md
-              - pandas_ext: api/aio/pandas_ext.md
-              - spark: api/aio/spark.md
 
 extra:
   tags:
