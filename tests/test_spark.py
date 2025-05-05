@@ -130,10 +130,6 @@ class TestCountTokensUDF(TestCase):
         )
 
     def test_count_token(self):
-        self.spark.udf.register(
-            "count_tokens",
-            count_tokens_udf("gpt-4o"),
-        )
         sentences = [
             ("How many tokens in this sentence?",),
             ("Understanding token counts helps optimize language model inputs",),
