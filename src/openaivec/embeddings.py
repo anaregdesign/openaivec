@@ -8,7 +8,6 @@ sequential as well as multiprocess execution (via
 exponential‑back‑off policy when OpenAI’s rate limits are hit.
 """
 
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from logging import Logger, getLogger
 from typing import List
@@ -18,35 +17,15 @@ from numpy.typing import NDArray
 from openai import OpenAI, RateLimitError
 
 from openaivec.log import observe
-from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
+from openaivec.util import backoff, map_unique_minibatch
 
-__all__ = ["VectorizedEmbeddingsOpenAI"]
+__all__ = ["BatchEmbeddings"]
 
 _logger: Logger = getLogger(__name__)
 
 
-class VectorizedEmbeddings(metaclass=ABCMeta):
-    """Abstract interface for a sentence‑embedding backend."""
-
-    @abstractmethod
-    def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
-        """Embed a collection of sentences.
-
-        Args:
-            sentences: A list of input strings. Duplicates are allowed; the
-                implementation may decide to de‑duplicate internally.
-            batch_size: Maximum number of sentences to be sent to the underlying
-                model in one request.
-
-        Returns:
-            A list of ``np.ndarray`` objects (dtype ``float32``) where each entry
-            is the embedding of the corresponding sentence in *sentences*.
-        """
-        pass
-
-
 @dataclass(frozen=True)
-class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
+class BatchEmbeddings:
     """Thin wrapper around the OpenAI /embeddings endpoint.
 
     Attributes:
@@ -59,7 +38,6 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
 
     client: OpenAI
     model_name: str
-    is_parallel: bool = False
 
     @observe(_logger)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
@@ -100,7 +78,4 @@ class VectorizedEmbeddingsOpenAI(VectorizedEmbeddings):
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted.
         """
-        if self.is_parallel:
-            return map_unique_minibatch_parallel(inputs, batch_size, self._embed_chunk)
-        else:
-            return map_unique_minibatch(inputs, batch_size, self._embed_chunk)
+        return map_unique_minibatch(inputs, batch_size, self._embed_chunk)
