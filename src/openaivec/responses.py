@@ -118,7 +118,7 @@ class BatchResponses(Generic[T]):
 
     Example:
         ```python
-        vector_llm = VectorizedResponsesOpenAI(
+        vector_llm = BatchResponses(
             client=openai_client,
             model_name="gpt‑4o‑mini",
             system_message="You are a helpful assistant."
@@ -134,7 +134,6 @@ class BatchResponses(Generic[T]):
         top_p: Nucleus‑sampling parameter.
         response_format: Expected Pydantic type of each assistant message
             (defaults to ``str``).
-        is_parallel: If ``True``, minibatches are executed concurrently.
 
     Notes:
         Internally the work is delegated to two helpers:
@@ -217,7 +216,7 @@ class BatchResponses(Generic[T]):
 
     @observe(_LOGGER)
     def parse(self, inputs: List[str], batch_size: int) -> List[T]:
-        """Public API: batched predict with optional parallelisation.
+        """Public API: batched predict.
 
         Args:
             inputs: All prompts that require a response.  Duplicate
