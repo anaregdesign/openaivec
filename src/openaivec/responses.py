@@ -20,7 +20,6 @@ from openai import AsyncOpenAI, OpenAI, RateLimitError
 from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
-from openaivec.aio.util import map
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch
 
@@ -369,6 +368,9 @@ class AsyncBatchResponses(Generic[T]):
             A list containing the assistant responses in the same order as
                 *inputs*.
         """
+        # Import map function locally within the method
+        from openaivec.aio.util import map
+
         return await map(
             inputs=inputs,
             f=self._predict_chunk,

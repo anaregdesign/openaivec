@@ -17,7 +17,6 @@ import numpy as np
 from numpy.typing import NDArray
 from openai import AsyncOpenAI, OpenAI, RateLimitError
 
-from openaivec.aio.util import map
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch
 
@@ -176,4 +175,7 @@ class AsyncBatchEmbeddings:
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted during API calls.
         """
+        # Import map function locally within the method
+        from openaivec.aio.util import map
+
         return await map(inputs, self._embed_chunk, batch_size)
