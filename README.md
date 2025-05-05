@@ -435,9 +435,9 @@ steps:
    - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
 
      ```python
-     from openaivec.spark import UDFBuilder
+     from openaivec.spark import ResponsesUDFBuilder
 
-     udf = UDFBuilder(
+     udf = ResponsesUDFBuilder(
          api_key="<your-api-key>",
          api_version="2024-10-21",
          endpoint="https://<your-resource-name>.openai.azure.com",
