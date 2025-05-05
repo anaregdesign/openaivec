@@ -228,7 +228,7 @@ class BatchResponses(Generic[T]):
             A list containing the assistant responses in the same order as
                 *inputs*.
         """
-        return map(inputs, batch_size, self._predict_chunk)
+        return map(inputs, self._predict_chunk, batch_size)
 
 
 @dataclass(frozen=True)
