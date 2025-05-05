@@ -130,9 +130,9 @@ def _initialize(api_key: str, endpoint: Optional[str], api_version: Optional[str
     global _INITIALIZED
     if not _INITIALIZED:
         if endpoint and api_version:
-            pandas_ext.use(AsyncAzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version))
+            pandas_ext.use_async(AsyncAzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version))
         else:
-            pandas_ext.use(AsyncOpenAI(api_key=api_key))
+            pandas_ext.use_async(AsyncOpenAI(api_key=api_key))
         _INITIALIZED = True
 
 
