@@ -20,7 +20,10 @@ from openai import AsyncOpenAI, OpenAI, RateLimitError
 from openaivec.log import observe
 from openaivec.util import backoff, map, map_async
 
-__all__ = ["BatchEmbeddings"]
+__all__ = [
+    "BatchEmbeddings",
+    "AsyncBatchEmbeddings",
+]
 
 _LOGGER: Logger = getLogger(__name__)
 

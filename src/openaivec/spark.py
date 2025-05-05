@@ -1,10 +1,13 @@
-"""Spark UDFs for the OpenAI and Azure OpenAI APIs.
+"""Asynchronous Spark UDFs for the OpenAI and Azure OpenAI APIs.
 
-This module provides a builder class for creating Spark UDFs that
-communicate with either the public OpenAI API or Azure OpenAI. It
-supports UDFs for generating responses, creating embeddings,
-and counting tokens.  The UDFs operate on Spark DataFrames and are
-optimised for processing large data volumes.
+This module provides builder classes (`ResponsesUDFBuilder`, `EmbeddingsUDFBuilder`)
+for creating asynchronous Spark UDFs that communicate with either the public
+OpenAI API or Azure OpenAI using the `openaivec.aio` subpackage.
+It supports UDFs for generating responses and creating embeddings asynchronously.
+The UDFs operate on Spark DataFrames and leverage asyncio for potentially
+improved performance in I/O-bound operations.
+
+## Setup
 
 First, obtain a Spark session:
 
@@ -14,163 +17,123 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 ```
 
-Next, instantiate a UDF builder with your OpenAI API key and model
-name, then register the desired UDFs:
+Next, instantiate UDF builders with your OpenAI API key (or Azure credentials)
+and model/deployment names, then register the desired UDFs:
 
 ```python
 import os
-from openaivec.spark import UDFBuilder
+from openaivec.aio.spark import ResponsesUDFBuilder, EmbeddingsUDFBuilder
 from pydantic import BaseModel
 
-udf = UDFBuilder.of_openai(
+# Option 1: Using OpenAI
+resp_builder = ResponsesUDFBuilder.of_openai(
     api_key=os.getenv("OPENAI_API_KEY"),
-    model_name="gpt-4.1-nano",
+    model_name="gpt-4o-mini", # Model for responses
+)
+emb_builder = EmbeddingsUDFBuilder.of_openai(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model_name="text-embedding-3-small", # Model for embeddings
 )
 
+# Option 2: Using Azure OpenAI
+# resp_builder = ResponsesUDFBuilder.of_azure_openai(
+#     api_key=os.getenv("AZURE_OPENAI_KEY"),
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="your-resp-deployment-name", # Deployment for responses
+# )
+# emb_builder = EmbeddingsUDFBuilder.of_azure_openai(
+#     api_key=os.getenv("AZURE_OPENAI_KEY"),
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="your-emb-deployment-name", # Deployment for embeddings
+# )
+
+# Define a Pydantic model for structured responses (optional)
 class Translation(BaseModel):
     en: str
     fr: str
-    ja: str
-    es: str
-    de: str
-    it: str
-    pt: str
-    ru: str
+    # ... other languages
 
+# Register the asynchronous responses UDF
 spark.udf.register(
-    "translate",
-    udf.responses(
-        instructions=(
-            "Translate the following text to English, French, Japanese, Spanish, German, Italian, Portuguese, and Russian."
-        ),
+    "translate_async",
+    resp_builder.build(
+        instructions="Translate the text to multiple languages.",
         response_format=Translation,
     ),
 )
+
+# Register the asynchronous embeddings UDF
+spark.udf.register(
+    "embed_async",
+    emb_builder.build(),
+)
 ```
 
-You can now invoke the UDF from Spark SQL:
+You can now invoke the UDFs from Spark SQL:
 
 ```sql
 SELECT
-    name,
-    translate(name) AS t,
-    t.en,
-    t.fr,
-    t.ja,
-    t.es,
-    t.de,
-    t.it,
-    t.pt,
-    t.ru
-FROM fruits;
+    text,
+    translate_async(text) AS translation,
+    embed_async(text) AS embedding
+FROM your_table;
 ```
 
-A sample result looks like this:
-
-| name       | t                          | en         | fr     | ja         | es       | de        | it       | pt       | ru        |
-|------------|----------------------------|------------|--------|------------|----------|-----------|----------|----------|-----------|
-| apple      | {apple, pomme, リン…}      | apple      | pomme  | リンゴ     | manzana  | Apfel     | mela     | maçã     | яблоко    |
-| banana     | {banana, banane, …}        | banana     | banane | バナナ     | plátano  | Banane    | banana   | banana   | банан     |
-| cherry     | {cherry, cerise, …}        | cherry     | cerise | さくらんぼ | cereza   | Kirsche   | ciliegia | cereja   | вишня     |
-| mango      | {mango, mangue, マ…}       | mango      | mangue | マンゴー   | mango    | Mango     | mango    | manga    | манго     |
-| orange     | {orange, orange, …}        | orange     | orange | オレンジ   | naranja  | Orange    | arancia  | laranja  | апельсин  |
+Note: This module relies on the `openaivec.aio.pandas_ext` extension for its core asynchronous logic.
 """
 
+import asyncio
 from dataclasses import dataclass
-from logging import Logger, getLogger
+import logging
 from typing import Iterator, List, Optional, Type, TypeVar, Union, get_args, get_origin
-
-import httpx
-import pandas as pd
-import tiktoken
-from openai import AzureOpenAI, OpenAI
-from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
-from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
+from pyspark.sql.udf import UserDefinedFunction
+from pyspark.sql.types import BooleanType, IntegerType, StringType, ArrayType, FloatType, StructField, StructType
+from openai import AsyncOpenAI, AsyncAzureOpenAI
+import tiktoken
+from openaivec import pandas_ext
+import pandas as pd
+from pydantic import BaseModel
 
-from openaivec import BatchEmbeddings, BatchResponses
-from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
 
 __all__ = [
-    "UDFBuilder",
+    "ResponsesUDFBuilder",
+    "EmbeddingsUDFBuilder",
+    "split_to_chunks_udf",
     "count_tokens_udf",
 ]
 
-_logger: Logger = getLogger(__name__)
+ResponseFormat = BaseModel | Type[str]
+T = TypeVar("T", bound=BaseModel)
 
-# Global Singletons
-_openai_client: Optional[OpenAI] = None
-_vectorized_client: Optional[BatchResponses] = None
-_embedding_client: Optional[BatchEmbeddings] = None
-
-T = TypeVar("T")
+_INITIALIZED: bool = False
+_LOGGER: logging.Logger = logging.getLogger(__name__)
+_TIKTOKEN_ENC: Optional[tiktoken.Encoding] = None
 
 
-def _get_openai_client(conf: "UDFBuilder", http_client: httpx.Client) -> OpenAI:
-    global _openai_client
-    if _openai_client is None:
-        if conf.endpoint is None:
-            _openai_client = OpenAI(
-                api_key=conf.api_key,
-                http_client=http_client,
-            )
+def _initialize(api_key: str, endpoint: Optional[str], api_version: Optional[str]) -> None:
+    """Initializes the OpenAI client for asynchronous operations.
+
+    This function sets up the global asynchronous OpenAI client instance
+    (either `AsyncOpenAI` or `AsyncAzureOpenAI`) used by the UDFs in this
+    module. It ensures the client is initialized only once.
+
+    Args:
+        api_key: The OpenAI or Azure OpenAI API key.
+        endpoint: The Azure OpenAI endpoint URL. Required for Azure.
+        api_version: The Azure OpenAI API version. Required for Azure.
+    """
+    global _INITIALIZED
+    if not _INITIALIZED:
+        if endpoint and api_version:
+            pandas_ext.use(AsyncAzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version))
         else:
-            _openai_client = AzureOpenAI(
-                api_key=conf.api_key,
-                api_version=conf.api_version,
-                azure_endpoint=conf.endpoint,
-                http_client=http_client,
-            )
-    return _openai_client
-
-
-def _get_vectorized_openai_client(
-    conf: "UDFBuilder",
-    system_message: str,
-    response_format: Type[T],
-    temperature: float,
-    top_p: float,
-    http_client: httpx.Client,
-) -> BatchResponses:
-    global _vectorized_client
-    if _vectorized_client is None:
-        _vectorized_client = BatchResponses(
-            client=_get_openai_client(conf, http_client),
-            model_name=conf.model_name,
-            system_message=system_message,
-            temperature=temperature,
-            top_p=top_p,
-            response_format=response_format,
-        )
-    return _vectorized_client
-
-
-def _get_vectorized_embedding_client(conf: "UDFBuilder", http_client: httpx.Client) -> BatchEmbeddings:
-    global _embedding_client
-    if _embedding_client is None:
-        _embedding_client = BatchEmbeddings(
-            client=_get_openai_client(conf, http_client),
-            model_name=conf.model_name,
-        )
-    return _embedding_client
-
-
-def _safe_dump(x: BaseModel) -> Optional[dict]:
-    try:
-        return x.model_dump()
-    except Exception as e:
-        _logger.error(f"Error during model_dump: {e}")
-        return None
-
-
-def _safe_cast_str(x: str) -> Optional[str]:
-    try:
-        return str(x)
-    except Exception as e:
-        _logger.error(f"Error during casting to str: {e}")
-        return None
+            pandas_ext.use(AsyncOpenAI(api_key=api_key))
+        _INITIALIZED = True
 
 
 def _python_type_to_spark(python_type):
@@ -218,206 +181,220 @@ def _pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
     return StructType(fields)
 
 
-@dataclass(frozen=True)
-class UDFBuilder:
-    """Builder for Spark pandas‑UDFs that talk to the OpenAI / Azure OpenAI API.
+def _safe_cast_str(x: str) -> Optional[str]:
+    try:
+        return str(x)
+    except Exception as e:
+        _LOGGER.error(f"Error during casting to str: {e}")
+        return None
 
-    An instance stores authentication parameters and batching behaviour so that
-    the same object can be reused on worker nodes.  The helper exposes factory
-    methods for creating completion‑ and embedding‑oriented UDFs while hiding
-    the low‑level HTTP and model‑selection details.
+
+def _safe_dump(x: BaseModel) -> Optional[dict]:
+    try:
+        return x.model_dump()
+    except Exception as e:
+        _LOGGER.error(f"Error during model_dump: {e}")
+        return None
+
+
+@dataclass(frozen=True)
+class ResponsesUDFBuilder:
+    """Builder for asynchronous Spark pandas UDFs for generating responses.
+
+    Configures and builds UDFs that leverage `openaivec.aio.pandas_ext.responses`
+    to generate text or structured responses from OpenAI models asynchronously.
+    An instance stores authentication parameters and the model name.
 
     Attributes:
-        api_key: OpenAI / Azure API key.
-        endpoint: Azure endpoint base URL or ``None`` for public OpenAI.
-        api_version: Azure API version, ignored for public OpenAI.
-        model_name: Deployment (Azure) or model (OpenAI) name.
-        batch_size: Number of rows sent in one request to the backend.
-        is_parallel: Whether vectorized requests are executed concurrently.
-        http2: Enable HTTP/2 in the underlying ``httpx.Client``.
-        ssl_verify: Toggle TLS certificate verification in ``httpx``.
+        api_key (str): OpenAI or Azure API key.
+        endpoint (Optional[str]): Azure endpoint base URL. None for public OpenAI.
+        api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
+        model_name (str): Deployment name (Azure) or model name (OpenAI) for responses.
     """
 
-    # Params for Constructor
+    # Params for OpenAI SDK
     api_key: str
     endpoint: Optional[str]
     api_version: Optional[str]
 
-    # Params for chat_completion
-    model_name: str  # it would be the name of deployment for Azure
-
-    # Params for minibatch
-    batch_size: int = 256
-    is_parallel: bool = False
-
-    # Params for httpx.Client
-    http2: bool = True
-    ssl_verify: bool = False
+    # Params for Responses API
+    model_name: str
 
     @classmethod
-    def of_azureopenai(
-        cls,
-        api_key: str,
-        api_version: str,
-        endpoint: str,
-        model_name: str,
-        batch_size: int = 256,
-        http2: bool = True,
-        ssl_verify: bool = False,
-    ) -> "UDFBuilder":
-        """Create a builder configured for Azure OpenAI."""
-        return cls(
-            api_key=api_key,
-            api_version=api_version,
-            endpoint=endpoint,
-            model_name=model_name,
-            batch_size=batch_size,
-            http2=http2,
-            ssl_verify=ssl_verify,
-        )
-
-    @classmethod
-    def of_openai(
-        cls,
-        api_key: str,
-        model_name: str,
-        batch_size: int = 256,
-        http2: bool = True,
-        ssl_verify: bool = False,
-    ) -> "UDFBuilder":
-        """Create a builder configured for the public OpenAI API."""
-        return cls(
-            api_key=api_key,
-            api_version=None,
-            endpoint=None,
-            model_name=model_name,
-            batch_size=batch_size,
-            http2=http2,
-            ssl_verify=ssl_verify,
-        )
-
-    def __post_init__(self):
-        assert self.api_key, "api_key must be set"
-        assert self.model_name, "model_name must be set"
-
-    @observe(_logger)
-    def responses(
-        self, instructions: str, response_format: Type[T] = str, temperature: float = 0.0, top_p: float = 1.0
-    ):
-        """Return a pandas‑UDF that produces chat completions.
+    def of_openai(cls, api_key: str, model_name: str) -> "ResponsesUDFBuilder":
+        """Creates a builder configured for the public OpenAI API.
 
         Args:
-            instructions: The system prompt prepended to every request.
-            response_format: ``str`` or a *pydantic* model describing the
-                JSON structure expected from the model.
-            temperature: Sampling temperature.
-            top_p: Nucleus‑sampling parameter.
+            api_key (str): The OpenAI API key.
+            model_name (str): The OpenAI model name for responses (e.g., "gpt-4o-mini").
 
         Returns:
-            A pandas UDF whose output schema is either ``StringType`` or the
-                struct derived from ``response_format``.
+            ResponsesUDFBuilder: A builder instance configured for OpenAI responses.
+        """
+        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name)
+
+    @classmethod
+    def of_azure_openai(cls, api_key: str, endpoint: str, api_version: str, model_name: str) -> "ResponsesUDFBuilder":
+        """Creates a builder configured for Azure OpenAI.
+
+        Args:
+            api_key (str): The Azure OpenAI API key.
+            endpoint (str): The Azure OpenAI endpoint URL.
+            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
+            model_name (str): The Azure OpenAI deployment name for responses.
+
+        Returns:
+            ResponsesUDFBuilder: A builder instance configured for Azure OpenAI responses.
+        """
+        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name)
+
+    def build(
+        self,
+        instructions: str,
+        response_format: Type[T] = str,
+        batch_size: int = 128,  # Default batch size for async might differ
+        temperature: float = 0.0,
+        top_p: float = 1.0,
+    ) -> UserDefinedFunction:
+        """Builds the asynchronous pandas UDF for generating responses.
+
+        Args:
+            instructions (str): The system prompt or instructions for the model.
+            response_format (Type[T]): The desired output format. Either `str` for plain text
+                or a Pydantic `BaseModel` for structured JSON output. Defaults to `str`.
+            batch_size (int): Number of rows per async batch request passed to the underlying
+                `pandas_ext` function. Defaults to 128.
+            temperature (float): Sampling temperature (0.0 to 2.0). Defaults to 0.0.
+            top_p (float): Nucleus sampling parameter. Defaults to 1.0.
+
+        Returns:
+            UserDefinedFunction: A Spark pandas UDF configured to generate responses asynchronously.
+                Output schema is `StringType` or a struct derived from `response_format`.
+
+        Raises:
+            ValueError: If `response_format` is not `str` or a Pydantic `BaseModel`.
         """
         if issubclass(response_format, BaseModel):
             spark_schema = _pydantic_to_spark_schema(response_format)
             json_schema_string = serialize_base_model(response_format)
 
+            @pandas_udf(returnType=spark_schema)
+            def structure_udf(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
+                _initialize(self.api_key, self.endpoint, self.api_version)
+                pandas_ext.responses_model(self.model_name)
+
+                for part in col:
+                    predictions: pd.Series = asyncio.run(
+                        part.aio.responses(
+                            instructions=instructions,
+                            response_format=deserialize_base_model(json_schema_string),
+                            batch_size=batch_size,
+                            temperature=temperature,
+                            top_p=top_p,
+                        )
+                    )
+                    yield pd.DataFrame(predictions.map(_safe_dump).tolist())
+
+            return structure_udf
+
         elif issubclass(response_format, str):
-            spark_schema = StringType()
-            json_schema_string = None
+
+            @pandas_udf(returnType=StringType())
+            def string_udf(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+                _initialize(self.api_key, self.endpoint, self.api_version)
+                pandas_ext.responses_model(self.model_name)
+
+                for part in col:
+                    predictions: pd.Series = asyncio.run(
+                        part.aio.responses(
+                            instructions=instructions,
+                            response_format=str,
+                            batch_size=batch_size,
+                            temperature=temperature,
+                            top_p=top_p,
+                        )
+                    )
+                    yield predictions.map(_safe_cast_str)
+
+            return string_udf
 
         else:
             raise ValueError(f"Unsupported response_format: {response_format}")
 
-        @pandas_udf(spark_schema)
-        def fn_struct(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-            cls = str
-            if json_schema_string:
-                cls = deserialize_base_model(json_schema_string)
 
-            http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
-            client_vec = _get_vectorized_openai_client(
-                conf=self,
-                system_message=instructions,
-                response_format=cls,
-                temperature=temperature,
-                top_p=top_p,
-                http_client=http_client,
-            )
+@dataclass(frozen=True)
+class EmbeddingsUDFBuilder:
+    """Builder for asynchronous Spark pandas UDFs for creating embeddings.
 
-            for part in col:
-                predictions = client_vec.parse(part.tolist(), self.batch_size)
-                result = pd.Series(predictions)
-                yield pd.DataFrame(result.map(_safe_dump).tolist())
+    Configures and builds UDFs that leverage `openaivec.aio.pandas_ext.embeddings`
+    to generate vector embeddings from OpenAI models asynchronously.
+    An instance stores authentication parameters and the model name.
 
-        @pandas_udf(spark_schema)
-        def fn_str(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-            http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
-            client_vec = _get_vectorized_openai_client(
-                conf=self,
-                system_message=instructions,
-                response_format=str,
-                temperature=temperature,
-                top_p=top_p,
-                http_client=http_client,
-            )
-
-            for part in col:
-                predictions = client_vec.parse(part.tolist(), self.batch_size)
-                result = pd.Series(predictions)
-                yield result.map(_safe_cast_str)
-
-        if issubclass(response_format, str):
-            return fn_str
-
-        else:
-            return fn_struct
-
-    @observe(_logger)
-    def embeddings(self):
-        """Return a pandas‑UDF that generates embedding vectors.
-
-        The UDF accepts a column of strings and yields an
-        ``ArrayType(FloatType())`` column containing model embeddings.
-        """
-
-        @pandas_udf(ArrayType(FloatType()))
-        def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-            http_client = httpx.Client(http2=self.http2, verify=self.ssl_verify)
-            client_emb = _get_vectorized_embedding_client(self, http_client)
-
-            for part in col:
-                yield pd.Series(client_emb.create(part.tolist(), self.batch_size))
-
-        return fn
-
-
-# singleton for tiktoken
-_tiktoken_enc: Optional[tiktoken.Encoding] = None
-
-
-def count_tokens_udf(model_name: str = "gpt-4o"):
-    """Create a pandas‑UDF that counts tokens for every string cell.
-
-    The UDF uses *tiktoken* to approximate tokenisation and caches the
-    resulting ``Encoding`` object per executor.
-
-    Args:
-        model_name: Model identifier understood by ``tiktoken``.
-
-    Returns:
-        A pandas UDF producing an ``IntegerType`` column with token counts.
+    Attributes:
+        api_key (str): OpenAI or Azure API key.
+        endpoint (Optional[str]): Azure endpoint base URL. None for public OpenAI.
+        api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
+        model_name (str): Deployment name (Azure) or model name (OpenAI) for embeddings.
     """
 
-    @pandas_udf(IntegerType())
-    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-        global _tiktoken_enc
-        if _tiktoken_enc is None:
-            _tiktoken_enc = tiktoken.encoding_for_model(model_name)
+    # Params for OpenAI SDK
+    api_key: str
+    endpoint: Optional[str]
+    api_version: Optional[str]
 
-        for part in col:
-            yield part.map(lambda x: len(_tiktoken_enc.encode(x)) if isinstance(x, str) else 0)
+    # Params for Embeddings API
+    model_name: str
 
-    return fn
+    @classmethod
+    def of_openai(cls, api_key: str, model_name: str) -> "EmbeddingsUDFBuilder":
+        """Creates a builder configured for the public OpenAI API.
+
+        Args:
+            api_key (str): The OpenAI API key.
+            model_name (str): The OpenAI model name for embeddings (e.g., "text-embedding-3-small").
+
+        Returns:
+            EmbeddingsUDFBuilder: A builder instance configured for OpenAI embeddings.
+        """
+        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name)
+
+    @classmethod
+    def of_azure_openai(cls, api_key: str, endpoint: str, api_version: str, model_name: str) -> "EmbeddingsUDFBuilder":
+        """Creates a builder configured for Azure OpenAI.
+
+        Args:
+            api_key (str): The Azure OpenAI API key.
+            endpoint (str): The Azure OpenAI endpoint URL.
+            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
+            model_name (str): The Azure OpenAI deployment name for embeddings.
+
+        Returns:
+            EmbeddingsUDFBuilder: A builder instance configured for Azure OpenAI embeddings.
+        """
+        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name)
+
+    def build(self, batch_size: int = 128) -> UserDefinedFunction:  # Default batch size for async might differ
+        """Builds the asynchronous pandas UDF for generating embeddings.
+
+        Args:
+            batch_size (int): Number of rows per async batch request passed to the underlying
+                `pandas_ext` function. Defaults to 128.
+
+        Returns:
+            UserDefinedFunction: A Spark pandas UDF configured to generate embeddings asynchronously,
+                returning an `ArrayType(FloatType())` column.
+        """
+
+        @pandas_udf(returnType=ArrayType(FloatType()))
+        def embeddings_udf(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+            _initialize(self.api_key, self.endpoint, self.api_version)
+            pandas_ext.embeddings_model(self.model_name)
+
+            for part in col:
+                embeddings: pd.Series = asyncio.run(part.aio.embeddings(batch_size=batch_size))
+                yield embeddings.map(lambda x: x.tolist())
+
+        return embeddings_udf
 
 
 def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
@@ -435,13 +412,38 @@ def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
 
     @pandas_udf(ArrayType(StringType()))
     def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-        global _tiktoken_enc
-        if _tiktoken_enc is None:
-            _tiktoken_enc = tiktoken.encoding_for_model(model_name)
+        global _TIKTOKEN_ENC
+        if _TIKTOKEN_ENC is None:
+            _TIKTOKEN_ENC = tiktoken.encoding_for_model(model_name)
 
-        chunker = TextChunker(_tiktoken_enc)
+        chunker = TextChunker(_TIKTOKEN_ENC)
 
         for part in col:
             yield part.map(lambda x: chunker.split(x, max_tokens=max_tokens, sep=sep) if isinstance(x, str) else [])
+
+    return fn
+
+
+def count_tokens_udf(model_name: str = "gpt-4o"):
+    """Create a pandas‑UDF that counts tokens for every string cell.
+
+    The UDF uses *tiktoken* to approximate tokenisation and caches the
+    resulting ``Encoding`` object per executor.
+
+    Args:
+        model_name: Model identifier understood by ``tiktoken``.
+
+    Returns:
+        A pandas UDF producing an ``IntegerType`` column with token counts.
+    """
+
+    @pandas_udf(IntegerType())
+    def fn(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
+        global _TIKTOKEN_ENC
+        if _TIKTOKEN_ENC is None:
+            _TIKTOKEN_ENC = tiktoken.encoding_for_model(model_name)
+
+        for part in col:
+            yield part.map(lambda x: len(_TIKTOKEN_ENC.encode(x)) if isinstance(x, str) else 0)
 
     return fn

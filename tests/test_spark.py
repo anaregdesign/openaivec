@@ -2,19 +2,22 @@ import os
 from typing import List
 from unittest import TestCase
 
-from openai import BaseModel
+from pydantic import BaseModel
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec.spark import UDFBuilder, _pydantic_to_spark_schema, count_tokens_udf
+from openaivec.spark import EmbeddingsUDFBuilder, ResponsesUDFBuilder, _pydantic_to_spark_schema, count_tokens_udf
 
 
-class TestUDFBuilder(TestCase):
+class TestResponsesUDFBuilder(TestCase):
     def setUp(self):
-        self.udf = UDFBuilder.of_openai(
+        self.responses = ResponsesUDFBuilder.of_openai(
             api_key=os.environ.get("OPENAI_API_KEY"),
-            model_name="gpt-4o-mini",
-            batch_size=8,
+            model_name="gpt-4.1-nano",
+        )
+        self.embeddings = EmbeddingsUDFBuilder.of_openai(
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            model_name="text-embedding-3-small",
         )
         self.spark: SparkSession = SparkSession.builder.getOrCreate()
         self.spark.sparkContext.setLogLevel("INFO")
@@ -26,20 +29,19 @@ class TestUDFBuilder(TestCase):
     def test_responses(self):
         self.spark.udf.register(
             "repeat",
-            self.udf.responses(
-                """
-                Repeat twice input string.
-                """,
-            ),
+            self.responses.build("Repeat twice input string."),
         )
         dummy_df = self.spark.range(31)
         dummy_df.createOrReplaceTempView("dummy")
 
-        self.spark.sql(
+        df = self.spark.sql(
             """
             SELECT id, repeat(cast(id as STRING)) as v from dummy
             """
-        ).show()
+        )
+
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (31, 2)
 
     def test_responses_structured(self):
         class Fruit(BaseModel):
@@ -49,7 +51,7 @@ class TestUDFBuilder(TestCase):
 
         self.spark.udf.register(
             "fruit",
-            self.udf.responses(
+            self.responses.build(
                 instructions="return the color and taste of given fruit",
                 response_format=Fruit,
             ),
@@ -59,31 +61,31 @@ class TestUDFBuilder(TestCase):
         dummy_df = self.spark.createDataFrame(fruit_data, ["name"])
         dummy_df.createOrReplaceTempView("dummy")
 
-        self.spark.sql(
+        df = self.spark.sql(
             """
-            with t as (SELECT name, fruit(name) as info from dummy)
-            select name, info.name, info.color, info.taste from t
+            with t as (SELECT fruit(name) as info from dummy)
+            select info.name, info.color, info.taste from t
             """
-        ).show(truncate=False)
-
-    def test_count_token(self):
-        self.spark.udf.register(
-            "count_tokens",
-            count_tokens_udf("gpt-4o"),
         )
-        sentences = [
-            ("How many tokens in this sentence?",),
-            ("Understanding token counts helps optimize language model inputs",),
-            ("Tokenization is a crucial step in natural language processing tasks",),
-        ]
-        dummy_df = self.spark.createDataFrame(sentences, ["sentence"])
-        dummy_df.createOrReplaceTempView("sentences")
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (3, 3)
 
-        self.spark.sql(
+    def test_embeddings(self):
+        self.spark.udf.register(
+            "embed",
+            self.embeddings.build(batch_size=8),
+        )
+        dummy_df = self.spark.range(31)
+        dummy_df.createOrReplaceTempView("dummy")
+
+        df = self.spark.sql(
             """
-            SELECT sentence, count_tokens(sentence) as token_count from sentences
+            SELECT id, embed(cast(id as STRING)) as v from dummy
             """
-        ).show(truncate=False)
+        )
+
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (31, 2)
 
 
 class TestMappingFunctions(TestCase):
@@ -116,3 +118,28 @@ class TestMappingFunctions(TestCase):
         )
 
         self.assertEqual(schema, expected)
+
+
+class TestCountTokensUDF(TestCase):
+    def setUp(self):
+        self.spark: SparkSession = SparkSession.builder.getOrCreate()
+        self.spark.sparkContext.setLogLevel("INFO")
+        self.spark.udf.register(
+            "count_tokens",
+            count_tokens_udf("gpt-4o"),
+        )
+
+    def test_count_token(self):
+        sentences = [
+            ("How many tokens in this sentence?",),
+            ("Understanding token counts helps optimize language model inputs",),
+            ("Tokenization is a crucial step in natural language processing tasks",),
+        ]
+        dummy_df = self.spark.createDataFrame(sentences, ["sentence"])
+        dummy_df.createOrReplaceTempView("sentences")
+
+        self.spark.sql(
+            """
+            SELECT sentence, count_tokens(sentence) as token_count from sentences
+            """
+        ).show(truncate=False)
