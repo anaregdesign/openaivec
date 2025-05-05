@@ -11,7 +11,6 @@ All public call sites are documented using the Google style docstrings so IDEs
 and static analysers can pick up argument / return‑value information.
 """
 
-from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
 from typing import Generic, List, Type, TypeVar, cast
@@ -23,9 +22,9 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
-__all__ = ["VectorizedResponses", "BatchResponses"]
+__all__ = ["BatchResponses"]
 
-_logger: Logger = getLogger(__name__)
+_LOGGER: Logger = getLogger(__name__)
 
 
 def _vectorize_system_message(system_message: str) -> str:
@@ -150,7 +149,6 @@ class BatchResponses(Generic[T]):
     temperature: float = 0.0
     top_p: float = 1.0
     response_format: Type[T] = str
-    is_parallel: bool = False
     _vectorized_system_message: str = field(init=False)
     _model_json_schema: dict = field(init=False)
 
@@ -161,7 +159,7 @@ class BatchResponses(Generic[T]):
             _vectorize_system_message(self.system_message),
         )
 
-    @observe(_logger)
+    @observe(_LOGGER)
     @backoff(exception=RateLimitError, scale=60, max_retries=16)
     def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         """Make a single call to the OpenAI *JSON mode* endpoint.
@@ -198,7 +196,7 @@ class BatchResponses(Generic[T]):
         )
         return cast(ParsedResponse[Response[T]], completion)
 
-    @observe(_logger)
+    @observe(_LOGGER)
     def _predict_chunk(self, user_messages: List[str]) -> List[T]:
         """Helper executed for every unique minibatch.
 
@@ -217,7 +215,7 @@ class BatchResponses(Generic[T]):
         sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses
 
-    @observe(_logger)
+    @observe(_LOGGER)
     def parse(self, inputs: List[str], batch_size: int) -> List[T]:
         """Public API: batched predict with optional parallelisation.
 
@@ -230,7 +228,4 @@ class BatchResponses(Generic[T]):
             A list containing the assistant responses in the same order as
                 *inputs*.
         """
-        if self.is_parallel:
-            return map_unique_minibatch_parallel(inputs, batch_size, self._predict_chunk)
-        else:
-            return map_unique_minibatch(inputs, batch_size, self._predict_chunk)
+        return map_unique_minibatch(inputs, batch_size, self._predict_chunk)
