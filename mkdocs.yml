@@ -11,6 +11,8 @@ theme:
 
 nav:
   - Home: index.md
+  - PyPI: https://pypi.org/project/openaivec/
+  - GitHub: https://github.com/anaregdesign/openaivec
   - Examples:
       - examples/pandas.ipynb
       - examples/spark.ipynb
