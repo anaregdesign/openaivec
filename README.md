@@ -134,63 +134,112 @@ Example output:
 | rabbit | rabbit family |
 | koala  | koala family  |
 
-## Using with Apache Spark UDF
+## Using with Apache Spark UDFs
 
-Below is an example showing how to create UDFs for Apache Spark using the provided `UDFBuilder`.
-This configuration is intended for use with Azure OpenAI or OpenAI.
+`openaivec.spark` provides builders (`ResponsesUDFBuilder`, `EmbeddingsUDFBuilder`) to create asynchronous Spark UDFs for interacting with OpenAI APIs. These UDFs leverage `openaivec.aio.pandas_ext` for efficient asynchronous processing within Spark.
+
+First, obtain a Spark session:
 
 ```python
-from openaivec.spark import UDFBuilder
+from pyspark.sql import SparkSession
 
-udf = UDFBuilder.of_azureopenai(
-    api_key="<your-api-key>",
-    api_version="2024-10-21",
-    endpoint="https://<your_resource_name>.openai.azure.com",
-    model_name="<your_deployment_name>"
-)
-
-# Register UDFs (e.g., to extract flavor or product type from product names)
-spark.udf.register("parse_taste", udf.responses("""
-- Extract flavor-related information from the product name. Return only the concise flavor name with no extra text.
-- Minimize unnecessary adjectives related to the flavor.
-    - Example:
-        - Hokkaido Milk → Milk
-        - Uji Matcha → Matcha
-"""))
-
-# Register UDFs (e.g., to extract product type from product names)
-spark.udf.register("parse_product", udf.responses("""
-- Extract the type of food from the product name. Return only the food category with no extra text.
-- Example output:
-    - Smoothie
-    - Milk Tea
-    - Protein Bar
-"""))
+spark = SparkSession.builder.getOrCreate()
 ```
 
-You can then use the UDFs in your Spark SQL queries as follows:
+Next, instantiate UDF builders using either OpenAI or Azure OpenAI credentials and register the UDFs.
+
+```python
+import os
+from openaivec.spark import ResponsesUDFBuilder, EmbeddingsUDFBuilder, count_tokens_udf
+from pydantic import BaseModel
+
+# --- Option 1: Using OpenAI ---
+resp_builder_openai = ResponsesUDFBuilder.of_openai(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model_name="gpt-4o-mini", # Model for responses
+)
+emb_builder_openai = EmbeddingsUDFBuilder.of_openai(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    model_name="text-embedding-3-small", # Model for embeddings
+)
+
+# --- Option 2: Using Azure OpenAI ---
+# resp_builder_azure = ResponsesUDFBuilder.of_azure_openai(
+#     api_key=os.getenv("AZURE_OPENAI_KEY"),
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="<your-resp-deployment-name>", # Deployment for responses
+# )
+# emb_builder_azure = EmbeddingsUDFBuilder.of_azure_openai(
+#     api_key=os.getenv("AZURE_OPENAI_KEY"),
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="<your-emb-deployment-name>", # Deployment for embeddings
+# )
+
+# --- Register Responses UDF (String Output) ---
+# Use the builder corresponding to your setup (OpenAI or Azure)
+spark.udf.register(
+    "parse_flavor",
+    resp_builder_openai.build( # or resp_builder_azure.build(...)
+        instructions="Extract flavor-related information. Return only the concise flavor name.",
+        response_format=str, # Specify string output
+    )
+)
+
+# --- Register Responses UDF (Structured Output with Pydantic) ---
+class Translation(BaseModel):
+    en: str
+    fr: str
+    ja: str
+
+spark.udf.register(
+    "translate_struct",
+    resp_builder_openai.build( # or resp_builder_azure.build(...)
+        instructions="Translate the text to English, French, and Japanese.",
+        response_format=Translation, # Specify Pydantic model for structured output
+    )
+)
+
+# --- Register Embeddings UDF ---
+spark.udf.register(
+    "embed_text",
+    emb_builder_openai.build() # or emb_builder_azure.build()
+)
+
+# --- Register Token Counting UDF ---
+spark.udf.register("count_tokens", count_tokens_udf("gpt-4o"))
+
+```
+
+You can now use these UDFs in Spark SQL:
 
 ```sql
-SELECT id,
-       product_name,
-       parse_taste(product_name)   AS taste,
-       parse_product(product_name) AS product
+-- Create a sample table (replace with your actual table)
+CREATE OR REPLACE TEMP VIEW product_names AS SELECT * FROM VALUES
+  ('4414732714624', 'Cafe Mocha Smoothie (Trial Size)'),
+  ('4200162318339', 'Dark Chocolate Tea (New Product)'),
+  ('4920122084098', 'Uji Matcha Tea (New Product)')
+AS product_names(id, product_name);
+
+-- Use the registered UDFs
+SELECT
+    id,
+    product_name,
+    parse_flavor(product_name) AS flavor,
+    translate_struct(product_name) AS translation,
+    embed_text(product_name) AS embedding,
+    count_tokens(product_name) AS token_count
 FROM product_names;
 ```
 
-Example Output:
+Example Output (structure might vary slightly):
 
-| id            | product_name                         | taste     | product     |
-| ------------- | ------------------------------------ | --------- | ----------- |
-| 4414732714624 | Cafe Mocha Smoothie (Trial Size)     | Mocha     | Smoothie    |
-| 4200162318339 | Dark Chocolate Tea (New Product)     | Chocolate | Tea         |
-| 4920122084098 | Cafe Mocha Protein Bar (Trial Size)  | Mocha     | Protein Bar |
-| 4468864478874 | Dark Chocolate Smoothie (On Sale)    | Chocolate | Smoothie    |
-| 4036242144725 | Uji Matcha Tea (New Product)         | Matcha    | Tea         |
-| 4847798245741 | Hokkaido Milk Tea (Trial Size)       | Milk      | Milk Tea    |
-| 4449574211957 | Dark Chocolate Smoothie (Trial Size) | Chocolate | Smoothie    |
-| 4127044426148 | Fruit Mix Tea (Trial Size)           | Fruit     | Tea         |
-| ...           | ...                                  | ...       | ...         |
+| id            | product_name                      | flavor    | translation                      | embedding                      | token_count |
+|---------------|-----------------------------------|-----------|----------------------------------|--------------------------------|-------------|
+| 4414732714624 | Cafe Mocha Smoothie (Trial Size)  | Mocha     | {en: ..., fr: ..., ja: ...}    | [0.1, -0.2, ..., 0.5]          | 8           |
+| 4200162318339 | Dark Chocolate Tea (New Product)  | Chocolate | {en: ..., fr: ..., ja: ...}    | [-0.3, 0.1, ..., -0.1]         | 7           |
+| 4920122084098 | Uji Matcha Tea (New Product)      | Matcha    | {en: ..., fr: ..., ja: ...}    | [0.0, 0.4, ..., 0.2]           | 8           |
 
 ## Building Prompts
 
