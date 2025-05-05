@@ -38,7 +38,8 @@ class TestResponsesUDFBuilder(TestCase):
             """
         )
 
-        df.show()
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (31, 2)
 
     def test_responses_structured(self):
         class Fruit(BaseModel):
@@ -64,8 +65,8 @@ class TestResponsesUDFBuilder(TestCase):
             select info.name, info.color, info.taste from t
             """
         )
-
-        df.show()
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (3, 3)
 
     def test_embeddings(self):
         self.spark.udf.register(
@@ -81,4 +82,5 @@ class TestResponsesUDFBuilder(TestCase):
             """
         )
 
-        df.show()
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (31, 2)
