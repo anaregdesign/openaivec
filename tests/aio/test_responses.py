@@ -6,7 +6,7 @@ from typing import List
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
-from openaivec.aio import AsyncBatchResponses
+from openaivec.responses import AsyncBatchResponses
 
 _h: Handler = StreamHandler()
 
