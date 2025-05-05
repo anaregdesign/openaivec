@@ -31,9 +31,6 @@ class BatchEmbeddings:
     Attributes:
         client: An already‑configured ``openai.OpenAI`` client.
         model_name: The model identifier, e.g. ``"text-embedding-3-small"``.
-        is_parallel: If *True* the workload is distributed over multiple worker
-            processes via ``multiprocessing.Pool``; otherwise requests are sent
-            sequentially.
     """
 
     client: OpenAI
