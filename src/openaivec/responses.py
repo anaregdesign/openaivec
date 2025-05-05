@@ -23,7 +23,10 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import backoff, map, map_async
 
-__all__ = ["BatchResponses"]
+__all__ = [
+    "BatchResponses",
+    "AsyncBatchResponses",
+]
 
 _LOGGER: Logger = getLogger(__name__)
 

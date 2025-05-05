@@ -100,6 +100,13 @@ from pydantic import BaseModel
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
 
+__all__ = [
+    "ResponsesUDFBuilder",
+    "EmbeddingsUDFBuilder",
+    "split_to_chunks_udf",
+    "count_tokens_udf",
+]
+
 ResponseFormat = BaseModel | Type[str]
 T = TypeVar("T", bound=BaseModel)
 
