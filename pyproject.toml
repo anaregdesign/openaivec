@@ -55,7 +55,6 @@ docs = [
 
 [project.optional-dependencies]
 spark = [
-    "httpx[http2]>=0.28.1",
     "pyspark>=3.5.5",
 ]
 
