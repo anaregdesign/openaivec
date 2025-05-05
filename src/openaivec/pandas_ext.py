@@ -6,13 +6,29 @@ from openai import OpenAI
 from openaivec import pandas_ext
 
 # Set up the OpenAI client to use with pandas_ext
-pandas_ext.use(OpenAI())
+# Option 1: Use an existing client instance
+# pandas_ext.use(OpenAI())
 
-# Set up the model_name for responses and embeddings
-pandas_ext.responses_model("gpt-4.1-nano")
+# Option 2: Use environment variables (OPENAI_API_KEY or Azure variables)
+# (No explicit setup needed if variables are set)
+
+# Option 3: Provide API key directly
+pandas_ext.use_openai("YOUR_API_KEY")
+
+# Option 4: Use Azure OpenAI credentials
+# pandas_ext.use_azure_openai(
+#     api_key="YOUR_AZURE_KEY",
+#     endpoint="YOUR_AZURE_ENDPOINT",
+#     api_version="YOUR_API_VERSION"
+# )
+
+# Set up the model_name for responses and embeddings (optional, defaults shown)
+pandas_ext.responses_model("gpt-4o-mini")
 pandas_ext.embeddings_model("text-embedding-3-small")
 ```
 
+This module provides `.ai` and `.aio` accessors for pandas Series and DataFrames
+to easily interact with OpenAI APIs for tasks like generating responses or embeddings.
 """
 
 import inspect
