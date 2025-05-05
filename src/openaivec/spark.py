@@ -88,7 +88,7 @@ from pydantic import BaseModel
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.types import ArrayType, BooleanType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec import VectorizedEmbeddingsOpenAI, VectorizedResponsesOpenAI
+from openaivec import VectorizedEmbeddingsOpenAI, BatchResponses
 from openaivec.log import observe
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
@@ -137,7 +137,7 @@ def _get_vectorized_openai_client(
 ) -> VectorizedResponses:
     global _vectorized_client
     if _vectorized_client is None:
-        _vectorized_client = VectorizedResponsesOpenAI(
+        _vectorized_client = BatchResponses(
             client=_get_openai_client(conf, http_client),
             model_name=conf.model_name,
             system_message=system_message,

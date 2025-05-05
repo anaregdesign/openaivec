@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from openaivec.log import observe
 from openaivec.util import backoff, map_unique_minibatch, map_unique_minibatch_parallel
 
-__all__ = ["VectorizedResponses", "VectorizedResponsesOpenAI"]
+__all__ = ["VectorizedResponses", "BatchResponses"]
 
 _logger: Logger = getLogger(__name__)
 
@@ -110,28 +110,8 @@ class Response(BaseModel, Generic[T]):
     assistant_messages: List[Message[T]]
 
 
-class VectorizedResponses(Generic[T], metaclass=ABCMeta):
-    """A minimal interface for batched language models."""
-
-    @abstractmethod
-    def parse(self, inputs: List[str], batch_size: int) -> List[T]:
-        """Return model outputs for *inputs* in their original order.
-
-        Args:
-            inputs: List of user prompt strings.  Duplicates keep their
-                position but may be executed only once internally.
-            batch_size: Maximum number of unique user messages to include in a
-                single underlying LLM call.
-
-        Returns:
-            A list with the same length and ordering as *inputs* but
-            populated with model responses.
-        """
-        pass
-
-
 @dataclass(frozen=True)
-class VectorizedResponsesOpenAI(VectorizedResponses, Generic[T]):
+class BatchResponses(Generic[T]):
     """Stateless façade that turns OpenAI's JSON‑mode API into a batched API.
 
     This wrapper allows you to submit *multiple* user prompts in one JSON‑mode

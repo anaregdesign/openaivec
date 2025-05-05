@@ -5,7 +5,7 @@ from unittest import TestCase
 from openai import OpenAI
 from pydantic import BaseModel
 
-from openaivec import VectorizedResponsesOpenAI
+from openaivec import BatchResponses
 
 _h: Handler = StreamHandler()
 
@@ -21,7 +21,7 @@ class TestVectorizedResponsesOpenAI(TestCase):
         system_message = """
         just repeat the user message
         """.strip()
-        client = VectorizedResponsesOpenAI(
+        client = BatchResponses(
             client=self.openai_client,
             model_name=self.model_name,
             system_message=system_message,
@@ -50,7 +50,7 @@ class TestVectorizedResponsesOpenAI(TestCase):
             color: str
             taste: str
 
-        client = VectorizedResponsesOpenAI(
+        client = BatchResponses(
             client=self.openai_client, model_name=self.model_name, system_message=system_message, response_format=Fruit
         )
 
