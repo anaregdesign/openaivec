@@ -176,6 +176,6 @@ class AsyncBatchEmbeddings:
             openai.RateLimitError: Propagated if retries are exhausted during API calls.
         """
         # Import map function locally within the method
-        from openaivec.aio.util import map
+        from openaivec.util import map_async
 
-        return await map(inputs, self._embed_chunk, batch_size)
+        return await map_async(inputs, self._embed_chunk, batch_size)

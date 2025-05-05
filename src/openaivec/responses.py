@@ -369,9 +369,9 @@ class AsyncBatchResponses(Generic[T]):
                 *inputs*.
         """
         # Import map function locally within the method
-        from openaivec.aio.util import map
+        from openaivec.util import map_async
 
-        return await map(
+        return await map_async(
             inputs=inputs,
             f=self._predict_chunk,
             batch_size=batch_size,  # Use the batch_size argument passed to the method
