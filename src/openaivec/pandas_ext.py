@@ -25,8 +25,8 @@ from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-from openaivec.embeddings import VectorizedEmbeddings, BatchEmbeddings
-from openaivec.responses import VectorizedResponses, BatchResponses
+from openaivec.embeddings import BatchEmbeddings
+from openaivec.responses import BatchResponses
 
 __all__ = [
     "use",
@@ -207,7 +207,7 @@ class OpenAIVecSeriesAccessor:
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
         """
-        client: VectorizedResponses = BatchResponses(
+        client: BatchResponses = BatchResponses(
             client=_get_openai_client(),
             model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,
@@ -243,7 +243,7 @@ class OpenAIVecSeriesAccessor:
             pandas.Series: Series whose values are ``np.ndarray`` objects
                 (dtype ``float32``).
         """
-        client: VectorizedEmbeddings = BatchEmbeddings(
+        client: BatchEmbeddings = BatchEmbeddings(
             client=_get_openai_client(),
             model_name=_EMBEDDINGS_MODEL_NAME,
         )

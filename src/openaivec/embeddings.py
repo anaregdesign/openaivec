@@ -76,7 +76,7 @@ class BatchEmbeddings:
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted.
         """
-        return map(inputs, batch_size, self._embed_chunk)
+        return map(inputs, self._embed_chunk, batch_size)
 
 
 @dataclass(frozen=True)
