@@ -21,7 +21,7 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.util import backoff, map_unique_minibatch, map_async
+from openaivec.util import backoff, map, map_async
 
 __all__ = ["BatchResponses"]
 
@@ -228,7 +228,7 @@ class BatchResponses(Generic[T]):
             A list containing the assistant responses in the same order as
                 *inputs*.
         """
-        return map_unique_minibatch(inputs, batch_size, self._predict_chunk)
+        return map(inputs, batch_size, self._predict_chunk)
 
 
 @dataclass(frozen=True)

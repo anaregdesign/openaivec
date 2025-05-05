@@ -2,9 +2,7 @@ import asyncio
 import functools
 import re
 import time
-from concurrent.futures.thread import ThreadPoolExecutor
 from dataclasses import dataclass
-from itertools import chain
 from typing import Awaitable, Callable, Dict, List, Optional, TypeVar
 
 import numpy as np
@@ -14,140 +12,6 @@ import tiktoken
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
-
-
-def split_to_minibatch(b: List[T], batch_size: int) -> List[List[T]]:
-    """Split a list into mini‑batches.
-
-    Args:
-        b (List[T]): Input list to split.
-        batch_size (int): Maximum number of elements per batch.
-
-    Returns:
-        List[List[T]]: The input list divided into sub‑lists of length
-            `batch_size` (the final batch may be smaller).
-    """
-    return [b[i : i + batch_size] for i in range(0, len(b), batch_size)]
-
-
-def map_minibatch(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
-    """Apply a function to each mini‑batch sequentially and flatten the result.
-
-    Args:
-        b (List[T]): Input list.
-        batch_size (int): Batch size passed to :func:`split_to_minibatch`.
-        f (Callable[[List[T]], List[U]]): Function executed on every batch.
-
-    Returns:
-        List[U]: Flattened list obtained by concatenating the results returned
-            by ``f`` for each batch.
-    """
-    batches = split_to_minibatch(b, batch_size)
-    return list(chain.from_iterable(f(batch) for batch in batches))
-
-
-async def map_minibatch_async(b: List[T], batch_size: int, f: Callable[[List[T]], Awaitable[List[U]]]) -> List[U]:
-    """Asynchronous version of :func:`map_minibatch`.
-
-    Args:
-        b (List[T]): Input list.
-        batch_size (int): Batch size passed to :func:`split_to_minibatch`.
-        f (Callable[[List[T]], Awaitable[List[U]]): Asynchronous function executed on every batch.
-
-    Returns:
-        List[U]: Flattened list obtained by concatenating the results returned
-            by ``f`` for each batch, gathered concurrently.
-    """
-    batches: List[List[T]] = split_to_minibatch(b, batch_size)
-    results: List[List[U]] = await asyncio.gather(*[f(batch) for batch in batches])
-    return list(chain.from_iterable(results))
-
-
-def map_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
-    """Parallel variant of :func:`map_minibatch`.
-
-    Args:
-        b (List[T]): Input list.
-        batch_size (int): Batch size passed to :func:`split_to_minibatch`.
-        f (Callable[[List[T]], List[U]]): Function executed on every batch.
-
-    Returns:
-        List[U]: Flattened list of results produced by ``f`` for every batch,
-            evaluated in parallel threads.
-    """
-    batches = split_to_minibatch(b, batch_size)
-    with ThreadPoolExecutor() as executor:
-        results = executor.map(f, batches)
-    return list(chain.from_iterable(results))
-
-
-def map_unique(b: List[T], f: Callable[[List[T]], List[U]]) -> List[U]:
-    """Call a function once per unique value and broadcast the result.
-
-    Args:
-        b (List[T]): Input list that may contain duplicates.
-        f (Callable[[List[T]], List[U]]): Function applied to the unique values
-            extracted from ``b``.
-
-    Returns:
-        List[U]: Result list aligned with the original order of ``b``.
-    """
-    unique_values = list(dict.fromkeys(b))
-    value_to_index = {v: i for i, v in enumerate(unique_values)}
-    results = f(unique_values)
-    return [results[value_to_index[value]] for value in b]
-
-
-def map_unique_minibatch(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
-    """Combine :func:`map_unique` and :func:`map_minibatch`.
-
-    The function ``f`` is executed on unique values only, processed in
-    mini‑batches.
-
-    Args:
-        b (List[T]): Input list that may contain duplicates.
-        batch_size (int): Batch size for mini‑batch processing.
-        f (Callable[[List[T]], List[U]]): Function to apply.
-
-    Returns:
-        List[U]: Result list aligned with the original order of ``b``.
-    """
-    return map_unique(b, lambda x: map_minibatch(x, batch_size, f))
-
-
-async def map_unique_minibatch_async(
-    b: List[T], batch_size: int, f: Callable[[List[T]], Awaitable[List[U]]]
-) -> List[U]:
-    """Asynchronous version of :func:`map_unique_minibatch`.
-
-    Applies an asynchronous function `f` concurrently to mini-batches of unique values from `b`.
-
-    Args:
-        b (List[T]): Input list that may contain duplicates.
-        batch_size (int): Batch size for mini-batch processing.
-        f (Callable[[List[T]], Awaitable[List[U]]): Asynchronous function to apply to unique values.
-
-    Returns:
-        List[U]: Result list aligned with the original order of ``b``.
-    """
-    unique_values = list(dict.fromkeys(b))
-    value_to_index = {v: i for i, v in enumerate(unique_values)}
-    unique_results: List[U] = await map_minibatch_async(unique_values, batch_size, f)
-    return [unique_results[value_to_index[value]] for value in b]
-
-
-def map_unique_minibatch_parallel(b: List[T], batch_size: int, f: Callable[[List[T]], List[U]]) -> List[U]:
-    """Parallel version of :func:`map_unique_minibatch`.
-
-    Args:
-        b (List[T]): Input list that may contain duplicates.
-        batch_size (int): Batch size for mini‑batch processing.
-        f (Callable[[List[T]], List[U]]): Function to apply.
-
-    Returns:
-        List[U]: Result list aligned with the original order of ``b``.
-    """
-    return map_unique(b, lambda x: map_minibatch_parallel(x, batch_size, f))
 
 
 def get_exponential_with_cutoff(scale: float) -> float:
@@ -278,6 +142,39 @@ async def map_async(inputs: List[T], f: Callable[[List[T]], Awaitable[List[U]]],
     # Ensure f is awaited correctly within gather
     tasks = [f(batch) for batch in input_batches]
     output_batches: List[List[U]] = await asyncio.gather(*tasks)
+    unique_outputs: List[U] = [u for batch in output_batches for u in batch]
+    if len(unique_hashes) != len(unique_outputs):
+        raise ValueError(
+            f"Number of unique inputs ({len(unique_hashes)}) does not match number of unique outputs ({len(unique_outputs)}). Check the function f."
+        )
+    hash_outputs: Dict[int, U] = {k: v for k, v in zip(unique_hashes, unique_outputs)}
+    outputs: List[U] = [hash_outputs[k] for k in original_hashes]
+    return outputs
+
+
+def map(inputs: List[T], f: Callable[[List[T]], List[U]], batch_size: int = 128) -> List[U]:
+    """Map a function `f` over a list of inputs in batches.
+
+    This function divides the input list into smaller batches and applies the
+    function `f` to each batch. It gathers the results and returns them in the
+    same order as the original inputs.
+
+    Args:
+        inputs (List[T]): List of inputs to be processed.
+        f (Callable[[List[T]], List[U]]): Function to apply. It takes a batch of
+            inputs (List[T]) and must return a list of corresponding outputs
+            (List[U]) of the same size.
+        batch_size (int): Size of each batch for processing.
+
+    Returns:
+        List[U]: List of outputs corresponding to the original inputs, in order.
+    """
+    original_hashes: List[int] = [hash(str(v)) for v in inputs]  # Use str(v) for hash if T is not hashable
+    hash_inputs: Dict[int, T] = {k: v for k, v in zip(original_hashes, inputs)}
+    unique_hashes: List[int] = list(hash_inputs.keys())
+    unique_inputs: List[T] = list(hash_inputs.values())
+    input_batches: List[List[T]] = [unique_inputs[i : i + batch_size] for i in range(0, len(unique_inputs), batch_size)]
+    output_batches: List[List[U]] = [f(batch) for batch in input_batches]
     unique_outputs: List[U] = [u for batch in output_batches for u in batch]
     if len(unique_hashes) != len(unique_outputs):
         raise ValueError(

@@ -1,10 +1,12 @@
 import os
+from typing import List
 from unittest import TestCase
 
 from openai import BaseModel
 from pyspark.sql.session import SparkSession
+from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec.spark import UDFBuilder, count_tokens_udf
+from openaivec.spark import UDFBuilder, _pydantic_to_spark_schema, count_tokens_udf
 
 
 class TestUDFBuilder(TestCase):
@@ -82,3 +84,35 @@ class TestUDFBuilder(TestCase):
             SELECT sentence, count_tokens(sentence) as token_count from sentences
             """
         ).show(truncate=False)
+
+
+class TestMappingFunctions(TestCase):
+    def test_pydantic_to_spark_schema(self):
+        class InnerModel(BaseModel):
+            inner_id: int
+            description: str
+
+        class OuterModel(BaseModel):
+            id: int
+            name: str
+            values: List[float]
+            inner: InnerModel
+
+        schema = _pydantic_to_spark_schema(OuterModel)
+
+        expected = StructType(
+            [
+                StructField("id", IntegerType(), True),
+                StructField("name", StringType(), True),
+                StructField("values", ArrayType(FloatType(), True), True),
+                StructField(
+                    "inner",
+                    StructType(
+                        [StructField("inner_id", IntegerType(), True), StructField("description", StringType(), True)]
+                    ),
+                    True,
+                ),
+            ]
+        )
+
+        self.assertEqual(schema, expected)

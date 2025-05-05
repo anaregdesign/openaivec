@@ -211,7 +211,6 @@ class OpenAIVecSeriesAccessor:
             client=_get_openai_client(),
             model_name=_RESPONSES_MODEL_NAME,
             system_message=instructions,
-            is_parallel=True,
             response_format=response_format,
             temperature=0,
             top_p=1,
@@ -247,7 +246,6 @@ class OpenAIVecSeriesAccessor:
         client: VectorizedEmbeddings = BatchEmbeddings(
             client=_get_openai_client(),
             model_name=_EMBEDDINGS_MODEL_NAME,
-            is_parallel=True,
         )
 
         return pd.Series(

@@ -18,7 +18,7 @@ from numpy.typing import NDArray
 from openai import AsyncOpenAI, OpenAI, RateLimitError
 
 from openaivec.log import observe
-from openaivec.util import backoff, map_unique_minibatch, map_async
+from openaivec.util import backoff, map, map_async
 
 __all__ = ["BatchEmbeddings"]
 
@@ -76,7 +76,7 @@ class BatchEmbeddings:
         Raises:
             openai.RateLimitError: Propagated if retries are exhausted.
         """
-        return map_unique_minibatch(inputs, batch_size, self._embed_chunk)
+        return map(inputs, batch_size, self._embed_chunk)
 
 
 @dataclass(frozen=True)
