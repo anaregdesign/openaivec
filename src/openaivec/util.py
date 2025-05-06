@@ -3,7 +3,7 @@ import functools
 import re
 import time
 from dataclasses import dataclass
-from typing import Awaitable, Callable, Dict, List, Optional, TypeVar
+from typing import Awaitable, Callable, Dict, List, TypeVar
 
 import numpy as np
 import tiktoken
@@ -34,7 +34,7 @@ def get_exponential_with_cutoff(scale: float) -> float:
             return v
 
 
-def backoff(exception: Exception, scale: int | None = None, max_retries: Optional[int] = None) -> Callable[..., V]:
+def backoff(exception: Exception, scale: int | None = None, max_retries: int | None = None) -> Callable[..., V]:
     """Decorator implementing exponential back‑off retry logic.
 
     Args:
@@ -47,7 +47,7 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: Optiona
 
     Returns:
         Callable[..., V]: A decorated function that retries on the specified
-        exception with exponential back‑off.
+            exception with exponential back‑off.
 
     Raises:
         exception: Re‑raised when the maximum number of retries is exceeded.
@@ -74,7 +74,7 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: Optiona
 
 
 def backoff_async(
-    exception: Exception, scale: int | None = None, max_retries: Optional[int] = None
+    exception: Exception, scale: int | None = None, max_retries: int | None = None
 ) -> Callable[..., Awaitable[V]]:
     """Asynchronous version of the backoff decorator.
 
@@ -83,7 +83,7 @@ def backoff_async(
         scale (int | None): Scale parameter forwarded to
             :func:`get_exponential_with_cutoff`. If ``None``, the default scale
             of the RNG is used.
-        max_retries (Optional[int]): Maximum number of retries. ``None`` means
+        max_retries (int | None): Maximum number of retries. ``None`` means
             retry indefinitely.
 
     Returns:

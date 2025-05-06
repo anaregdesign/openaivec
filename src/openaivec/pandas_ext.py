@@ -35,7 +35,7 @@ import inspect
 import json
 import os
 import logging
-from typing import Awaitable, Callable, Optional, Type, TypeVar
+from typing import Awaitable, Callable, Type, TypeVar
 
 import pandas as pd
 from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
@@ -59,8 +59,8 @@ _LOGGER = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-_CLIENT: Optional[OpenAI] = None
-_ASYNC_CLIENT: Optional[AsyncOpenAI] = None
+_CLIENT: OpenAI | None = None
+_ASYNC_CLIENT: AsyncOpenAI | None = None
 _RESPONSES_MODEL_NAME = "gpt-4o-mini"
 _EMBEDDINGS_MODEL_NAME = "text-embedding-3-small"
 
