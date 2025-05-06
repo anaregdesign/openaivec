@@ -181,19 +181,25 @@ def _pydantic_to_spark_schema(model: Type[BaseModel]) -> StructType:
     return StructType(fields)
 
 
-def _safe_cast_str(x: str) -> Optional[str]:
+def _safe_cast_str(x: Optional[str]) -> Optional[str]:
     try:
+        if x is None:
+            return None
+        
         return str(x)
     except Exception as e:
-        _LOGGER.error(f"Error during casting to str: {e}")
+        _LOGGER.info(f"Error during casting to str: {e}")
         return None
 
 
-def _safe_dump(x: BaseModel) -> Optional[dict]:
+def _safe_dump(x: Optional[BaseModel]) -> Optional[dict]:
     try:
+        if x is None:
+            return None
+
         return x.model_dump()
     except Exception as e:
-        _LOGGER.error(f"Error during model_dump: {e}")
+        _LOGGER.info(f"Error during model_dump: {e}")
         return None
 
 
