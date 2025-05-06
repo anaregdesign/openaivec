@@ -139,7 +139,7 @@ def responses_model(name: str) -> None:
         _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
 
     except KeyError:
-        _LOGGER.warning(
+        _LOGGER.info(
             "The model name '%s' is not supported by tiktoken. Instead, using the 'o200k_base' encoding.",
             name,
         )
