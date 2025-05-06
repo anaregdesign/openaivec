@@ -1,16 +1,3 @@
-"""Vectorized interaction helpers for OpenAI completions.
-
-This module provides a thin wrapper that allows you to send *multiple* user
-messages to an LLM in a single request and receive the responses in the same
-order.  The trick is to embed a special system prompt – produced by
-`_vectorize_system_message` – that teaches the model how to map between an
-array‑like JSON input and output.  Public entry point for callers is
-`VectorizedResponsesOpenAI.parse(...)`.
-
-All public call sites are documented using the Google style docstrings so IDEs
-and static analysers can pick up argument / return‑value information.
-"""
-
 import asyncio
 from dataclasses import dataclass, field
 from logging import Logger, getLogger

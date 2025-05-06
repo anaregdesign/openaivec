@@ -1,13 +1,3 @@
-"""Embedding utilities built on top of OpenAI’s embedding endpoint.
-
-This module defines an abstract base class ``VectorizedEmbeddings`` and a
-concrete implementation ``VectorizedEmbeddingsOpenAI`` that delegates the
-actual embedding work to the OpenAI SDK.  The implementation supports
-sequential as well as multiprocess execution (via
-``map_unique_minibatch_parallel``) and applies a generic
-exponential‑back‑off policy when OpenAI’s rate limits are hit.
-"""
-
 import asyncio
 from dataclasses import dataclass, field
 from logging import Logger, getLogger

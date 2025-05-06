@@ -1,3 +1,0 @@
-# openaivec
-
-::: openaivec
