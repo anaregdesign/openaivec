@@ -86,8 +86,8 @@ Note: This module relies on the `openaivec.aio.pandas_ext` extension for its cor
 
 import asyncio
 from dataclasses import dataclass
+from typing import Dict, Iterator, List, Type, TypeVar, Union, get_args, get_origin, Optional
 import logging
-from typing import Dict, Iterator, List, Optional, Type, TypeVar, Union, get_args, get_origin
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.udf import UserDefinedFunction
 from pyspark.sql.types import BooleanType, IntegerType, StringType, ArrayType, FloatType, StructField, StructType
@@ -112,10 +112,10 @@ T = TypeVar("T", bound=BaseModel)
 
 _INITIALIZED: bool = False
 _LOGGER: logging.Logger = logging.getLogger(__name__)
-_TIKTOKEN_ENC: Optional[tiktoken.Encoding] = None
+_TIKTOKEN_ENC: tiktoken.Encoding | None = None
 
 
-def _initialize(api_key: str, endpoint: Optional[str], api_version: Optional[str]) -> None:
+def _initialize(api_key: str, endpoint: str | None, api_version: str | None) -> None:
     """Initializes the OpenAI client for asynchronous operations.
 
     This function sets up the global asynchronous OpenAI client instance
@@ -220,8 +220,8 @@ class ResponsesUDFBuilder:
 
     # Params for OpenAI SDK
     api_key: str
-    endpoint: Optional[str]
-    api_version: Optional[str]
+    endpoint: str | None
+    api_version: str | None
 
     # Params for Responses API
     model_name: str
@@ -345,8 +345,8 @@ class EmbeddingsUDFBuilder:
 
     # Params for OpenAI SDK
     api_key: str
-    endpoint: Optional[str]
-    api_version: Optional[str]
+    endpoint: str | None
+    api_version: str | None
 
     # Params for Embeddings API
     model_name: str
