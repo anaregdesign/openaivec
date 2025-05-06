@@ -15,7 +15,7 @@ nav:
   - GitHub: https://github.com/anaregdesign/openaivec
   - Examples:
       - examples/pandas.ipynb
-      - examples/spark.ipynbS
+      - examples/spark.ipynb
       - examples/prompt.ipynb
       - examples/generate_faq.ipynb
       - examples/aio.ipynb
