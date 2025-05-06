@@ -73,6 +73,47 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: Optiona
     return decorator
 
 
+def backoff_async(
+    exception: Exception, scale: int | None = None, max_retries: Optional[int] = None
+) -> Callable[..., Awaitable[V]]:
+    """Asynchronous version of the backoff decorator.
+
+    Args:
+        exception (Exception): Exception type that triggers a retry.
+        scale (int | None): Scale parameter forwarded to
+            :func:`get_exponential_with_cutoff`. If ``None``, the default scale
+            of the RNG is used.
+        max_retries (Optional[int]): Maximum number of retries. ``None`` means
+            retry indefinitely.
+
+    Returns:
+        Callable[..., Awaitable[V]]: A decorated asynchronous function that
+            retries on the specified exception with exponential back‑off.
+
+    Raises:
+        exception: Re‑raised when the maximum number of retries is exceeded.
+    """
+
+    def decorator(func: Callable[..., Awaitable[V]]) -> Callable[..., Awaitable[V]]:
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs) -> V:
+            attempt = 0
+            while True:
+                try:
+                    return await func(*args, **kwargs)
+                except exception:
+                    attempt += 1
+                    if max_retries is not None and attempt >= max_retries:
+                        raise
+
+                    interval = get_exponential_with_cutoff(scale)
+                    await asyncio.sleep(interval)
+
+        return wrapper
+
+    return decorator
+
+
 @dataclass(frozen=True)
 class TextChunker:
     """Utility for splitting text into token‑bounded chunks."""
