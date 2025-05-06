@@ -21,7 +21,7 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.util import backoff, map, map_async
+from openaivec.util import backoff, backoff_async, map, map_async
 
 __all__ = [
     "BatchResponses",
@@ -300,7 +300,7 @@ class AsyncBatchResponses(Generic[T]):
         object.__setattr__(self, "_semaphore", asyncio.Semaphore(self.max_concurrency))
 
     @observe(_LOGGER)
-    @backoff(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff_async(exception=RateLimitError, scale=60, max_retries=16)
     async def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         """Make a single async call to the OpenAI *JSON mode* endpoint, respecting concurrency limits.
 
