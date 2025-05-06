@@ -87,7 +87,7 @@ Note: This module relies on the `openaivec.aio.pandas_ext` extension for its cor
 import asyncio
 from dataclasses import dataclass
 import logging
-from typing import Iterator, List, Optional, Type, TypeVar, Union, get_args, get_origin
+from typing import Dict, Iterator, List, Optional, Type, TypeVar, Union, get_args, get_origin
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.udf import UserDefinedFunction
 from pyspark.sql.types import BooleanType, IntegerType, StringType, ArrayType, FloatType, StructField, StructType
@@ -192,15 +192,15 @@ def _safe_cast_str(x: Optional[str]) -> Optional[str]:
         return None
 
 
-def _safe_dump(x: Optional[BaseModel]) -> Optional[dict]:
+def _safe_dump(x: Optional[BaseModel]) -> Dict:
     try:
         if x is None:
-            return None
+            return {}
 
         return x.model_dump()
     except Exception as e:
         _LOGGER.info(f"Error during model_dump: {e}")
-        return None
+        return {}
 
 
 @dataclass(frozen=True)
