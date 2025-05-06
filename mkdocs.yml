@@ -20,11 +20,12 @@ nav:
       - examples/generate_faq.ipynb
       - examples/aio.ipynb
   - API Reference:
-      - openaivec::
-          - pandas_ext: api/pandas_ext.md
-          - spark: api/spark.md
-          - prompt: api/prompt.md
-          - util: api/util.md
+      - pandas_ext: api/pandas_ext.md
+      - spark: api/spark.md
+      - prompt: api/prompt.md
+      - util: api/util.md
+      - responses: api/responses.md
+      - embeddings: api/embeddings.md
 
 extra:
   tags:

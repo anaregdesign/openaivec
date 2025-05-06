@@ -1,13 +1,3 @@
-"""Embedding utilities built on top of OpenAI’s embedding endpoint.
-
-This module defines an abstract base class ``VectorizedEmbeddings`` and a
-concrete implementation ``VectorizedEmbeddingsOpenAI`` that delegates the
-actual embedding work to the OpenAI SDK.  The implementation supports
-sequential as well as multiprocess execution (via
-``map_unique_minibatch_parallel``) and applies a generic
-exponential‑back‑off policy when OpenAI’s rate limits are hit.
-"""
-
 import asyncio
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
@@ -18,7 +8,7 @@ from numpy.typing import NDArray
 from openai import AsyncOpenAI, OpenAI, RateLimitError
 
 from openaivec.log import observe
-from openaivec.util import backoff, map, map_async
+from openaivec.util import backoff, backoff_async, map, map_async
 
 __all__ = [
     "BatchEmbeddings",
@@ -138,7 +128,7 @@ class AsyncBatchEmbeddings:
         object.__setattr__(self, "_semaphore", asyncio.Semaphore(self.max_concurrency))
 
     @observe(_LOGGER)
-    @backoff(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff_async(exception=RateLimitError, scale=60, max_retries=16)
     async def _embed_chunk(self, inputs: List[str]) -> List[NDArray[np.float32]]:
         """Embed one minibatch of sentences asynchronously, respecting concurrency limits.
 

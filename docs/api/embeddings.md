@@ -1,0 +1,3 @@
+# openaivec.embeddings
+
+::: openaivec.embeddings

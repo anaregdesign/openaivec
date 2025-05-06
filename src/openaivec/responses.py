@@ -1,16 +1,3 @@
-"""Vectorized interaction helpers for OpenAI completions.
-
-This module provides a thin wrapper that allows you to send *multiple* user
-messages to an LLM in a single request and receive the responses in the same
-order.  The trick is to embed a special system prompt – produced by
-`_vectorize_system_message` – that teaches the model how to map between an
-array‑like JSON input and output.  Public entry point for callers is
-`VectorizedResponsesOpenAI.parse(...)`.
-
-All public call sites are documented using the Google style docstrings so IDEs
-and static analysers can pick up argument / return‑value information.
-"""
-
 import asyncio
 from dataclasses import dataclass, field
 from logging import Logger, getLogger
@@ -21,7 +8,7 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
-from openaivec.util import backoff, map, map_async
+from openaivec.util import backoff, backoff_async, map, map_async
 
 __all__ = [
     "BatchResponses",
@@ -300,7 +287,7 @@ class AsyncBatchResponses(Generic[T]):
         object.__setattr__(self, "_semaphore", asyncio.Semaphore(self.max_concurrency))
 
     @observe(_LOGGER)
-    @backoff(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff_async(exception=RateLimitError, scale=60, max_retries=16)
     async def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         """Make a single async call to the OpenAI *JSON mode* endpoint, respecting concurrency limits.
 

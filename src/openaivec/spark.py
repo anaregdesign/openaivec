@@ -2,7 +2,7 @@
 
 This module provides builder classes (`ResponsesUDFBuilder`, `EmbeddingsUDFBuilder`)
 for creating asynchronous Spark UDFs that communicate with either the public
-OpenAI API or Azure OpenAI using the `openaivec.aio` subpackage.
+OpenAI API or Azure OpenAI using the `openaivec.spark` subpackage.
 It supports UDFs for generating responses and creating embeddings asynchronously.
 The UDFs operate on Spark DataFrames and leverage asyncio for potentially
 improved performance in I/O-bound operations.
@@ -22,7 +22,7 @@ and model/deployment names, then register the desired UDFs:
 
 ```python
 import os
-from openaivec.aio.spark import ResponsesUDFBuilder, EmbeddingsUDFBuilder
+from openaivec.spark import ResponsesUDFBuilder, EmbeddingsUDFBuilder
 from pydantic import BaseModel
 
 # Option 1: Using OpenAI
@@ -185,7 +185,7 @@ def _safe_cast_str(x: Optional[str]) -> Optional[str]:
     try:
         if x is None:
             return None
-        
+
         return str(x)
     except Exception as e:
         _LOGGER.info(f"Error during casting to str: {e}")

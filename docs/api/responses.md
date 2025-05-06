@@ -1,0 +1,3 @@
+# openaivec.responses
+
+::: openaivec.responses
