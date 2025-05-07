@@ -261,6 +261,7 @@ class ResponsesUDFBuilder:
         batch_size: int = 128,  # Default batch size for async might differ
         temperature: float = 0.0,
         top_p: float = 1.0,
+        max_concurrency: int = 8,
     ) -> UserDefinedFunction:
         """Builds the asynchronous pandas UDF for generating responses.
 
@@ -297,6 +298,7 @@ class ResponsesUDFBuilder:
                             batch_size=batch_size,
                             temperature=temperature,
                             top_p=top_p,
+                            max_concurrency=max_concurrency,
                         )
                     )
                     yield pd.DataFrame(predictions.map(_safe_dump).tolist())
@@ -318,6 +320,7 @@ class ResponsesUDFBuilder:
                             batch_size=batch_size,
                             temperature=temperature,
                             top_p=top_p,
+                            max_concurrency=max_concurrency,
                         )
                     )
                     yield predictions.map(_safe_cast_str)
@@ -379,7 +382,7 @@ class EmbeddingsUDFBuilder:
         """
         return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name)
 
-    def build(self, batch_size: int = 128) -> UserDefinedFunction:  # Default batch size for async might differ
+    def build(self, batch_size: int = 128, max_concurrency: int = 8) -> UserDefinedFunction:
         """Builds the asynchronous pandas UDF for generating embeddings.
 
         Args:
@@ -397,7 +400,9 @@ class EmbeddingsUDFBuilder:
             pandas_ext.embeddings_model(self.model_name)
 
             for part in col:
-                embeddings: pd.Series = asyncio.run(part.aio.embeddings(batch_size=batch_size))
+                embeddings: pd.Series = asyncio.run(
+                    part.aio.embeddings(batch_size=batch_size, max_concurrency=max_concurrency)
+                )
                 yield embeddings.map(lambda x: x.tolist())
 
         return embeddings_udf
