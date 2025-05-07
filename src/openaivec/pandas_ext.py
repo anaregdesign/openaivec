@@ -498,6 +498,8 @@ class AsyncOpenAIVecSeriesAccessor:
                 request. Defaults to ``128``.
             temperature (float, optional): Sampling temperature. Defaults to ``0.0``.
             top_p (float, optional): Nucleus sampling parameter. Defaults to ``1.0``.
+            max_concurrency (int, optional): Maximum number of concurrent
+                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
@@ -541,6 +543,8 @@ class AsyncOpenAIVecSeriesAccessor:
         Args:
             batch_size (int, optional): Number of inputs grouped into a
                 single request. Defaults to ``128``.
+            max_concurrency (int, optional): Maximum number of concurrent
+                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Series whose values are ``np.ndarray`` objects
@@ -607,6 +611,8 @@ class AsyncOpenAIVecDataFrameAccessor:
                 Defaults to ``128``.
             temperature (float, optional): Sampling temperature. Defaults to ``0.0``.
             top_p (float, optional): Nucleus sampling parameter. Defaults to ``1.0``.
+            max_concurrency (int, optional): Maximum number of concurrent
+                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Responses aligned with the DataFrame’s original index.
