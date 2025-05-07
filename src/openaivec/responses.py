@@ -150,7 +150,7 @@ class BatchResponses(Generic[T]):
         )
 
     @observe(_LOGGER)
-    @backoff(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff(exception=RateLimitError, scale=15, max_retries=8)
     def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         """Make a single call to the OpenAI *JSON mode* endpoint.
 
@@ -287,7 +287,7 @@ class AsyncBatchResponses(Generic[T]):
         object.__setattr__(self, "_semaphore", asyncio.Semaphore(self.max_concurrency))
 
     @observe(_LOGGER)
-    @backoff_async(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff_async(exception=RateLimitError, scale=15, max_retries=8)
     async def _request_llm(self, user_messages: List[Message[str]]) -> ParsedResponse[Response[T]]:
         """Make a single async call to the OpenAI *JSON mode* endpoint, respecting concurrency limits.
 

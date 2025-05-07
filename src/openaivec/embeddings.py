@@ -31,7 +31,7 @@ class BatchEmbeddings:
     model_name: str
 
     @observe(_LOGGER)
-    @backoff(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff(exception=RateLimitError, scale=15, max_retries=8)
     def _embed_chunk(self, inputs: List[str]) -> List[NDArray[np.float32]]:
         """Embed one minibatch of sentences.
 
@@ -128,7 +128,7 @@ class AsyncBatchEmbeddings:
         object.__setattr__(self, "_semaphore", asyncio.Semaphore(self.max_concurrency))
 
     @observe(_LOGGER)
-    @backoff_async(exception=RateLimitError, scale=60, max_retries=16)
+    @backoff_async(exception=RateLimitError, scale=15, max_retries=8)
     async def _embed_chunk(self, inputs: List[str]) -> List[NDArray[np.float32]]:
         """Embed one minibatch of sentences asynchronously, respecting concurrency limits.
 
