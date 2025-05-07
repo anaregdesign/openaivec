@@ -475,6 +475,7 @@ class AsyncOpenAIVecSeriesAccessor:
         batch_size: int = 128,
         temperature: float = 0.0,
         top_p: float = 1.0,
+        max_concurrency: int = 8,
     ) -> pd.Series:
         """Call an LLM once for every Series element (asynchronously).
 
@@ -511,6 +512,7 @@ class AsyncOpenAIVecSeriesAccessor:
             response_format=response_format,
             temperature=temperature,
             top_p=top_p,
+            max_concurrency=max_concurrency,
         )
 
         # Await the async operation
@@ -522,7 +524,7 @@ class AsyncOpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
-    async def embeddings(self, batch_size: int = 128) -> pd.Series:
+    async def embeddings(self, batch_size: int = 128, max_concurrency: int = 8) -> pd.Series:
         """Compute OpenAI embeddings for every Series element (asynchronously).
 
         Example:
@@ -550,6 +552,7 @@ class AsyncOpenAIVecSeriesAccessor:
         client: AsyncBatchEmbeddings = AsyncBatchEmbeddings(
             client=_get_async_openai_client(),
             model_name=_EMBEDDINGS_MODEL_NAME,
+            max_concurrency=max_concurrency,
         )
 
         # Await the async operation
@@ -576,6 +579,7 @@ class AsyncOpenAIVecDataFrameAccessor:
         batch_size: int = 128,
         temperature: float = 0.0,
         top_p: float = 1.0,
+        max_concurrency: int = 8,
     ) -> pd.Series:
         """Generate a response for each row after serialising it to JSON (asynchronously).
 
@@ -624,6 +628,7 @@ class AsyncOpenAIVecDataFrameAccessor:
             batch_size=batch_size,
             temperature=temperature,
             top_p=top_p,
+            max_concurrency=max_concurrency,
         )
 
     async def pipe(self, func: Callable[[pd.DataFrame], Awaitable[T] | T]) -> T:
