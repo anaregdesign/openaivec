@@ -250,7 +250,6 @@ class OpenAIVecSeriesAccessor:
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
-        max_concurrency: int = 8,
         temperature: float = 0.0,
         top_p: float = 1.0,
     ) -> pd.Series:
@@ -272,8 +271,6 @@ class OpenAIVecSeriesAccessor:
                 type the assistant should return. Defaults to ``str``.
             batch_size (int, optional): Number of prompts grouped into a single
                 request. Defaults to ``128``.
-            max_concurrency (int, optional): Maximum number of concurrent
-                requests. Defaults to ``8``.
             temperature (float, optional): Sampling temperature. Defaults to ``0.0``.
             top_p (float, optional): Nucleus sampling parameter. Defaults to ``1.0``.
 
@@ -287,7 +284,6 @@ class OpenAIVecSeriesAccessor:
             response_format=response_format,
             temperature=temperature,
             top_p=top_p,
-            max_concurrency=max_concurrency,
         )
 
         return pd.Series(
@@ -296,7 +292,7 @@ class OpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
-    def embeddings(self, batch_size: int = 128, max_concurrency: int = 8) -> pd.Series:
+    def embeddings(self, batch_size: int = 128) -> pd.Series:
         """Compute OpenAI embeddings for every Series element.
 
         Example:
@@ -312,8 +308,6 @@ class OpenAIVecSeriesAccessor:
         Args:
             batch_size (int, optional): Number of inputs grouped into a
                 single request. Defaults to ``128``.
-            max_concurrency (int, optional): Maximum number of concurrent
-                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Series whose values are ``np.ndarray`` objects
@@ -322,7 +316,6 @@ class OpenAIVecSeriesAccessor:
         client: BatchEmbeddings = BatchEmbeddings(
             client=_get_openai_client(),
             model_name=_EMBEDDINGS_MODEL_NAME,
-            max_concurrency=max_concurrency,
         )
 
         return pd.Series(
@@ -421,7 +414,6 @@ class OpenAIVecDataFrameAccessor:
         instructions: str,
         response_format: Type[T] = str,
         batch_size: int = 128,
-        max_concurrency: int = 8,
         temperature: float = 0.0,
         top_p: float = 1.0,
     ) -> pd.Series:
@@ -448,8 +440,6 @@ class OpenAIVecDataFrameAccessor:
                 responses. Defaults to ``str``.
             batch_size (int, optional): Number of requests sent in one batch.
                 Defaults to ``128``.
-            max_concurrency (int, optional): Maximum number of concurrent
-                requests. Defaults to ``8``.
             temperature (float, optional): Sampling temperature. Defaults to ``0.0``.
             top_p (float, optional): Nucleus sampling parameter. Defaults to ``1.0``.
 
@@ -464,7 +454,6 @@ class OpenAIVecDataFrameAccessor:
                     instructions=instructions,
                     response_format=response_format,
                     batch_size=batch_size,
-                    max_concurrency=max_concurrency,
                     temperature=temperature,
                     top_p=top_p,
                 )
@@ -486,7 +475,6 @@ class AsyncOpenAIVecSeriesAccessor:
         batch_size: int = 128,
         temperature: float = 0.0,
         top_p: float = 1.0,
-        max_concurrency: int = 8,
     ) -> pd.Series:
         """Call an LLM once for every Series element (asynchronously).
 
@@ -509,8 +497,6 @@ class AsyncOpenAIVecSeriesAccessor:
                 request. Defaults to ``128``.
             temperature (float, optional): Sampling temperature. Defaults to ``0.0``.
             top_p (float, optional): Nucleus sampling parameter. Defaults to ``1.0``.
-            max_concurrency (int, optional): Maximum number of concurrent
-                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Series whose values are instances of ``response_format``.
@@ -525,7 +511,6 @@ class AsyncOpenAIVecSeriesAccessor:
             response_format=response_format,
             temperature=temperature,
             top_p=top_p,
-            max_concurrency=max_concurrency,
         )
 
         # Await the async operation
@@ -537,7 +522,7 @@ class AsyncOpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
-    async def embeddings(self, batch_size: int = 128, max_concurrency: int = 8) -> pd.Series:
+    async def embeddings(self, batch_size: int = 128) -> pd.Series:
         """Compute OpenAI embeddings for every Series element (asynchronously).
 
         Example:
@@ -554,8 +539,6 @@ class AsyncOpenAIVecSeriesAccessor:
         Args:
             batch_size (int, optional): Number of inputs grouped into a
                 single request. Defaults to ``128``.
-            max_concurrency (int, optional): Maximum number of concurrent
-                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Series whose values are ``np.ndarray`` objects
@@ -567,7 +550,6 @@ class AsyncOpenAIVecSeriesAccessor:
         client: AsyncBatchEmbeddings = AsyncBatchEmbeddings(
             client=_get_async_openai_client(),
             model_name=_EMBEDDINGS_MODEL_NAME,
-            max_concurrency=max_concurrency,
         )
 
         # Await the async operation
@@ -594,7 +576,6 @@ class AsyncOpenAIVecDataFrameAccessor:
         batch_size: int = 128,
         temperature: float = 0.0,
         top_p: float = 1.0,
-        max_concurrency: int = 8,
     ) -> pd.Series:
         """Generate a response for each row after serialising it to JSON (asynchronously).
 
@@ -622,8 +603,6 @@ class AsyncOpenAIVecDataFrameAccessor:
                 Defaults to ``128``.
             temperature (float, optional): Sampling temperature. Defaults to ``0.0``.
             top_p (float, optional): Nucleus sampling parameter. Defaults to ``1.0``.
-            max_concurrency (int, optional): Maximum number of concurrent
-                requests. Defaults to ``8``.
 
         Returns:
             pandas.Series: Responses aligned with the DataFrame’s original index.
@@ -645,7 +624,6 @@ class AsyncOpenAIVecDataFrameAccessor:
             batch_size=batch_size,
             temperature=temperature,
             top_p=top_p,
-            max_concurrency=max_concurrency,
         )
 
     async def pipe(self, func: Callable[[pd.DataFrame], Awaitable[T] | T]) -> T:
