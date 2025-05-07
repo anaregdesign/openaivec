@@ -9,7 +9,7 @@ from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, Str
 from openaivec.spark import EmbeddingsUDFBuilder, ResponsesUDFBuilder, _pydantic_to_spark_schema, count_tokens_udf
 
 
-class TestResponsesUDFBuilder(TestCase):
+class TestUDFBuilder(TestCase):
     def setUp(self):
         self.responses = ResponsesUDFBuilder.of_openai(
             api_key=os.environ.get("OPENAI_API_KEY"),

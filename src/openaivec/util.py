@@ -39,9 +39,10 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: int | N
 
     Args:
         exception (Exception): Exception type that triggers a retry.
-        scale (int | None): Scale parameter forwarded to
-            :func:`get_exponential_with_cutoff`. If ``None``, the default scale
-            of the RNG is used.
+        scale (int | None): Initial scale parameter for the exponential jitter.
+            This scale is used as the mean for the first delay's exponential
+            distribution and doubles with each subsequent retry. If ``None``,
+            an initial scale of 1.0 is used.
         max_retries (Optional[int]): Maximum number of retries. ``None`` means
             retry indefinitely.
 
@@ -57,6 +58,10 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: int | N
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> V:
             attempt = 0
+            # Initialize the scale for the exponential backoff. This scale will double with each retry.
+            # If the input 'scale' is None, default to 1.0. This 'scale' is the mean of the exponential distribution.
+            current_jitter_scale = float(scale) if scale is not None else 1.0
+
             while True:
                 try:
                     return func(*args, **kwargs)
@@ -65,8 +70,12 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: int | N
                     if max_retries is not None and attempt >= max_retries:
                         raise
 
-                    interval = get_exponential_with_cutoff(scale)
+                    # Get the sleep interval with exponential jitter, using the current scale
+                    interval = get_exponential_with_cutoff(current_jitter_scale)
                     time.sleep(interval)
+
+                    # Double the scale for the next potential retry
+                    current_jitter_scale *= 2
 
         return wrapper
 
@@ -80,9 +89,10 @@ def backoff_async(
 
     Args:
         exception (Exception): Exception type that triggers a retry.
-        scale (int | None): Scale parameter forwarded to
-            :func:`get_exponential_with_cutoff`. If ``None``, the default scale
-            of the RNG is used.
+        scale (int | None): Initial scale parameter for the exponential jitter.
+            This scale is used as the mean for the first delay's exponential
+            distribution and doubles with each subsequent retry. If ``None``,
+            an initial scale of 1.0 is used.
         max_retries (int | None): Maximum number of retries. ``None`` means
             retry indefinitely.
 
@@ -98,6 +108,10 @@ def backoff_async(
         @functools.wraps(func)
         async def wrapper(*args, **kwargs) -> V:
             attempt = 0
+            # Initialize the scale for the exponential backoff. This scale will double with each retry.
+            # If the input 'scale' is None, default to 1.0. This 'scale' is the mean of the exponential distribution.
+            current_jitter_scale = float(scale) if scale is not None else 1.0
+
             while True:
                 try:
                     return await func(*args, **kwargs)
@@ -106,8 +120,12 @@ def backoff_async(
                     if max_retries is not None and attempt >= max_retries:
                         raise
 
-                    interval = get_exponential_with_cutoff(scale)
+                    # Get the sleep interval with exponential jitter, using the current scale
+                    interval = get_exponential_with_cutoff(current_jitter_scale)
                     await asyncio.sleep(interval)
+
+                    # Double the scale for the next potential retry
+                    current_jitter_scale *= 2
 
         return wrapper
 
