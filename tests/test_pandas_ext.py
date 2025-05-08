@@ -203,3 +203,33 @@ class TestPandasExt(unittest.TestCase):
 
         # assert all values are elements of int
         self.assertTrue(all(isinstance(num_token, int) for num_token in num_tokens))
+
+    def test_similarity(self):
+        sample_df = pd.DataFrame(
+            {
+                "vector1": [np.array([1, 0]), np.array([0, 1]), np.array([1, 1])],
+                "vector2": [np.array([1, 0]), np.array([0, 1]), np.array([1, -1])],
+            }
+        )
+        similarity_scores = sample_df.ai.similarity("vector1", "vector2")
+
+        # Expected cosine similarity values
+        expected_scores = [
+            1.0,  # Cosine similarity between [1, 0] and [1, 0]
+            1.0,  # Cosine similarity between [0, 1] and [0, 1]
+            0.0,  # Cosine similarity between [1, 1] and [1, -1]
+        ]
+
+        # Assert similarity scores match expected values
+        self.assertTrue(np.allclose(similarity_scores, expected_scores))
+
+    def test_similarity_with_invalid_vectors(self):
+        sample_df = pd.DataFrame(
+            {
+                "vector1": [np.array([1, 0]), "invalid", np.array([1, 1])],
+                "vector2": [np.array([1, 0]), np.array([0, 1]), np.array([1, -1])],
+            }
+        )
+
+        with self.assertRaises(TypeError):
+            sample_df.ai.similarity("vector1", "vector2")

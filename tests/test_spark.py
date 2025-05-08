@@ -6,7 +6,13 @@ from pydantic import BaseModel
 from pyspark.sql.session import SparkSession
 from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, StructField, StructType
 
-from openaivec.spark import EmbeddingsUDFBuilder, ResponsesUDFBuilder, _pydantic_to_spark_schema, count_tokens_udf
+from openaivec.spark import (
+    EmbeddingsUDFBuilder,
+    ResponsesUDFBuilder,
+    _pydantic_to_spark_schema,
+    count_tokens_udf,
+    similarity_udf,
+)
 
 
 class TestUDFBuilder(TestCase):
@@ -143,3 +149,30 @@ class TestCountTokensUDF(TestCase):
             SELECT sentence, count_tokens(sentence) as token_count from sentences
             """
         ).show(truncate=False)
+
+
+class TestSimilarityUDF(TestCase):
+    def setUp(self):
+        self.spark: SparkSession = SparkSession.builder.getOrCreate()
+        self.spark.sparkContext.setLogLevel("INFO")
+        self.spark.udf.register("similarity", similarity_udf())
+
+    def test_similarity(self):
+        df = self.spark.createDataFrame(
+            [
+                (1, [0.1, 0.2, 0.3]),
+                (2, [0.4, 0.5, 0.6]),
+                (3, [0.7, 0.8, 0.9]),
+            ],
+            ["id", "vector"],
+        )
+        df.createOrReplaceTempView("vectors")
+        result_df = self.spark.sql(
+            """
+            SELECT id, similarity(vector, vector) as similarity_score
+            FROM vectors
+            """
+        )
+        result_df.show(truncate=False)
+        df_pandas = result_df.toPandas()
+        assert df_pandas.shape == (3, 2)
