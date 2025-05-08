@@ -458,3 +458,21 @@ def count_tokens_udf(model_name: str = "gpt-4o"):
             yield part.map(lambda x: len(_TIKTOKEN_ENC.encode(x)) if isinstance(x, str) else 0)
 
     return fn
+
+
+def similarity_udf() -> UserDefinedFunction:
+    @pandas_udf(FloatType())
+    def fn(a: pd.Series, b: pd.Series) -> pd.Series:
+        """Compute cosine similarity between two vectors.
+
+        Args:
+            a: First vector.
+            b: Second vector.
+
+        Returns:
+            Cosine similarity between the two vectors.
+        """
+        pandas_ext._wakeup()
+        return pd.DataFrame({"a": a, "b": b}).ai.similarity("a", "b")
+
+    return fn

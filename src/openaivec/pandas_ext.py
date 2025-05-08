@@ -37,6 +37,7 @@ import os
 import logging
 from typing import Awaitable, Callable, Type, TypeVar
 
+import numpy as np
 import pandas as pd
 from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 from pydantic import BaseModel
@@ -65,6 +66,11 @@ _RESPONSES_MODEL_NAME = "gpt-4o-mini"
 _EMBEDDINGS_MODEL_NAME = "text-embedding-3-small"
 
 _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
+
+
+# internal method for accesing .ai accessor in spark udfs
+def _wakeup() -> None:
+    pass
 
 
 def use(client: OpenAI) -> None:
@@ -459,6 +465,12 @@ class OpenAIVecDataFrameAccessor:
                 )
             )
         )
+
+    def similarity(self, col1: str, col2: str) -> pd.Series:
+        return self._obj.apply(
+            lambda row: np.dot(row[col1], row[col2]) / (np.linalg.norm(row[col1]) * np.linalg.norm(row[col2])),
+            axis=1,
+        ).rename("similarity")
 
 
 @pd.api.extensions.register_series_accessor("aio")
