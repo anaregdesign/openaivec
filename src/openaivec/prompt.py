@@ -116,7 +116,7 @@ class Response(BaseModel):
     iterations: List[Step]
 
 
-_prompt: str = """
+_PROMPT: str = """
 <Prompt>
     <Instructions>
         <Instruction id="1">
@@ -431,7 +431,7 @@ class FewShotPromptBuilder:
 
         response: ParsedResponse[Response] = client.responses.parse(
             model=model_name,
-            instructions=_prompt,
+            instructions=_PROMPT,
             input=Request(prompt=self._prompt).model_dump_json(),
             temperature=temperature,
             top_p=top_p,
