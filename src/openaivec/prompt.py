@@ -425,9 +425,6 @@ class FewShotPromptBuilder:
             temperature (float, optional): Sampling temperature. Defaults to 0.0.
             top_p (float, optional): Nucleus sampling parameter. Defaults to 1.0.
 
-        Raises:
-            ValueError: If fewer than five examples are present.
-
         Returns:
             FewShotPromptBuilder: The current builder instance containing the refined prompt and iteration history.
         """
