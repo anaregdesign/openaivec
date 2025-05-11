@@ -48,7 +48,7 @@ from typing import List
 from xml.etree import ElementTree
 
 from openai import OpenAI
-from openai.types.chat import ParsedChatCompletion
+from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 __all__ = [
@@ -116,7 +116,7 @@ class Response(BaseModel):
     iterations: List[Step]
 
 
-_prompt: str = """
+_PROMPT: str = """
 <Prompt>
     <Instructions>
         <Instruction id="1">
@@ -425,35 +425,24 @@ class FewShotPromptBuilder:
             temperature (float, optional): Sampling temperature. Defaults to 0.0.
             top_p (float, optional): Nucleus sampling parameter. Defaults to 1.0.
 
-        Raises:
-            ValueError: If fewer than five examples are present.
-
         Returns:
             FewShotPromptBuilder: The current builder instance containing the refined prompt and iteration history.
         """
-        # At least 5 examples are required to enhance the prompt.
-        if len(self._prompt.examples) < 5:
-            raise ValueError("At least 5 examples are required to enhance the prompt.")
 
-        completion: ParsedChatCompletion[Response] = client.beta.chat.completions.parse(
+        response: ParsedResponse[Response] = client.responses.parse(
             model=model_name,
-            messages=[
-                {"role": "system", "content": _prompt},
-                {
-                    "role": "user",
-                    "content": Request(prompt=self._prompt).model_dump_json(),
-                },
-            ],
+            instructions=_PROMPT,
+            input=Request(prompt=self._prompt).model_dump_json(),
             temperature=temperature,
             top_p=top_p,
-            response_format=Response,
+            text_format=Response,
         )
 
         # keep the original prompt
         self._steps = [Step(id=0, analysis="Original Prompt", prompt=self._prompt)]
 
         # add the histories
-        for step in completion.choices[0].message.parsed.iterations:
+        for step in response.output_parsed.iterations:
             self._steps.append(step)
 
         # set the final prompt

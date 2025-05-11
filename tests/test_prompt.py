@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, force=True)
 class TestAtomicPromptBuilder(unittest.TestCase):
     def setUp(self):
         self.client: OpenAI = OpenAI()
-        self.model_name: str = "gpt-4o-mini"
+        self.model_name: str = "gpt-4.1-nano"
 
     def test_improve(self):
         prompt: str = (
