@@ -3,6 +3,9 @@
 venv
 .vscode
 
+# Claude code file
+CLAUDE.md
+
 ### ruff
 .ruff_cache
 
