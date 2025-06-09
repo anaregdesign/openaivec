@@ -81,7 +81,7 @@ SELECT
 FROM your_table;
 ```
 
-Note: This module relies on the `openaivec.aio.pandas_ext` extension for its core asynchronous logic.
+Note: This module provides asynchronous support through the pandas extensions.
 """
 
 import asyncio
@@ -207,7 +207,7 @@ def _safe_dump(x: Optional[BaseModel]) -> Dict:
 class ResponsesUDFBuilder:
     """Builder for asynchronous Spark pandas UDFs for generating responses.
 
-    Configures and builds UDFs that leverage `openaivec.aio.pandas_ext.responses`
+    Configures and builds UDFs that leverage `pandas_ext.aio.responses`
     to generate text or structured responses from OpenAI models asynchronously.
     An instance stores authentication parameters and the model name.
 
@@ -335,7 +335,7 @@ class ResponsesUDFBuilder:
 class EmbeddingsUDFBuilder:
     """Builder for asynchronous Spark pandas UDFs for creating embeddings.
 
-    Configures and builds UDFs that leverage `openaivec.aio.pandas_ext.embeddings`
+    Configures and builds UDFs that leverage `pandas_ext.aio.embeddings`
     to generate vector embeddings from OpenAI models asynchronously.
     An instance stores authentication parameters and the model name.
 
@@ -408,7 +408,7 @@ class EmbeddingsUDFBuilder:
         return embeddings_udf
 
 
-def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
+def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]) -> UserDefinedFunction:
     """Create a pandas‑UDF that splits text into token‑bounded chunks.
 
     Args:
@@ -435,7 +435,7 @@ def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
     return fn
 
 
-def count_tokens_udf(model_name: str = "gpt-4o"):
+def count_tokens_udf(model_name: str = "gpt-4o") -> UserDefinedFunction:
     """Create a pandas‑UDF that counts tokens for every string cell.
 
     The UDF uses *tiktoken* to approximate tokenisation and caches the

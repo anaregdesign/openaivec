@@ -34,11 +34,11 @@ def get_exponential_with_cutoff(scale: float) -> float:
             return v
 
 
-def backoff(exception: Exception, scale: int | None = None, max_retries: int | None = None) -> Callable[..., V]:
+def backoff(exception: type[Exception], scale: int | None = None, max_retries: int | None = None) -> Callable[..., V]:
     """Decorator implementing exponential back‑off retry logic.
 
     Args:
-        exception (Exception): Exception type that triggers a retry.
+        exception (type[Exception]): Exception type that triggers a retry.
         scale (int | None): Initial scale parameter for the exponential jitter.
             This scale is used as the mean for the first delay's exponential
             distribution and doubles with each subsequent retry. If ``None``,
@@ -83,12 +83,12 @@ def backoff(exception: Exception, scale: int | None = None, max_retries: int | N
 
 
 def backoff_async(
-    exception: Exception, scale: int | None = None, max_retries: int | None = None
+    exception: type[Exception], scale: int | None = None, max_retries: int | None = None
 ) -> Callable[..., Awaitable[V]]:
     """Asynchronous version of the backoff decorator.
 
     Args:
-        exception (Exception): Exception type that triggers a retry.
+        exception (type[Exception]): Exception type that triggers a retry.
         scale (int | None): Initial scale parameter for the exponential jitter.
             This scale is used as the mean for the first delay's exponential
             distribution and doubles with each subsequent retry. If ``None``,

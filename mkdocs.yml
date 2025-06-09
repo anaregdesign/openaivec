@@ -14,11 +14,13 @@ nav:
   - PyPI: https://pypi.org/project/openaivec/
   - GitHub: https://github.com/anaregdesign/openaivec
   - Examples:
-      - examples/pandas.ipynb
-      - examples/spark.ipynb
-      - examples/prompt.ipynb
-      - examples/generate_faq.ipynb
-      - examples/aio.ipynb
+      - Getting Started: examples/pandas.ipynb
+      - Customer Analysis: examples/customer_analysis.ipynb
+      - Survey Transformation: examples/survey_transformation.ipynb
+      - Spark Processing: examples/spark.ipynb
+      - Async Workflows: examples/aio.ipynb
+      - Prompt Engineering: examples/prompt.ipynb
+      - FAQ Generation: examples/generate_faq.ipynb
   - API Reference:
       - pandas_ext: api/pandas_ext.md
       - spark: api/spark.md

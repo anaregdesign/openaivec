@@ -27,7 +27,7 @@ def observe(logger: Logger):
             )
             try:
                 res = func(self, *args, **kwargs)
-
+                return res
             finally:
                 child_logger.info(
                     json.dumps(
@@ -40,8 +40,6 @@ def observe(logger: Logger):
                         }
                     )
                 )
-
-            return res
 
         return decorated
 

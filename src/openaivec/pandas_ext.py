@@ -35,7 +35,7 @@ import inspect
 import json
 import os
 import logging
-from typing import Awaitable, Callable, Type, TypeVar
+from typing import Any, Awaitable, Callable, Type, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -672,7 +672,7 @@ class AsyncOpenAIVecDataFrameAccessor:
         else:
             return result
 
-    async def assign(self, **kwargs):
+    async def assign(self, **kwargs: Any) -> pd.DataFrame:
         """Asynchronously assign new columns to the DataFrame, evaluating sequentially.
 
         This method extends pandas' `assign` method by supporting asynchronous
@@ -707,7 +707,7 @@ class AsyncOpenAIVecDataFrameAccessor:
             ```
 
         Args:
-            **kwargs: Column names as keys and either static values or callables
+            **kwargs: Any. Column names as keys and either static values or callables
                 (synchronous or asynchronous) as values.
 
         Returns:

@@ -44,7 +44,7 @@ this will produce an XML string that looks like this:
 
 import difflib
 import logging
-from typing import List
+from typing import Any, List
 from xml.etree import ElementTree
 
 from openai import OpenAI
@@ -501,7 +501,7 @@ class FewShotPromptBuilder:
         self._validate()
         return self.build_xml()
 
-    def build_json(self, **kwargs) -> str:
+    def build_json(self, **kwargs: Any) -> str:
         """Build and return the prompt as a JSON string.
 
         Args:
