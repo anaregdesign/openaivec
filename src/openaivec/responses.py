@@ -341,8 +341,8 @@ class AsyncBatchResponses(Generic[T]):
         messages = [Message(id=i, body=message) for i, message in enumerate(user_messages)]
         responses: ParsedResponse[Response[T]] = await self._request_llm(messages)
         response_dict = {message.id: message.body for message in responses.output_parsed.assistant_messages}
-        # Ensure None is returned for missing IDs, though this shouldn't happen in normal operation
-        sorted_responses = [response_dict.get(m.id) for m in messages]
+        # Ensure proper handling for missing IDs - this shouldn't happen in normal operation
+        sorted_responses = [response_dict.get(m.id, None) for m in messages]
         return sorted_responses
 
     @observe(_LOGGER)

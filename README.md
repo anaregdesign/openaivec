@@ -97,11 +97,11 @@ client = BatchResponses(
     system_message="Please answer only with 'xx family' and do not output anything else."
 )
 
-result = client.parse(["panda", "rabbit", "koala"])
+result = client.parse(["panda", "rabbit", "koala"], batch_size=32)
 print(result)  # Expected output: ['bear family', 'rabbit family', 'koala family']
 ```
 
-See [examples/basic_usage.ipynb](examples/basic_usage.ipynb) for a complete example.
+# See the project documentation for complete examples.
 
 ## Using with Pandas DataFrame
 
@@ -335,8 +335,8 @@ improved_prompt: str = (
     .example("Apple", "Company")
     .example("Apple", "Color")
     .example("Apple", "Animal")
-    # improve the prompt with OpenAI's API, max_iter is number of iterations to improve the prompt.
-    .improve(client, model_name, max_iter=5)
+    # improve the prompt with OpenAI's API
+    .improve(client, model_name)
     .build()
 )
 print(improved_prompt)
@@ -407,7 +407,7 @@ Then we will get the improved prompt with extra examples, improved purpose, and 
 seamlessly integrates data engineering, warehousing, and business intelligence to simplify the journey from raw data to
 actionable insights.
 
-This section provides instructions on how to integrate and use `vectorize-openai` within Microsoft Fabric. Follow these
+This section provides instructions on how to integrate and use `openaivec` within Microsoft Fabric. Follow these
 steps:
 
 1. **Create an Environment in Microsoft Fabric:**
@@ -432,15 +432,15 @@ steps:
    - Select the environment you created in the previous steps.
    - ![image](https://github.com/user-attachments/assets/2457c078-1691-461b-b66e-accc3989e419)
      _Figure: Using custom environment from a notebook._
-   - In the notebook, import and use `openaivec.spark.UDFBuilder` as you normally would. For example:
+   - In the notebook, import and use `openaivec.spark.ResponsesUDFBuilder` as you normally would. For example:
 
      ```python
      from openaivec.spark import ResponsesUDFBuilder
 
-     udf = ResponsesUDFBuilder(
+     resp_builder = ResponsesUDFBuilder.of_azure_openai(
          api_key="<your-api-key>",
-         api_version="2024-10-21",
          endpoint="https://<your-resource-name>.openai.azure.com",
+         api_version="2024-10-21",
          model_name="<your-deployment-name>"
      )
      ```

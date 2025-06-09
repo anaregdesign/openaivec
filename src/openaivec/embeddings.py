@@ -155,7 +155,7 @@ class AsyncBatchEmbeddings:
     async def create(self, inputs: List[str], batch_size: int) -> List[NDArray[np.float32]]:
         """Asynchronous public API: generate embeddings for a list of inputs.
 
-        Uses ``openaivec.aio.map`` to efficiently handle batching and de-duplication.
+        Uses ``openaivec.util.map_async`` to efficiently handle batching and de-duplication.
 
         Args:
             inputs: A list of input strings. Duplicates are handled efficiently.
