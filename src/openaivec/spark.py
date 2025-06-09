@@ -408,7 +408,7 @@ class EmbeddingsUDFBuilder:
         return embeddings_udf
 
 
-def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
+def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]) -> UserDefinedFunction:
     """Create a pandas‑UDF that splits text into token‑bounded chunks.
 
     Args:
@@ -435,7 +435,7 @@ def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]):
     return fn
 
 
-def count_tokens_udf(model_name: str = "gpt-4o"):
+def count_tokens_udf(model_name: str = "gpt-4o") -> UserDefinedFunction:
     """Create a pandas‑UDF that counts tokens for every string cell.
 
     The UDF uses *tiktoken* to approximate tokenisation and caches the

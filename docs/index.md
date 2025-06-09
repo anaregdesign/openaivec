@@ -31,9 +31,32 @@ uv add "openaivec[spark]"
 ```
 
 ## Links
-- [https://github.com/anaregdesign/openaivec/](https://github.com/anaregdesign/openaivec/)
-- [https://pypi.org/project/openaivec/](https://pypi.org/project/openaivec/)
+- [GitHub Repository](https://github.com/anaregdesign/openaivec/)
+- [PyPI Package](https://pypi.org/project/openaivec/)
+- [Complete Documentation](https://openaivec.anareg.design/)
 
+## 📚 Examples & Tutorials
+
+Get started with these comprehensive examples:
+
+📓 **[Getting Started](examples/pandas.ipynb)** - Basic pandas integration and usage  
+📓 **[Customer Feedback Analysis](examples/customer_analysis.ipynb)** - Sentiment analysis & prioritization  
+📓 **[Survey Data Transformation](examples/survey_transformation.ipynb)** - Unstructured to structured data  
+📓 **[Spark Processing](examples/spark.ipynb)** - Enterprise-scale distributed processing  
+📓 **[Async Workflows](examples/aio.ipynb)** - High-performance async processing  
+📓 **[Prompt Engineering](examples/prompt.ipynb)** - Advanced prompting techniques  
+📓 **[FAQ Generation](examples/generate_faq.ipynb)** - Auto-generate FAQs from documents
+
+## 📖 API Reference
+
+Detailed documentation for all components:
+
+🔗 **[pandas_ext](api/pandas_ext.md)** - Pandas Series and DataFrame extensions  
+🔗 **[spark](api/spark.md)** - Apache Spark UDF builders  
+🔗 **[responses](api/responses.md)** - Batch response processing  
+🔗 **[embeddings](api/embeddings.md)** - Batch embedding generation  
+🔗 **[prompt](api/prompt.md)** - Few-shot prompt building  
+🔗 **[util](api/util.md)** - Utility functions and helpers
 
 ## Quick Start
 
