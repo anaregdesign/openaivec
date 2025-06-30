@@ -29,6 +29,7 @@ dependencies = [
     "openai>=1.74.0",
     "pandas>=2.2.3",
     "tiktoken>=0.9.0",
+    "azure-identity>=1.12.0",
 ]
 
 [dependency-groups]

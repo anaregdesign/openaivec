@@ -167,6 +167,37 @@ result = df.assign(
 
 📓 **[Interactive pandas examples →](https://openaivec.anareg.design/examples/pandas/)**
 
+### Authentication Methods
+
+`openaivec` supports multiple authentication methods:
+
+#### OpenAI API
+```bash
+export OPENAI_API_KEY="your-openai-api-key"
+```
+
+#### Azure OpenAI with API Key  
+```bash
+export AZURE_OPENAI_API_KEY="your-azure-api-key"
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_VERSION="2024-02-01"
+```
+
+#### Azure OpenAI with Entra ID (Recommended for Azure environments)
+```bash
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_VERSION="2024-02-01"
+export AZURE_OPENAI_USE_ENTRA_ID="true"
+```
+
+When using Entra ID, the library automatically uses `DefaultAzureCredential` which supports:
+- Managed Identity (for Azure VMs, App Service, Function Apps, etc.)
+- Service Principal (for CI/CD pipelines)  
+- Azure CLI (for local development)
+- Visual Studio/VS Code (for local development)
+
+This is ideal for Microsoft Fabric and other Azure services where you want to avoid storing secrets.
+
 ## Using with Apache Spark UDFs
 
 Scale to enterprise datasets with distributed processing:
@@ -198,7 +229,7 @@ emb_builder_openai = EmbeddingsUDFBuilder.of_openai(
     model_name="text-embedding-3-small", # Model for embeddings
 )
 
-# --- Option 2: Using Azure OpenAI ---
+# --- Option 2: Using Azure OpenAI with API Key ---
 # resp_builder_azure = ResponsesUDFBuilder.of_azure_openai(
 #     api_key=os.getenv("AZURE_OPENAI_KEY"),
 #     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -212,11 +243,23 @@ emb_builder_openai = EmbeddingsUDFBuilder.of_openai(
 #     model_name="<your-emb-deployment-name>", # Deployment for embeddings
 # )
 
+# --- Option 3: Using Azure OpenAI with Entra ID (Managed Identity/Service Principal) ---
+# resp_builder_entra = ResponsesUDFBuilder.of_azure_openai_entra(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="<your-resp-deployment-name>", # Deployment for responses
+# )
+# emb_builder_entra = EmbeddingsUDFBuilder.of_azure_openai_entra(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="<your-emb-deployment-name>", # Deployment for embeddings
+# )
+
 # --- Register Responses UDF (String Output) ---
-# Use the builder corresponding to your setup (OpenAI or Azure)
+# Use the builder corresponding to your setup (OpenAI, Azure with API key, or Azure with Entra ID)
 spark.udf.register(
     "parse_flavor",
-    resp_builder_openai.build( # or resp_builder_azure.build(...)
+    resp_builder_openai.build( # or resp_builder_azure.build(...) or resp_builder_entra.build(...)
         instructions="Extract flavor-related information. Return only the concise flavor name.",
         response_format=str, # Specify string output
     )
@@ -474,13 +517,23 @@ steps:
      ```python
      from openaivec.spark import ResponsesUDFBuilder
 
+     # Option 1: Using API key (less secure, requires storing secrets)
      resp_builder = ResponsesUDFBuilder.of_azure_openai(
          api_key="<your-api-key>",
          endpoint="https://<your-resource-name>.openai.azure.com",
          api_version="2024-10-21",
          model_name="<your-deployment-name>"
      )
+
+     # Option 2: Using Entra ID (recommended for Fabric - no secrets needed)
+     resp_builder = ResponsesUDFBuilder.of_azure_openai_entra(
+         endpoint="https://<your-resource-name>.openai.azure.com",
+         api_version="2024-10-21",
+         model_name="<your-deployment-name>"
+     )
      ```
+
+   **Note**: The Entra ID option (`of_azure_openai_entra`) is recommended for Microsoft Fabric as it uses the workspace's managed identity, eliminating the need to store API keys securely.
 
 Following these steps allows you to successfully integrate and use `openaivec` within Microsoft Fabric.
 
