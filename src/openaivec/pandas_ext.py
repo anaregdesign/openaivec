@@ -22,6 +22,12 @@ pandas_ext.use_openai("YOUR_API_KEY")
 #     api_version="YOUR_API_VERSION"
 # )
 
+# Option 5: Use Azure OpenAI with Entra ID (Managed Identity/Service Principal)
+# pandas_ext.use_azure_openai_entra(
+#     endpoint="YOUR_AZURE_ENDPOINT",
+#     api_version="YOUR_API_VERSION"
+# )
+
 # Set up the model_name for responses and embeddings (optional, defaults shown)
 pandas_ext.responses_model("gpt-4o-mini")
 pandas_ext.embeddings_model("text-embedding-3-small")
@@ -43,6 +49,12 @@ from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
+try:
+    from azure.identity import DefaultAzureCredential
+    _AZURE_IDENTITY_AVAILABLE = True
+except ImportError:
+    _AZURE_IDENTITY_AVAILABLE = False
+
 from openaivec.embeddings import AsyncBatchEmbeddings, BatchEmbeddings
 from openaivec.responses import AsyncBatchResponses, BatchResponses
 
@@ -53,6 +65,7 @@ __all__ = [
     "embeddings_model",
     "use_openai",
     "use_azure_openai",
+    "use_azure_openai_entra",
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -109,7 +122,49 @@ def use_openai(api_key: str) -> None:
     _ASYNC_CLIENT = AsyncOpenAI(api_key=api_key)
 
 
-def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
+def use_azure_openai_entra(endpoint: str, api_version: str) -> None:
+    """Create and register an `openai.AzureOpenAI` client using Entra ID authentication.
+
+    This function uses DefaultAzureCredential which automatically tries multiple
+    credential types including managed identity, Azure CLI, environment variables,
+    and other credential sources. This is ideal for Microsoft Fabric and other
+    Azure environments where you want to avoid storing API keys.
+
+    Args:
+        endpoint (str): Resource endpoint, e.g.
+            ``https://<resource>.openai.azure.com``.
+        api_version (str): REST API version such as ``2024‑02‑15-preview``.
+
+    Raises:
+        ImportError: If azure-identity package is not available.
+        Exception: If credential acquisition fails.
+    """
+    if not _AZURE_IDENTITY_AVAILABLE:
+        raise ImportError(
+            "azure-identity package is required for Entra ID authentication. "
+            "Install it with: pip install azure-identity"
+        )
+    
+    global _CLIENT, _ASYNC_CLIENT
+    
+    # Create credential and get token
+    credential = DefaultAzureCredential()
+    
+    def get_token():
+        # Get token for Azure OpenAI resource
+        token = credential.get_token("https://cognitiveservices.azure.com/.default")
+        return token.token
+    
+    _CLIENT = AzureOpenAI(
+        azure_ad_token_provider=get_token,
+        azure_endpoint=endpoint,
+        api_version=api_version,
+    )
+    _ASYNC_CLIENT = AsyncAzureOpenAI(
+        azure_ad_token_provider=get_token,
+        azure_endpoint=endpoint,
+        api_version=api_version,
+    )
     """Create and register an `openai.AzureOpenAI` client.
 
     Args:
@@ -186,9 +241,23 @@ def _get_openai_client() -> OpenAI:
 
         return _CLIENT
 
+    # Check for Entra ID environment variables
+    aoai_entra_param_names = [
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_API_VERSION",
+    ]
+    
+    if all(param in os.environ for param in aoai_entra_param_names) and "AZURE_OPENAI_USE_ENTRA_ID" in os.environ:
+        use_azure_openai_entra(
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"]
+        )
+        return _CLIENT
+
     raise ValueError(
         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters."
-        "If using Azure OpenAI, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set."
+        "If using Azure OpenAI with API key, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set."
+        "If using Azure OpenAI with Entra ID, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, and AZURE_OPENAI_USE_ENTRA_ID are set."
         "If using OpenAI, ensure OPENAI_API_KEY is set."
     )
 
@@ -215,9 +284,23 @@ def _get_async_openai_client() -> AsyncOpenAI:
         )
         return _ASYNC_CLIENT
 
+    # Check for Entra ID environment variables
+    aoai_entra_param_names = [
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_API_VERSION",
+    ]
+    
+    if all(param in os.environ for param in aoai_entra_param_names) and "AZURE_OPENAI_USE_ENTRA_ID" in os.environ:
+        use_azure_openai_entra(
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"]
+        )
+        return _ASYNC_CLIENT
+
     raise ValueError(
         "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters."
-        "If using Azure OpenAI, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set."
+        "If using Azure OpenAI with API key, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set."
+        "If using Azure OpenAI with Entra ID, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, and AZURE_OPENAI_USE_ENTRA_ID are set."
         "If using OpenAI, ensure OPENAI_API_KEY is set."
     )
 

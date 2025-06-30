@@ -35,7 +35,7 @@ emb_builder = EmbeddingsUDFBuilder.of_openai(
     model_name="text-embedding-3-small", # Model for embeddings
 )
 
-# Option 2: Using Azure OpenAI
+# Option 2: Using Azure OpenAI with API key
 # resp_builder = ResponsesUDFBuilder.of_azure_openai(
 #     api_key=os.getenv("AZURE_OPENAI_KEY"),
 #     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -44,6 +44,18 @@ emb_builder = EmbeddingsUDFBuilder.of_openai(
 # )
 # emb_builder = EmbeddingsUDFBuilder.of_azure_openai(
 #     api_key=os.getenv("AZURE_OPENAI_KEY"),
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="your-emb-deployment-name", # Deployment for embeddings
+# )
+
+# Option 3: Using Azure OpenAI with Entra ID (Managed Identity/Service Principal)
+# resp_builder = ResponsesUDFBuilder.of_azure_openai_entra(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="your-resp-deployment-name", # Deployment for responses
+# )
+# emb_builder = EmbeddingsUDFBuilder.of_azure_openai_entra(
 #     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
 #     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 #     model_name="your-emb-deployment-name", # Deployment for embeddings
@@ -97,6 +109,12 @@ from openaivec import pandas_ext
 import pandas as pd
 from pydantic import BaseModel
 
+try:
+    from azure.identity import DefaultAzureCredential
+    _AZURE_IDENTITY_AVAILABLE = True
+except ImportError:
+    _AZURE_IDENTITY_AVAILABLE = False
+
 from openaivec.serialize import deserialize_base_model, serialize_base_model
 from openaivec.util import TextChunker
 
@@ -115,7 +133,7 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 _TIKTOKEN_ENC: tiktoken.Encoding | None = None
 
 
-def _initialize(api_key: str, endpoint: str | None, api_version: str | None) -> None:
+def _initialize(api_key: str | None, endpoint: str | None, api_version: str | None, use_entra_id: bool = False) -> None:
     """Initializes the OpenAI client for asynchronous operations.
 
     This function sets up the global asynchronous OpenAI client instance
@@ -123,14 +141,36 @@ def _initialize(api_key: str, endpoint: str | None, api_version: str | None) -> 
     module. It ensures the client is initialized only once.
 
     Args:
-        api_key: The OpenAI or Azure OpenAI API key.
+        api_key: The OpenAI or Azure OpenAI API key. None if using Entra ID.
         endpoint: The Azure OpenAI endpoint URL. Required for Azure.
         api_version: The Azure OpenAI API version. Required for Azure.
+        use_entra_id: Whether to use Entra ID authentication instead of API key.
     """
     global _INITIALIZED
     if not _INITIALIZED:
         if endpoint and api_version:
-            pandas_ext.use_async(AsyncAzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version))
+            if use_entra_id:
+                if not _AZURE_IDENTITY_AVAILABLE:
+                    raise ImportError(
+                        "azure-identity package is required for Entra ID authentication. "
+                        "Install it with: pip install azure-identity"
+                    )
+                
+                # Create credential and get token
+                credential = DefaultAzureCredential()
+                
+                def get_token():
+                    # Get token for Azure OpenAI resource
+                    token = credential.get_token("https://cognitiveservices.azure.com/.default")
+                    return token.token
+                
+                pandas_ext.use_async(AsyncAzureOpenAI(
+                    azure_ad_token_provider=get_token,
+                    azure_endpoint=endpoint, 
+                    api_version=api_version
+                ))
+            else:
+                pandas_ext.use_async(AsyncAzureOpenAI(api_key=api_key, azure_endpoint=endpoint, api_version=api_version))
         else:
             pandas_ext.use_async(AsyncOpenAI(api_key=api_key))
         _INITIALIZED = True
@@ -212,19 +252,23 @@ class ResponsesUDFBuilder:
     An instance stores authentication parameters and the model name.
 
     Attributes:
-        api_key (str): OpenAI or Azure API key.
+        api_key (str | None): OpenAI or Azure API key. None if using Entra ID.
         endpoint (Optional[str]): Azure endpoint base URL. None for public OpenAI.
         api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
         model_name (str): Deployment name (Azure) or model name (OpenAI) for responses.
+        use_entra_id (bool): Whether to use Entra ID authentication for Azure OpenAI.
     """
 
     # Params for OpenAI SDK
-    api_key: str
+    api_key: str | None
     endpoint: str | None
     api_version: str | None
 
     # Params for Responses API
     model_name: str
+    
+    # Authentication method
+    use_entra_id: bool = False
 
     @classmethod
     def of_openai(cls, api_key: str, model_name: str) -> "ResponsesUDFBuilder":
@@ -237,7 +281,21 @@ class ResponsesUDFBuilder:
         Returns:
             ResponsesUDFBuilder: A builder instance configured for OpenAI responses.
         """
-        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name)
+        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name, use_entra_id=False)
+
+    @classmethod
+    def of_azure_openai_entra(cls, endpoint: str, api_version: str, model_name: str) -> "ResponsesUDFBuilder":
+        """Creates a builder configured for Azure OpenAI with Entra ID authentication.
+
+        Args:
+            endpoint (str): The Azure OpenAI endpoint URL.
+            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
+            model_name (str): The Azure OpenAI deployment name for responses.
+
+        Returns:
+            ResponsesUDFBuilder: A builder instance configured for Azure OpenAI with Entra ID.
+        """
+        return cls(api_key=None, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=True)
 
     @classmethod
     def of_azure_openai(cls, api_key: str, endpoint: str, api_version: str, model_name: str) -> "ResponsesUDFBuilder":
@@ -252,7 +310,7 @@ class ResponsesUDFBuilder:
         Returns:
             ResponsesUDFBuilder: A builder instance configured for Azure OpenAI responses.
         """
-        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name)
+        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=False)
 
     def build(
         self,
@@ -287,7 +345,7 @@ class ResponsesUDFBuilder:
 
             @pandas_udf(returnType=spark_schema)
             def structure_udf(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-                _initialize(self.api_key, self.endpoint, self.api_version)
+                _initialize(self.api_key, self.endpoint, self.api_version, self.use_entra_id)
                 pandas_ext.responses_model(self.model_name)
 
                 for part in col:
@@ -309,7 +367,7 @@ class ResponsesUDFBuilder:
 
             @pandas_udf(returnType=StringType())
             def string_udf(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-                _initialize(self.api_key, self.endpoint, self.api_version)
+                _initialize(self.api_key, self.endpoint, self.api_version, self.use_entra_id)
                 pandas_ext.responses_model(self.model_name)
 
                 for part in col:
@@ -340,19 +398,23 @@ class EmbeddingsUDFBuilder:
     An instance stores authentication parameters and the model name.
 
     Attributes:
-        api_key (str): OpenAI or Azure API key.
+        api_key (str | None): OpenAI or Azure API key. None if using Entra ID.
         endpoint (Optional[str]): Azure endpoint base URL. None for public OpenAI.
         api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
         model_name (str): Deployment name (Azure) or model name (OpenAI) for embeddings.
+        use_entra_id (bool): Whether to use Entra ID authentication for Azure OpenAI.
     """
 
     # Params for OpenAI SDK
-    api_key: str
+    api_key: str | None
     endpoint: str | None
     api_version: str | None
 
     # Params for Embeddings API
     model_name: str
+    
+    # Authentication method
+    use_entra_id: bool = False
 
     @classmethod
     def of_openai(cls, api_key: str, model_name: str) -> "EmbeddingsUDFBuilder":
@@ -365,7 +427,7 @@ class EmbeddingsUDFBuilder:
         Returns:
             EmbeddingsUDFBuilder: A builder instance configured for OpenAI embeddings.
         """
-        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name)
+        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name, use_entra_id=False)
 
     @classmethod
     def of_azure_openai(cls, api_key: str, endpoint: str, api_version: str, model_name: str) -> "EmbeddingsUDFBuilder":
@@ -380,7 +442,21 @@ class EmbeddingsUDFBuilder:
         Returns:
             EmbeddingsUDFBuilder: A builder instance configured for Azure OpenAI embeddings.
         """
-        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name)
+        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=False)
+
+    @classmethod
+    def of_azure_openai_entra(cls, endpoint: str, api_version: str, model_name: str) -> "EmbeddingsUDFBuilder":
+        """Creates a builder configured for Azure OpenAI with Entra ID authentication.
+
+        Args:
+            endpoint (str): The Azure OpenAI endpoint URL.
+            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
+            model_name (str): The Azure OpenAI deployment name for embeddings.
+
+        Returns:
+            EmbeddingsUDFBuilder: A builder instance configured for Azure OpenAI with Entra ID.
+        """
+        return cls(api_key=None, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=True)
 
     def build(self, batch_size: int = 128, max_concurrency: int = 8) -> UserDefinedFunction:
         """Builds the asynchronous pandas UDF for generating embeddings.
@@ -396,7 +472,7 @@ class EmbeddingsUDFBuilder:
 
         @pandas_udf(returnType=ArrayType(FloatType()))
         def embeddings_udf(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-            _initialize(self.api_key, self.endpoint, self.api_version)
+            _initialize(self.api_key, self.endpoint, self.api_version, self.use_entra_id)
             pandas_ext.embeddings_model(self.model_name)
 
             for part in col:
