@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import MagicMock, patch
-import pandas as pd
 
 from openaivec import pandas_ext
 from openaivec.spark import ResponsesUDFBuilder, EmbeddingsUDFBuilder
@@ -121,7 +120,7 @@ class TestEntraAuthentication(unittest.TestCase):
         # This should trigger the Entra ID path
         try:
             pandas_ext._get_openai_client()
-        except:
+        except Exception:
             # Expected to fail due to mocking, but should call use_azure_openai_entra
             pass
 
