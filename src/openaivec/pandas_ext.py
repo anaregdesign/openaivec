@@ -78,7 +78,22 @@ _ASYNC_CLIENT: AsyncOpenAI | None = None
 _RESPONSES_MODEL_NAME = "gpt-4o-mini"
 _EMBEDDINGS_MODEL_NAME = "text-embedding-3-small"
 
-_TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
+_TIKTOKEN_ENCODING = None
+
+
+def _get_tiktoken_encoding():
+    """Get the tiktoken encoding, initializing it lazily if needed."""
+    global _TIKTOKEN_ENCODING
+    if _TIKTOKEN_ENCODING is None:
+        try:
+            _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(_RESPONSES_MODEL_NAME)
+        except KeyError:
+            _LOGGER.info(
+                "The model name '%s' is not supported by tiktoken. Instead, using the 'o200k_base' encoding.",
+                _RESPONSES_MODEL_NAME,
+            )
+            _TIKTOKEN_ENCODING = tiktoken.get_encoding("o200k_base")
+    return _TIKTOKEN_ENCODING
 
 
 # internal method for accesing .ai accessor in spark udfs
@@ -198,16 +213,8 @@ def responses_model(name: str) -> None:
     """
     global _RESPONSES_MODEL_NAME, _TIKTOKEN_ENCODING
     _RESPONSES_MODEL_NAME = name
-
-    try:
-        _TIKTOKEN_ENCODING = tiktoken.encoding_for_model(name)
-
-    except KeyError:
-        _LOGGER.info(
-            "The model name '%s' is not supported by tiktoken. Instead, using the 'o200k_base' encoding.",
-            name,
-        )
-        _TIKTOKEN_ENCODING = tiktoken.get_encoding("o200k_base")
+    # Reset the encoding so it gets re-initialized with the new model
+    _TIKTOKEN_ENCODING = None
 
 
 def embeddings_model(name: str) -> None:
@@ -430,7 +437,7 @@ class OpenAIVecSeriesAccessor:
         Returns:
             pandas.Series: Token counts for each element.
         """
-        return self._obj.map(_TIKTOKEN_ENCODING.encode).map(len).rename("num_tokens")
+        return self._obj.map(_get_tiktoken_encoding().encode).map(len).rename("num_tokens")
 
     def extract(self) -> pd.DataFrame:
         """Expand a Series of Pydantic models/dicts into columns.
