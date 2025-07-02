@@ -196,6 +196,28 @@ When using Entra ID, the library automatically uses `DefaultAzureCredential` whi
 - Azure CLI (for local development)
 - Visual Studio/VS Code (for local development)
 
+#### Azure OpenAI with Service Principal (Explicit credentials)
+```bash
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_VERSION="2024-02-01" 
+export AZURE_CLIENT_ID="your-client-id"
+export AZURE_CLIENT_SECRET="your-client-secret"
+export AZURE_TENANT_ID="your-tenant-id"
+```
+
+For explicit Service Principal authentication, you can also use the programmatic approach:
+```python
+from openaivec import pandas_ext
+
+pandas_ext.use_azure_openai_service_principal(
+    endpoint="https://your-resource.openai.azure.com",
+    api_version="2024-02-01",
+    client_id="your-client-id",
+    client_secret="your-client-secret", 
+    tenant_id="your-tenant-id"
+)
+```
+
 This is ideal for Microsoft Fabric and other Azure services where you want to avoid storing secrets.
 
 ## Using with Apache Spark UDFs
@@ -253,6 +275,24 @@ emb_builder_openai = EmbeddingsUDFBuilder.of_openai(
 #     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
 #     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
 #     model_name="<your-emb-deployment-name>", # Deployment for embeddings
+# )
+
+# --- Option 4: Using Azure OpenAI with Service Principal ---
+# resp_builder_sp = ResponsesUDFBuilder.of_azure_openai_service_principal(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="<your-resp-deployment-name>", # Deployment for responses
+#     client_id=os.getenv("AZURE_CLIENT_ID"),
+#     client_secret=os.getenv("AZURE_CLIENT_SECRET"),
+#     tenant_id=os.getenv("AZURE_TENANT_ID"),
+# )
+# emb_builder_sp = EmbeddingsUDFBuilder.of_azure_openai_service_principal(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="<your-emb-deployment-name>", # Deployment for embeddings
+#     client_id=os.getenv("AZURE_CLIENT_ID"),
+#     client_secret=os.getenv("AZURE_CLIENT_SECRET"),
+#     tenant_id=os.getenv("AZURE_TENANT_ID"),
 # )
 
 # --- Register Responses UDF (String Output) ---
