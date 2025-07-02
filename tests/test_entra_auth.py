@@ -13,33 +13,9 @@ class TestEntraAuthentication(unittest.TestCase):
         pandas_ext._CLIENT = None
         pandas_ext._ASYNC_CLIENT = None
 
-    def test_use_azure_openai_entra_import_error(self):
-        """Test that ImportError is raised when azure-identity is not available."""
-        with patch('openaivec.pandas_ext._AZURE_IDENTITY_AVAILABLE', False):
-            with self.assertRaises(ImportError) as context:
-                pandas_ext.use_azure_openai_entra(
-                    endpoint="https://test.openai.azure.com",
-                    api_version="2024-02-01"
-                )
-            self.assertIn("azure-identity package is required", str(context.exception))
-
-    def test_use_azure_openai_service_principal_import_error(self):
-        """Test that ImportError is raised when azure-identity is not available for Service Principal auth."""
-        with patch('openaivec.pandas_ext._AZURE_IDENTITY_AVAILABLE', False):
-            with self.assertRaises(ImportError) as context:
-                pandas_ext.use_azure_openai_service_principal(
-                    endpoint="https://test.openai.azure.com",
-                    api_version="2024-02-01",
-                    client_id="test-client-id",
-                    client_secret="test-client-secret",
-                    tenant_id="test-tenant-id"
-                )
-            self.assertIn("azure-identity package is required", str(context.exception))
-
-    @patch('openaivec.pandas_ext._AZURE_IDENTITY_AVAILABLE', True)
-    @patch('openaivec.pandas_ext.DefaultAzureCredential')
-    @patch('openaivec.pandas_ext.AzureOpenAI')
-    @patch('openaivec.pandas_ext.AsyncAzureOpenAI')
+    @patch("openaivec.pandas_ext.DefaultAzureCredential")
+    @patch("openaivec.pandas_ext.AzureOpenAI")
+    @patch("openaivec.pandas_ext.AsyncAzureOpenAI")
     def test_use_azure_openai_entra_success(self, mock_async_azure, mock_azure, mock_credential_class):
         """Test successful Entra ID authentication setup."""
         # Mock the credential
@@ -56,10 +32,7 @@ class TestEntraAuthentication(unittest.TestCase):
         mock_async_azure.return_value = mock_async_client
 
         # Call the function
-        pandas_ext.use_azure_openai_entra(
-            endpoint="https://test.openai.azure.com",
-            api_version="2024-02-01"
-        )
+        pandas_ext.use_azure_openai_entra(endpoint="https://test.openai.azure.com", api_version="2024-02-01")
 
         # Verify credential was created
         mock_credential_class.assert_called_once()
@@ -72,10 +45,9 @@ class TestEntraAuthentication(unittest.TestCase):
         self.assertEqual(pandas_ext._CLIENT, mock_client)
         self.assertEqual(pandas_ext._ASYNC_CLIENT, mock_async_client)
 
-    @patch('openaivec.pandas_ext._AZURE_IDENTITY_AVAILABLE', True)
-    @patch('openaivec.pandas_ext.ClientSecretCredential')
-    @patch('openaivec.pandas_ext.AzureOpenAI')
-    @patch('openaivec.pandas_ext.AsyncAzureOpenAI')
+    @patch("openaivec.pandas_ext.ClientSecretCredential")
+    @patch("openaivec.pandas_ext.AzureOpenAI")
+    @patch("openaivec.pandas_ext.AsyncAzureOpenAI")
     def test_use_azure_openai_service_principal_success(self, mock_async_azure, mock_azure, mock_credential_class):
         """Test successful Service Principal authentication setup."""
         # Mock the credential
@@ -97,14 +69,12 @@ class TestEntraAuthentication(unittest.TestCase):
             api_version="2024-02-01",
             client_id="test-client-id",
             client_secret="test-client-secret",
-            tenant_id="test-tenant-id"
+            tenant_id="test-tenant-id",
         )
 
         # Verify credential was created with correct parameters
         mock_credential_class.assert_called_once_with(
-            tenant_id="test-tenant-id",
-            client_id="test-client-id",
-            client_secret="test-client-secret"
+            tenant_id="test-tenant-id", client_id="test-client-id", client_secret="test-client-secret"
         )
 
         # Verify clients were created with correct parameters
@@ -118,9 +88,7 @@ class TestEntraAuthentication(unittest.TestCase):
     def test_responses_udf_builder_of_azure_openai_entra(self):
         """Test ResponsesUDFBuilder.of_azure_openai_entra creates correct instance."""
         builder = ResponsesUDFBuilder.of_azure_openai_entra(
-            endpoint="https://test.openai.azure.com",
-            api_version="2024-02-01",
-            model_name="gpt-4"
+            endpoint="https://test.openai.azure.com", api_version="2024-02-01", model_name="gpt-4"
         )
 
         self.assertIsNone(builder.api_key)
@@ -141,7 +109,7 @@ class TestEntraAuthentication(unittest.TestCase):
             model_name="gpt-4",
             client_id="test-client-id",
             client_secret="test-client-secret",
-            tenant_id="test-tenant-id"
+            tenant_id="test-tenant-id",
         )
 
         self.assertIsNone(builder.api_key)
@@ -157,9 +125,7 @@ class TestEntraAuthentication(unittest.TestCase):
     def test_embeddings_udf_builder_of_azure_openai_entra(self):
         """Test EmbeddingsUDFBuilder.of_azure_openai_entra creates correct instance."""
         builder = EmbeddingsUDFBuilder.of_azure_openai_entra(
-            endpoint="https://test.openai.azure.com",
-            api_version="2024-02-01",
-            model_name="text-embedding-ada-002"
+            endpoint="https://test.openai.azure.com", api_version="2024-02-01", model_name="text-embedding-ada-002"
         )
 
         self.assertIsNone(builder.api_key)
@@ -180,7 +146,7 @@ class TestEntraAuthentication(unittest.TestCase):
             model_name="text-embedding-ada-002",
             client_id="test-client-id",
             client_secret="test-client-secret",
-            tenant_id="test-tenant-id"
+            tenant_id="test-tenant-id",
         )
 
         self.assertIsNone(builder.api_key)
@@ -196,10 +162,7 @@ class TestEntraAuthentication(unittest.TestCase):
     def test_existing_builders_still_work(self):
         """Test that existing builder methods still work with API keys."""
         resp_builder = ResponsesUDFBuilder.of_azure_openai(
-            api_key="test_key",
-            endpoint="https://test.openai.azure.com",
-            api_version="2024-02-01",
-            model_name="gpt-4"
+            api_key="test_key", endpoint="https://test.openai.azure.com", api_version="2024-02-01", model_name="gpt-4"
         )
 
         self.assertEqual(resp_builder.api_key, "test_key")
@@ -209,18 +172,21 @@ class TestEntraAuthentication(unittest.TestCase):
             api_key="test_key",
             endpoint="https://test.openai.azure.com",
             api_version="2024-02-01",
-            model_name="text-embedding-ada-002"
+            model_name="text-embedding-ada-002",
         )
 
         self.assertEqual(emb_builder.api_key, "test_key")
         self.assertFalse(emb_builder.use_entra_id)
 
-    @patch.dict('os.environ', {
-        'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-        'AZURE_OPENAI_API_VERSION': '2024-02-01',
-        'AZURE_OPENAI_USE_ENTRA_ID': 'true'
-    })
-    @patch('openaivec.pandas_ext.use_azure_openai_entra')
+    @patch.dict(
+        "os.environ",
+        {
+            "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            "AZURE_OPENAI_API_VERSION": "2024-02-01",
+            "AZURE_OPENAI_USE_ENTRA_ID": "true",
+        },
+    )
+    @patch("openaivec.pandas_ext.use_azure_openai_entra")
     def test_environment_variable_entra_id_detection(self, mock_use_entra):
         """Test that environment variables trigger Entra ID authentication."""
         # This should trigger the Entra ID path
@@ -230,19 +196,19 @@ class TestEntraAuthentication(unittest.TestCase):
             # Expected to fail due to mocking, but should call use_azure_openai_entra
             pass
 
-        mock_use_entra.assert_called_once_with(
-            endpoint='https://test.openai.azure.com',
-            api_version='2024-02-01'
-        )
+        mock_use_entra.assert_called_once_with(endpoint="https://test.openai.azure.com", api_version="2024-02-01")
 
-    @patch.dict('os.environ', {
-        'AZURE_OPENAI_ENDPOINT': 'https://test.openai.azure.com',
-        'AZURE_OPENAI_API_VERSION': '2024-02-01',
-        'AZURE_CLIENT_ID': 'test-client-id',
-        'AZURE_CLIENT_SECRET': 'test-client-secret',
-        'AZURE_TENANT_ID': 'test-tenant-id'
-    })
-    @patch('openaivec.pandas_ext.use_azure_openai_service_principal')
+    @patch.dict(
+        "os.environ",
+        {
+            "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            "AZURE_OPENAI_API_VERSION": "2024-02-01",
+            "AZURE_CLIENT_ID": "test-client-id",
+            "AZURE_CLIENT_SECRET": "test-client-secret",
+            "AZURE_TENANT_ID": "test-tenant-id",
+        },
+    )
+    @patch("openaivec.pandas_ext.use_azure_openai_service_principal")
     def test_environment_variable_service_principal_detection(self, mock_use_sp):
         """Test that Service Principal environment variables trigger Service Principal authentication."""
         # This should trigger the Service Principal path
@@ -253,13 +219,13 @@ class TestEntraAuthentication(unittest.TestCase):
             pass
 
         mock_use_sp.assert_called_once_with(
-            endpoint='https://test.openai.azure.com',
-            api_version='2024-02-01',
-            client_id='test-client-id',
-            client_secret='test-client-secret',
-            tenant_id='test-tenant-id'
+            endpoint="https://test.openai.azure.com",
+            api_version="2024-02-01",
+            client_id="test-client-id",
+            client_secret="test-client-secret",
+            tenant_id="test-tenant-id",
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -58,11 +58,7 @@ from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-try:
-    from azure.identity import DefaultAzureCredential, ClientSecretCredential
-    _AZURE_IDENTITY_AVAILABLE = True
-except ImportError:
-    _AZURE_IDENTITY_AVAILABLE = False
+from azure.identity import DefaultAzureCredential, ClientSecretCredential
 
 from openaivec.embeddings import AsyncBatchEmbeddings, BatchEmbeddings
 from openaivec.responses import AsyncBatchResponses, BatchResponses
@@ -161,25 +157,18 @@ def use_azure_openai_entra(endpoint: str, api_version: str) -> None:
         api_version (str): REST API version such as ``2024‑02‑15-preview``.
 
     Raises:
-        ImportError: If azure-identity package is not available.
         Exception: If credential acquisition fails.
     """
-    if not _AZURE_IDENTITY_AVAILABLE:
-        raise ImportError(
-            "azure-identity package is required for Entra ID authentication. "
-            "Install it with: pip install azure-identity"
-        )
-    
     global _CLIENT, _ASYNC_CLIENT
-    
+
     # Create credential and get token
     credential = DefaultAzureCredential()
-    
+
     def get_token():
         # Get token for Azure OpenAI resource
         token = credential.get_token("https://cognitiveservices.azure.com/.default")
         return token.token
-    
+
     _CLIENT = AzureOpenAI(
         azure_ad_token_provider=get_token,
         azure_endpoint=endpoint,
@@ -193,11 +182,7 @@ def use_azure_openai_entra(endpoint: str, api_version: str) -> None:
 
 
 def use_azure_openai_service_principal(
-    endpoint: str, 
-    api_version: str, 
-    client_id: str, 
-    client_secret: str, 
-    tenant_id: str
+    endpoint: str, api_version: str, client_id: str, client_secret: str, tenant_id: str
 ) -> None:
     """Create and register an `openai.AzureOpenAI` client using Service Principal authentication.
 
@@ -214,29 +199,18 @@ def use_azure_openai_service_principal(
         tenant_id (str): The Azure tenant ID.
 
     Raises:
-        ImportError: If azure-identity package is not available.
         Exception: If credential acquisition fails.
     """
-    if not _AZURE_IDENTITY_AVAILABLE:
-        raise ImportError(
-            "azure-identity package is required for Service Principal authentication. "
-            "Install it with: pip install azure-identity"
-        )
-    
     global _CLIENT, _ASYNC_CLIENT
-    
+
     # Create credential using explicit Service Principal credentials
-    credential = ClientSecretCredential(
-        tenant_id=tenant_id,
-        client_id=client_id,
-        client_secret=client_secret
-    )
-    
+    credential = ClientSecretCredential(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
+
     def get_token():
         # Get token for Azure OpenAI resource
         token = credential.get_token("https://cognitiveservices.azure.com/.default")
         return token.token
-    
+
     _CLIENT = AzureOpenAI(
         azure_ad_token_provider=get_token,
         azure_endpoint=endpoint,
@@ -323,11 +297,10 @@ def _get_openai_client() -> OpenAI:
         "AZURE_OPENAI_ENDPOINT",
         "AZURE_OPENAI_API_VERSION",
     ]
-    
+
     if all(param in os.environ for param in aoai_entra_param_names) and "AZURE_OPENAI_USE_ENTRA_ID" in os.environ:
         use_azure_openai_entra(
-            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            api_version=os.environ["AZURE_OPENAI_API_VERSION"]
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"], api_version=os.environ["AZURE_OPENAI_API_VERSION"]
         )
         return _CLIENT
 
@@ -336,17 +309,17 @@ def _get_openai_client() -> OpenAI:
         "AZURE_OPENAI_ENDPOINT",
         "AZURE_OPENAI_API_VERSION",
         "AZURE_CLIENT_ID",
-        "AZURE_CLIENT_SECRET", 
+        "AZURE_CLIENT_SECRET",
         "AZURE_TENANT_ID",
     ]
-    
+
     if all(param in os.environ for param in aoai_sp_param_names):
         use_azure_openai_service_principal(
             endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version=os.environ["AZURE_OPENAI_API_VERSION"],
             client_id=os.environ["AZURE_CLIENT_ID"],
             client_secret=os.environ["AZURE_CLIENT_SECRET"],
-            tenant_id=os.environ["AZURE_TENANT_ID"]
+            tenant_id=os.environ["AZURE_TENANT_ID"],
         )
         return _CLIENT
 
@@ -386,11 +359,10 @@ def _get_async_openai_client() -> AsyncOpenAI:
         "AZURE_OPENAI_ENDPOINT",
         "AZURE_OPENAI_API_VERSION",
     ]
-    
+
     if all(param in os.environ for param in aoai_entra_param_names) and "AZURE_OPENAI_USE_ENTRA_ID" in os.environ:
         use_azure_openai_entra(
-            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-            api_version=os.environ["AZURE_OPENAI_API_VERSION"]
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"], api_version=os.environ["AZURE_OPENAI_API_VERSION"]
         )
         return _ASYNC_CLIENT
 
@@ -399,17 +371,17 @@ def _get_async_openai_client() -> AsyncOpenAI:
         "AZURE_OPENAI_ENDPOINT",
         "AZURE_OPENAI_API_VERSION",
         "AZURE_CLIENT_ID",
-        "AZURE_CLIENT_SECRET", 
+        "AZURE_CLIENT_SECRET",
         "AZURE_TENANT_ID",
     ]
-    
+
     if all(param in os.environ for param in aoai_sp_param_names):
         use_azure_openai_service_principal(
             endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
             api_version=os.environ["AZURE_OPENAI_API_VERSION"],
             client_id=os.environ["AZURE_CLIENT_ID"],
             client_secret=os.environ["AZURE_CLIENT_SECRET"],
-            tenant_id=os.environ["AZURE_TENANT_ID"]
+            tenant_id=os.environ["AZURE_TENANT_ID"],
         )
         return _ASYNC_CLIENT
 
