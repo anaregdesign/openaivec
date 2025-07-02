@@ -28,6 +28,15 @@ pandas_ext.use_openai("YOUR_API_KEY")
 #     api_version="YOUR_API_VERSION"
 # )
 
+# Option 6: Use Azure OpenAI with explicit Service Principal credentials
+# pandas_ext.use_azure_openai_service_principal(
+#     endpoint="YOUR_AZURE_ENDPOINT",
+#     api_version="YOUR_API_VERSION",
+#     client_id="YOUR_CLIENT_ID",
+#     client_secret="YOUR_CLIENT_SECRET",
+#     tenant_id="YOUR_TENANT_ID"
+# )
+
 # Set up the model_name for responses and embeddings (optional, defaults shown)
 pandas_ext.responses_model("gpt-4o-mini")
 pandas_ext.embeddings_model("text-embedding-3-small")
@@ -50,7 +59,7 @@ from pydantic import BaseModel
 import tiktoken
 
 try:
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, ClientSecretCredential
     _AZURE_IDENTITY_AVAILABLE = True
 except ImportError:
     _AZURE_IDENTITY_AVAILABLE = False
@@ -66,6 +75,7 @@ __all__ = [
     "use_openai",
     "use_azure_openai",
     "use_azure_openai_entra",
+    "use_azure_openai_service_principal",
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -182,6 +192,63 @@ def use_azure_openai_entra(endpoint: str, api_version: str) -> None:
     )
 
 
+def use_azure_openai_service_principal(
+    endpoint: str, 
+    api_version: str, 
+    client_id: str, 
+    client_secret: str, 
+    tenant_id: str
+) -> None:
+    """Create and register an `openai.AzureOpenAI` client using Service Principal authentication.
+
+    This function uses explicit Service Principal credentials to authenticate with Azure OpenAI.
+    This is ideal for CI/CD pipelines, automation scenarios, and environments where you need
+    explicit control over the authentication method.
+
+    Args:
+        endpoint (str): Resource endpoint, e.g.
+            ``https://<resource>.openai.azure.com``.
+        api_version (str): REST API version such as ``2024‑02‑15-preview``.
+        client_id (str): The Azure application (client) ID.
+        client_secret (str): The client secret for the Azure application.
+        tenant_id (str): The Azure tenant ID.
+
+    Raises:
+        ImportError: If azure-identity package is not available.
+        Exception: If credential acquisition fails.
+    """
+    if not _AZURE_IDENTITY_AVAILABLE:
+        raise ImportError(
+            "azure-identity package is required for Service Principal authentication. "
+            "Install it with: pip install azure-identity"
+        )
+    
+    global _CLIENT, _ASYNC_CLIENT
+    
+    # Create credential using explicit Service Principal credentials
+    credential = ClientSecretCredential(
+        tenant_id=tenant_id,
+        client_id=client_id,
+        client_secret=client_secret
+    )
+    
+    def get_token():
+        # Get token for Azure OpenAI resource
+        token = credential.get_token("https://cognitiveservices.azure.com/.default")
+        return token.token
+    
+    _CLIENT = AzureOpenAI(
+        azure_ad_token_provider=get_token,
+        azure_endpoint=endpoint,
+        api_version=api_version,
+    )
+    _ASYNC_CLIENT = AsyncAzureOpenAI(
+        azure_ad_token_provider=get_token,
+        azure_endpoint=endpoint,
+        api_version=api_version,
+    )
+
+
 def use_azure_openai(api_key: str, endpoint: str, api_version: str) -> None:
     """Create and register an `openai.AzureOpenAI` client.
 
@@ -264,10 +331,30 @@ def _get_openai_client() -> OpenAI:
         )
         return _CLIENT
 
+    # Check for Service Principal environment variables
+    aoai_sp_param_names = [
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_API_VERSION",
+        "AZURE_CLIENT_ID",
+        "AZURE_CLIENT_SECRET", 
+        "AZURE_TENANT_ID",
+    ]
+    
+    if all(param in os.environ for param in aoai_sp_param_names):
+        use_azure_openai_service_principal(
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+            client_id=os.environ["AZURE_CLIENT_ID"],
+            client_secret=os.environ["AZURE_CLIENT_SECRET"],
+            tenant_id=os.environ["AZURE_TENANT_ID"]
+        )
+        return _CLIENT
+
     raise ValueError(
-        "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters."
-        "If using Azure OpenAI with API key, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set."
-        "If using Azure OpenAI with Entra ID, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, and AZURE_OPENAI_USE_ENTRA_ID are set."
+        "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters. "
+        "If using Azure OpenAI with API key, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set. "
+        "If using Azure OpenAI with Entra ID, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, and AZURE_OPENAI_USE_ENTRA_ID are set. "
+        "If using Azure OpenAI with Service Principal, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID are set. "
         "If using OpenAI, ensure OPENAI_API_KEY is set."
     )
 
@@ -307,10 +394,30 @@ def _get_async_openai_client() -> AsyncOpenAI:
         )
         return _ASYNC_CLIENT
 
+    # Check for Service Principal environment variables
+    aoai_sp_param_names = [
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_API_VERSION",
+        "AZURE_CLIENT_ID",
+        "AZURE_CLIENT_SECRET", 
+        "AZURE_TENANT_ID",
+    ]
+    
+    if all(param in os.environ for param in aoai_sp_param_names):
+        use_azure_openai_service_principal(
+            endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_version=os.environ["AZURE_OPENAI_API_VERSION"],
+            client_id=os.environ["AZURE_CLIENT_ID"],
+            client_secret=os.environ["AZURE_CLIENT_SECRET"],
+            tenant_id=os.environ["AZURE_TENANT_ID"]
+        )
+        return _ASYNC_CLIENT
+
     raise ValueError(
-        "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters."
-        "If using Azure OpenAI with API key, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set."
-        "If using Azure OpenAI with Entra ID, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, and AZURE_OPENAI_USE_ENTRA_ID are set."
+        "No OpenAI API key found. Please set the OPENAI_API_KEY environment variable or provide Azure OpenAI parameters. "
+        "If using Azure OpenAI with API key, ensure AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, and AZURE_OPENAI_API_VERSION are set. "
+        "If using Azure OpenAI with Entra ID, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, and AZURE_OPENAI_USE_ENTRA_ID are set. "
+        "If using Azure OpenAI with Service Principal, ensure AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_VERSION, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_TENANT_ID are set. "
         "If using OpenAI, ensure OPENAI_API_KEY is set."
     )
 

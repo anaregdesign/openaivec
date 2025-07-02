@@ -61,6 +61,24 @@ emb_builder = EmbeddingsUDFBuilder.of_openai(
 #     model_name="your-emb-deployment-name", # Deployment for embeddings
 # )
 
+# Option 4: Using Azure OpenAI with explicit Service Principal authentication
+# resp_builder = ResponsesUDFBuilder.of_azure_openai_service_principal(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="your-resp-deployment-name", # Deployment for responses
+#     client_id=os.getenv("AZURE_CLIENT_ID"),
+#     client_secret=os.getenv("AZURE_CLIENT_SECRET"),
+#     tenant_id=os.getenv("AZURE_TENANT_ID"),
+# )
+# emb_builder = EmbeddingsUDFBuilder.of_azure_openai_service_principal(
+#     endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+#     api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+#     model_name="your-emb-deployment-name", # Deployment for embeddings
+#     client_id=os.getenv("AZURE_CLIENT_ID"),
+#     client_secret=os.getenv("AZURE_CLIENT_SECRET"),
+#     tenant_id=os.getenv("AZURE_TENANT_ID"),
+# )
+
 # Define a Pydantic model for structured responses (optional)
 class Translation(BaseModel):
     en: str
@@ -110,7 +128,7 @@ import pandas as pd
 from pydantic import BaseModel
 
 try:
-    from azure.identity import DefaultAzureCredential
+    from azure.identity import DefaultAzureCredential, ClientSecretCredential
     _AZURE_IDENTITY_AVAILABLE = True
 except ImportError:
     _AZURE_IDENTITY_AVAILABLE = False
@@ -133,7 +151,15 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 _TIKTOKEN_ENC: tiktoken.Encoding | None = None
 
 
-def _initialize(api_key: str | None, endpoint: str | None, api_version: str | None, use_entra_id: bool = False) -> None:
+def _initialize(
+    api_key: str | None, 
+    endpoint: str | None, 
+    api_version: str | None, 
+    use_entra_id: bool = False,
+    client_id: str | None = None,
+    client_secret: str | None = None,
+    tenant_id: str | None = None
+) -> None:
     """Initializes the OpenAI client for asynchronous operations.
 
     This function sets up the global asynchronous OpenAI client instance
@@ -145,6 +171,9 @@ def _initialize(api_key: str | None, endpoint: str | None, api_version: str | No
         endpoint: The Azure OpenAI endpoint URL. Required for Azure.
         api_version: The Azure OpenAI API version. Required for Azure.
         use_entra_id: Whether to use Entra ID authentication instead of API key.
+        client_id: Azure Service Principal client ID. Required for Service Principal auth.
+        client_secret: Azure Service Principal client secret. Required for Service Principal auth.
+        tenant_id: Azure tenant ID. Required for Service Principal auth.
     """
     global _INITIALIZED
     if not _INITIALIZED:
@@ -156,8 +185,17 @@ def _initialize(api_key: str | None, endpoint: str | None, api_version: str | No
                         "Install it with: pip install azure-identity"
                     )
                 
-                # Create credential and get token
-                credential = DefaultAzureCredential()
+                # Check if Service Principal credentials are provided
+                if client_id and client_secret and tenant_id:
+                    # Use explicit Service Principal credentials
+                    credential = ClientSecretCredential(
+                        tenant_id=tenant_id,
+                        client_id=client_id,
+                        client_secret=client_secret
+                    )
+                else:
+                    # Use DefaultAzureCredential for other Entra ID sources
+                    credential = DefaultAzureCredential()
                 
                 def get_token():
                     # Get token for Azure OpenAI resource
@@ -257,6 +295,9 @@ class ResponsesUDFBuilder:
         api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
         model_name (str): Deployment name (Azure) or model name (OpenAI) for responses.
         use_entra_id (bool): Whether to use Entra ID authentication for Azure OpenAI.
+        client_id (str | None): Azure Service Principal client ID. None if not using SP.
+        client_secret (str | None): Azure Service Principal client secret. None if not using SP.
+        tenant_id (str | None): Azure tenant ID. None if not using SP.
     """
 
     # Params for OpenAI SDK
@@ -269,6 +310,11 @@ class ResponsesUDFBuilder:
     
     # Authentication method
     use_entra_id: bool = False
+    
+    # Service Principal authentication
+    client_id: str | None = None
+    client_secret: str | None = None
+    tenant_id: str | None = None
 
     @classmethod
     def of_openai(cls, api_key: str, model_name: str) -> "ResponsesUDFBuilder":
@@ -281,7 +327,16 @@ class ResponsesUDFBuilder:
         Returns:
             ResponsesUDFBuilder: A builder instance configured for OpenAI responses.
         """
-        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name, use_entra_id=False)
+        return cls(
+            api_key=api_key, 
+            endpoint=None, 
+            api_version=None, 
+            model_name=model_name, 
+            use_entra_id=False,
+            client_id=None,
+            client_secret=None,
+            tenant_id=None
+        )
 
     @classmethod
     def of_azure_openai_entra(cls, endpoint: str, api_version: str, model_name: str) -> "ResponsesUDFBuilder":
@@ -295,7 +350,50 @@ class ResponsesUDFBuilder:
         Returns:
             ResponsesUDFBuilder: A builder instance configured for Azure OpenAI with Entra ID.
         """
-        return cls(api_key=None, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=True)
+        return cls(
+            api_key=None, 
+            endpoint=endpoint, 
+            api_version=api_version, 
+            model_name=model_name, 
+            use_entra_id=True,
+            client_id=None,
+            client_secret=None,
+            tenant_id=None
+        )
+
+    @classmethod
+    def of_azure_openai_service_principal(
+        cls, 
+        endpoint: str, 
+        api_version: str, 
+        model_name: str, 
+        client_id: str, 
+        client_secret: str, 
+        tenant_id: str
+    ) -> "ResponsesUDFBuilder":
+        """Creates a builder configured for Azure OpenAI with Service Principal authentication.
+
+        Args:
+            endpoint (str): The Azure OpenAI endpoint URL.
+            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
+            model_name (str): The Azure OpenAI deployment name for responses.
+            client_id (str): The Azure application (client) ID.
+            client_secret (str): The client secret for the Azure application.
+            tenant_id (str): The Azure tenant ID.
+
+        Returns:
+            ResponsesUDFBuilder: A builder instance configured for Azure OpenAI with Service Principal.
+        """
+        return cls(
+            api_key=None, 
+            endpoint=endpoint, 
+            api_version=api_version, 
+            model_name=model_name, 
+            use_entra_id=True,
+            client_id=client_id,
+            client_secret=client_secret,
+            tenant_id=tenant_id
+        )
 
     @classmethod
     def of_azure_openai(cls, api_key: str, endpoint: str, api_version: str, model_name: str) -> "ResponsesUDFBuilder":
@@ -310,7 +408,16 @@ class ResponsesUDFBuilder:
         Returns:
             ResponsesUDFBuilder: A builder instance configured for Azure OpenAI responses.
         """
-        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=False)
+        return cls(
+            api_key=api_key, 
+            endpoint=endpoint, 
+            api_version=api_version, 
+            model_name=model_name, 
+            use_entra_id=False,
+            client_id=None,
+            client_secret=None,
+            tenant_id=None
+        )
 
     def build(
         self,
@@ -345,7 +452,15 @@ class ResponsesUDFBuilder:
 
             @pandas_udf(returnType=spark_schema)
             def structure_udf(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-                _initialize(self.api_key, self.endpoint, self.api_version, self.use_entra_id)
+                _initialize(
+                    self.api_key, 
+                    self.endpoint, 
+                    self.api_version, 
+                    self.use_entra_id,
+                    self.client_id,
+                    self.client_secret,
+                    self.tenant_id
+                )
                 pandas_ext.responses_model(self.model_name)
 
                 for part in col:
@@ -367,7 +482,15 @@ class ResponsesUDFBuilder:
 
             @pandas_udf(returnType=StringType())
             def string_udf(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-                _initialize(self.api_key, self.endpoint, self.api_version, self.use_entra_id)
+                _initialize(
+                    self.api_key, 
+                    self.endpoint, 
+                    self.api_version, 
+                    self.use_entra_id,
+                    self.client_id,
+                    self.client_secret,
+                    self.tenant_id
+                )
                 pandas_ext.responses_model(self.model_name)
 
                 for part in col:
@@ -403,6 +526,9 @@ class EmbeddingsUDFBuilder:
         api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
         model_name (str): Deployment name (Azure) or model name (OpenAI) for embeddings.
         use_entra_id (bool): Whether to use Entra ID authentication for Azure OpenAI.
+        client_id (str | None): Azure Service Principal client ID. None if not using SP.
+        client_secret (str | None): Azure Service Principal client secret. None if not using SP.
+        tenant_id (str | None): Azure tenant ID. None if not using SP.
     """
 
     # Params for OpenAI SDK
@@ -415,6 +541,11 @@ class EmbeddingsUDFBuilder:
     
     # Authentication method
     use_entra_id: bool = False
+    
+    # Service Principal authentication
+    client_id: str | None = None
+    client_secret: str | None = None
+    tenant_id: str | None = None
 
     @classmethod
     def of_openai(cls, api_key: str, model_name: str) -> "EmbeddingsUDFBuilder":
@@ -427,7 +558,16 @@ class EmbeddingsUDFBuilder:
         Returns:
             EmbeddingsUDFBuilder: A builder instance configured for OpenAI embeddings.
         """
-        return cls(api_key=api_key, endpoint=None, api_version=None, model_name=model_name, use_entra_id=False)
+        return cls(
+            api_key=api_key, 
+            endpoint=None, 
+            api_version=None, 
+            model_name=model_name, 
+            use_entra_id=False,
+            client_id=None,
+            client_secret=None,
+            tenant_id=None
+        )
 
     @classmethod
     def of_azure_openai(cls, api_key: str, endpoint: str, api_version: str, model_name: str) -> "EmbeddingsUDFBuilder":
@@ -442,7 +582,16 @@ class EmbeddingsUDFBuilder:
         Returns:
             EmbeddingsUDFBuilder: A builder instance configured for Azure OpenAI embeddings.
         """
-        return cls(api_key=api_key, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=False)
+        return cls(
+            api_key=api_key, 
+            endpoint=endpoint, 
+            api_version=api_version, 
+            model_name=model_name, 
+            use_entra_id=False,
+            client_id=None,
+            client_secret=None,
+            tenant_id=None
+        )
 
     @classmethod
     def of_azure_openai_entra(cls, endpoint: str, api_version: str, model_name: str) -> "EmbeddingsUDFBuilder":
@@ -456,7 +605,50 @@ class EmbeddingsUDFBuilder:
         Returns:
             EmbeddingsUDFBuilder: A builder instance configured for Azure OpenAI with Entra ID.
         """
-        return cls(api_key=None, endpoint=endpoint, api_version=api_version, model_name=model_name, use_entra_id=True)
+        return cls(
+            api_key=None, 
+            endpoint=endpoint, 
+            api_version=api_version, 
+            model_name=model_name, 
+            use_entra_id=True,
+            client_id=None,
+            client_secret=None,
+            tenant_id=None
+        )
+
+    @classmethod
+    def of_azure_openai_service_principal(
+        cls, 
+        endpoint: str, 
+        api_version: str, 
+        model_name: str, 
+        client_id: str, 
+        client_secret: str, 
+        tenant_id: str
+    ) -> "EmbeddingsUDFBuilder":
+        """Creates a builder configured for Azure OpenAI with Service Principal authentication.
+
+        Args:
+            endpoint (str): The Azure OpenAI endpoint URL.
+            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
+            model_name (str): The Azure OpenAI deployment name for embeddings.
+            client_id (str): The Azure application (client) ID.
+            client_secret (str): The client secret for the Azure application.
+            tenant_id (str): The Azure tenant ID.
+
+        Returns:
+            EmbeddingsUDFBuilder: A builder instance configured for Azure OpenAI with Service Principal.
+        """
+        return cls(
+            api_key=None, 
+            endpoint=endpoint, 
+            api_version=api_version, 
+            model_name=model_name, 
+            use_entra_id=True,
+            client_id=client_id,
+            client_secret=client_secret,
+            tenant_id=tenant_id
+        )
 
     def build(self, batch_size: int = 128, max_concurrency: int = 8) -> UserDefinedFunction:
         """Builds the asynchronous pandas UDF for generating embeddings.
@@ -472,7 +664,15 @@ class EmbeddingsUDFBuilder:
 
         @pandas_udf(returnType=ArrayType(FloatType()))
         def embeddings_udf(col: Iterator[pd.Series]) -> Iterator[pd.Series]:
-            _initialize(self.api_key, self.endpoint, self.api_version, self.use_entra_id)
+            _initialize(
+                self.api_key, 
+                self.endpoint, 
+                self.api_version, 
+                self.use_entra_id,
+                self.client_id,
+                self.client_secret,
+                self.tenant_id
+            )
             pandas_ext.embeddings_model(self.model_name)
 
             for part in col:
