@@ -35,8 +35,7 @@ Attributes:
 """
 
 from typing import List, Optional
-from openai import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
