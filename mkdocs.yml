@@ -28,6 +28,14 @@ nav:
       - util: api/util.md
       - responses: api/responses.md
       - embeddings: api/embeddings.md
+      - task: api/task.md
+  - NLP Tasks:
+      - Translation: api/tasks/translation.md
+      - Morphological Analysis: api/tasks/morphological_analysis.md
+      - Named Entity Recognition: api/tasks/named_entity_recognition.md
+      - Sentiment Analysis: api/tasks/sentiment_analysis.md
+      - Dependency Parsing: api/tasks/dependency_parsing.md
+      - Keyword Extraction: api/tasks/keyword_extraction.md
 
 extra:
   tags:
