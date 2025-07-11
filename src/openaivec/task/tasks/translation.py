@@ -1,3 +1,76 @@
+"""Multilingual translation task for OpenAI API.
+
+This module provides a predefined task that translates text into multiple languages
+using OpenAI's language models. The translation covers a comprehensive set of
+languages including Germanic, Romance, Slavic, East Asian, South Asian, Southeast
+Asian, Middle Eastern, African, and other language families.
+
+The task is designed to be used with the OpenAI API for batch processing and
+provides structured output with consistent language code naming.
+
+Example:
+    Basic usage with BatchResponses:
+    
+    ```python
+    from openai import OpenAI
+    from openaivec.responses import BatchResponses
+    from openaivec import task
+    
+    client = OpenAI()
+    translator = BatchResponses.of_task(
+        client=client,
+        model_name="gpt-4o-mini",
+        task=task.MULTILINGUAL_TRANSLATION_TASK
+    )
+    
+    texts = ["Hello", "Good morning", "Thank you"]
+    translations = translator.parse(texts)
+    
+    for translation in translations:
+        print(f"English: {translation.en}")
+        print(f"Japanese: {translation.ja}")
+        print(f"Spanish: {translation.es}")
+    ```
+
+    With pandas integration:
+    
+    ```python
+    import pandas as pd
+    from openaivec import task
+    
+    df = pd.DataFrame({"text": ["Hello", "Goodbye"]})
+    df["translations"] = df["text"].ai.task(task.MULTILINGUAL_TRANSLATION_TASK)
+    
+    # Extract specific languages
+    extracted_df = df.ai.extract("translations")
+    print(extracted_df[["text", "translations_en", "translations_ja", "translations_fr"]])
+    ```
+
+Attributes:
+    MULTILINGUAL_TRANSLATION_TASK (PreparedTask): A prepared task instance configured
+        for multilingual translation with temperature=0.0 and top_p=1.0 for 
+        deterministic output.
+
+Note:
+    The translation covers 58 languages across major language families. All field
+    names use ISO 639-1 language codes where possible, with some exceptions like
+    'zh_tw' for Traditional Chinese and 'is_' for Icelandic (to avoid Python
+    keyword conflicts).
+
+    Languages included:
+    - Germanic: English, German, Dutch, Swedish, Danish, Norwegian, Icelandic
+    - Romance: Spanish, French, Italian, Portuguese, Romanian, Catalan
+    - Slavic: Russian, Polish, Czech, Slovak, Ukrainian, Bulgarian, Croatian, Serbian
+    - East Asian: Japanese, Korean, Chinese (Simplified/Traditional)
+    - South Asian: Hindi, Bengali, Telugu, Tamil, Urdu
+    - Southeast Asian: Thai, Vietnamese, Indonesian, Malay, Filipino
+    - Middle Eastern: Arabic, Hebrew, Persian, Turkish
+    - African: Swahili, Amharic
+    - Other European: Finnish, Hungarian, Estonian, Latvian, Lithuanian, Greek
+    - Celtic: Welsh, Irish
+    - Other: Basque, Maltese
+"""
+
 from openai import BaseModel
 from pydantic import Field
 
