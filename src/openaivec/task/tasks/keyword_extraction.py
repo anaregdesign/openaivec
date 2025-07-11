@@ -28,6 +28,21 @@ Example:
         print(f"Topics: {analysis.topics}")
     ```
 
+    With pandas integration:
+    
+    ```python
+    import pandas as pd
+    from openaivec import task
+    
+    df = pd.DataFrame({"text": ["Machine learning is transforming the technology industry.", 
+                               "Climate change affects global weather patterns."]})
+    df["keywords"] = df["text"].ai.task(task.KEYWORD_EXTRACTION)
+    
+    # Extract keyword components
+    extracted_df = df.ai.extract("keywords")
+    print(extracted_df[["text", "keywords_keywords", "keywords_topics", "keywords_summary"]])
+    ```
+
 Attributes:
     KEYWORD_EXTRACTION (PreparedTask): A prepared task instance 
         configured for keyword extraction with temperature=0.0 and 

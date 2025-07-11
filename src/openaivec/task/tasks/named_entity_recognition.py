@@ -27,6 +27,20 @@ Example:
         print(f"Locations: {analysis.locations}")
     ```
 
+    With pandas integration:
+    
+    ```python
+    import pandas as pd
+    from openaivec import task
+    
+    df = pd.DataFrame({"text": ["John works at Microsoft in Seattle", "The meeting is on March 15th"]})
+    df["entities"] = df["text"].ai.task(task.NAMED_ENTITY_RECOGNITION)
+    
+    # Extract entity components
+    extracted_df = df.ai.extract("entities")
+    print(extracted_df[["text", "entities_persons", "entities_organizations", "entities_locations"]])
+    ```
+
 Attributes:
     NAMED_ENTITY_RECOGNITION (PreparedTask): A prepared task instance 
         configured for named entity recognition with temperature=0.0 and 

@@ -1,6 +1,6 @@
-# Pandas Extension
+# Task Module
 
-::: openaivec.pandas_ext
+::: openaivec.task
     options:
       show_source: true
       show_root_heading: true
@@ -13,3 +13,7 @@
       show_docstring_parameters: true
       show_docstring_returns: true
       show_docstring_examples: true
+      group_by_category: true
+      show_category_heading: true
+      show_symbol_type_heading: true
+      show_symbol_type_toc: true

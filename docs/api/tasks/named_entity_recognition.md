@@ -1,6 +1,6 @@
-# Pandas Extension
+# Named Entity Recognition Task
 
-::: openaivec.pandas_ext
+::: openaivec.task.tasks.named_entity_recognition
     options:
       show_source: true
       show_root_heading: true

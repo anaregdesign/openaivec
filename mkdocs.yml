@@ -1,13 +1,52 @@
-site_name: openaivec, A Pandas and Spark extension for OpenAI
+site_name: openaivec - AI-Powered Data Processing for Pandas & Spark
 site_url: https://openaivec.anareg.design
-site_description: Library for processing data using OpenAI, compatible with Pandas and Spark DataFrames.
+site_description: Transform your data analysis with OpenAI's language models. Seamlessly integrate AI text processing, sentiment analysis, NLP tasks, and embeddings into pandas DataFrames and Apache Spark workflows for scalable data insights.
 site_author: anaregdesign
+repo_url: https://github.com/anaregdesign/openaivec
+repo_name: anaregdesign/openaivec
+edit_uri: edit/main/docs/
 theme:
   name: material
+  language: en
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
   features:
-    - social
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tooltips
     - navigation.expand
+    - navigation.footer
+    - navigation.indexes
     - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
 
 nav:
   - Home: index.md
@@ -46,12 +85,28 @@ extra:
     - vectorization
     - embeddings
     - NLP
+    - data science
+    - machine learning
+    - AI
+    - text processing
+    - sentiment analysis
+    - named entity recognition
+    - translation
+    - data analysis
   analytics:
     provider: google
     property: G-J7N4M1XMRZ
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/anaregdesign/openaivec
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/openaivec/
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/vbb83Pgn
 
 plugins:
-  - search
+  - search:
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
   - mkdocs-jupyter
   - mkdocstrings:
       handlers:
@@ -62,4 +117,43 @@ plugins:
           show_submodules: true
 
 markdown_extensions:
-  - pymdownx.superfences
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      title: On this page
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: anaregdesign
+      repo: openaivec
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

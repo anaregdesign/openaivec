@@ -1,6 +1,6 @@
-# Pandas Extension
+# Keyword Extraction Task
 
-::: openaivec.pandas_ext
+::: openaivec.task.tasks.keyword_extraction
     options:
       show_source: true
       show_root_heading: true

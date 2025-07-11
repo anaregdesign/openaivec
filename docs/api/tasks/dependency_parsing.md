@@ -1,6 +1,6 @@
-# Pandas Extension
+# Dependency Parsing Task
 
-::: openaivec.pandas_ext
+::: openaivec.task.tasks.dependency_parsing
     options:
       show_source: true
       show_root_heading: true

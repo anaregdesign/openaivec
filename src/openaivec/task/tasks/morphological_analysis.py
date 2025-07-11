@@ -28,6 +28,20 @@ Example:
         print(f"Lemmas: {analysis.lemmas}")
     ```
 
+    With pandas integration:
+    
+    ```python
+    import pandas as pd
+    from openaivec import task
+    
+    df = pd.DataFrame({"text": ["Running quickly", "The cats are sleeping"]})
+    df["analysis"] = df["text"].ai.task(task.MORPHOLOGICAL_ANALYSIS)
+    
+    # Extract analysis components
+    extracted_df = df.ai.extract("analysis")
+    print(extracted_df[["text", "analysis_tokens", "analysis_pos_tags", "analysis_lemmas"]])
+    ```
+
 Attributes:
     MORPHOLOGICAL_ANALYSIS (PreparedTask): A prepared task instance 
         configured for morphological analysis with temperature=0.0 and 

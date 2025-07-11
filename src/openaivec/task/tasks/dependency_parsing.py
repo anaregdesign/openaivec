@@ -27,6 +27,20 @@ Example:
         print(f"Root: {analysis.root_word}")
     ```
 
+    With pandas integration:
+    
+    ```python
+    import pandas as pd
+    from openaivec import task
+    
+    df = pd.DataFrame({"text": ["The cat sat on the mat.", "She quickly ran to the store."]})
+    df["parsing"] = df["text"].ai.task(task.DEPENDENCY_PARSING)
+    
+    # Extract parsing components
+    extracted_df = df.ai.extract("parsing")
+    print(extracted_df[["text", "parsing_tokens", "parsing_root_word", "parsing_syntactic_structure"]])
+    ```
+
 Attributes:
     DEPENDENCY_PARSING (PreparedTask): A prepared task instance 
         configured for dependency parsing with temperature=0.0 and 
