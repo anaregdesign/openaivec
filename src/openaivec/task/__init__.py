@@ -7,12 +7,24 @@ Classes:
     PreparedTask: A model representing a prepared task with configuration.
 
 Constants:
-    MULTILINGUAL_TRANSLATION_TASK: Pre-configured task for multilingual translation.
+    MULTILINGUAL_TRANSLATION: Pre-configured task for multilingual translation.
 """
-from .tasks import MULTILINGUAL_TRANSLATION_TASK
+from .tasks import (
+    MULTILINGUAL_TRANSLATION,
+    MORPHOLOGICAL_ANALYSIS,
+    NAMED_ENTITY_RECOGNITION,
+    SENTIMENT_ANALYSIS,
+    DEPENDENCY_PARSING,
+    KEYWORD_EXTRACTION,
+)
 from .model import PreparedTask
 
 __all__ = [
-    "MULTILINGUAL_TRANSLATION_TASK",
+    "MULTILINGUAL_TRANSLATION",
+    "MORPHOLOGICAL_ANALYSIS",
+    "NAMED_ENTITY_RECOGNITION",
+    "SENTIMENT_ANALYSIS",
+    "DEPENDENCY_PARSING",
+    "KEYWORD_EXTRACTION",
     "PreparedTask",
 ]

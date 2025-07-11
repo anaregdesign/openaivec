@@ -20,7 +20,7 @@ Example:
     translator = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.MULTILINGUAL_TRANSLATION_TASK
+        task=task.MULTILINGUAL_TRANSLATION
     )
     
     texts = ["Hello", "Good morning", "Thank you"]
@@ -39,7 +39,7 @@ Example:
     from openaivec import task
     
     df = pd.DataFrame({"text": ["Hello", "Goodbye"]})
-    df["translations"] = df["text"].ai.task(task.MULTILINGUAL_TRANSLATION_TASK)
+    df["translations"] = df["text"].ai.task(task.MULTILINGUAL_TRANSLATION)
     
     # Extract specific languages
     extracted_df = df.ai.extract("translations")
@@ -47,7 +47,7 @@ Example:
     ```
 
 Attributes:
-    MULTILINGUAL_TRANSLATION_TASK (PreparedTask): A prepared task instance configured
+    MULTILINGUAL_TRANSLATION (PreparedTask): A prepared task instance configured
         for multilingual translation with temperature=0.0 and top_p=1.0 for 
         deterministic output.
 
@@ -76,7 +76,7 @@ from pydantic import Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["MULTILINGUAL_TRANSLATION_TASK"]
+__all__ = ["MULTILINGUAL_TRANSLATION"]
 
 
 class TranslatedString(BaseModel):
@@ -156,7 +156,7 @@ class TranslatedString(BaseModel):
 
 instructions = "Translate the following text into multiple languages. "
 
-MULTILINGUAL_TRANSLATION_TASK = PreparedTask(
+MULTILINGUAL_TRANSLATION = PreparedTask(
     instructions=instructions,
     response_format=TranslatedString,
     temperature=0.0,

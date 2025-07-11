@@ -16,7 +16,7 @@ Example:
     analyzer = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.MORPHOLOGICAL_ANALYSIS_TASK
+        task=task.MORPHOLOGICAL_ANALYSIS
     )
     
     texts = ["Running quickly", "The cats are sleeping"]
@@ -29,7 +29,7 @@ Example:
     ```
 
 Attributes:
-    MORPHOLOGICAL_ANALYSIS_TASK (PreparedTask): A prepared task instance 
+    MORPHOLOGICAL_ANALYSIS (PreparedTask): A prepared task instance 
         configured for morphological analysis with temperature=0.0 and 
         top_p=1.0 for deterministic output.
 """
@@ -40,7 +40,7 @@ from pydantic import Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["MORPHOLOGICAL_ANALYSIS_TASK"]
+__all__ = ["MORPHOLOGICAL_ANALYSIS"]
 
 
 class MorphologicalAnalysis(BaseModel):
@@ -50,7 +50,7 @@ class MorphologicalAnalysis(BaseModel):
     morphological_features: List[str] = Field(description="Morphological features for each token (e.g., tense, number, case)")
 
 
-MORPHOLOGICAL_ANALYSIS_TASK = PreparedTask(
+MORPHOLOGICAL_ANALYSIS = PreparedTask(
     instructions="Perform morphological analysis on the following text. Break it down into tokens, identify part-of-speech tags, provide lemmatized forms, and extract morphological features for each token.",
     response_format=MorphologicalAnalysis,
     temperature=0.0,

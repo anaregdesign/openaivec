@@ -3,7 +3,7 @@ from dataclasses import FrozenInstanceError
 
 from pydantic import BaseModel, Field
 
-from openaivec.task import PreparedTask, MULTILINGUAL_TRANSLATION_TASK
+from openaivec.task import PreparedTask, MULTILINGUAL_TRANSLATION
 from openaivec.task.tasks.translation import TranslatedString
 
 
@@ -121,15 +121,15 @@ class TestPreparedTask(unittest.TestCase):
 
 
 class TestMultilingualTranslationTask(unittest.TestCase):
-    """Unit tests for MULTILINGUAL_TRANSLATION_TASK."""
+    """Unit tests for MULTILINGUAL_TRANSLATION."""
 
     def test_multilingual_translation_task_exists(self):
-        """Test that MULTILINGUAL_TRANSLATION_TASK is properly defined."""
-        self.assertIsInstance(MULTILINGUAL_TRANSLATION_TASK, PreparedTask)
+        """Test that MULTILINGUAL_TRANSLATION is properly defined."""
+        self.assertIsInstance(MULTILINGUAL_TRANSLATION, PreparedTask)
 
     def test_multilingual_translation_task_configuration(self):
-        """Test the configuration of MULTILINGUAL_TRANSLATION_TASK."""
-        task = MULTILINGUAL_TRANSLATION_TASK
+        """Test the configuration of MULTILINGUAL_TRANSLATION."""
+        task = MULTILINGUAL_TRANSLATION
         
         # Test basic configuration
         self.assertIsNotNone(task.instructions)
@@ -140,7 +140,7 @@ class TestMultilingualTranslationTask(unittest.TestCase):
 
     def test_multilingual_translation_task_instructions(self):
         """Test that translation task has appropriate instructions."""
-        instructions = MULTILINGUAL_TRANSLATION_TASK.instructions
+        instructions = MULTILINGUAL_TRANSLATION.instructions
         
         # Should contain translation-related keywords
         self.assertIn("translate", instructions.lower())

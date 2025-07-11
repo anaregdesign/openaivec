@@ -15,7 +15,7 @@ Example:
     analyzer = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.NAMED_ENTITY_RECOGNITION_TASK
+        task=task.NAMED_ENTITY_RECOGNITION
     )
     
     texts = ["John works at Microsoft in Seattle", "The meeting is on March 15th"]
@@ -28,7 +28,7 @@ Example:
     ```
 
 Attributes:
-    NAMED_ENTITY_RECOGNITION_TASK (PreparedTask): A prepared task instance 
+    NAMED_ENTITY_RECOGNITION (PreparedTask): A prepared task instance 
         configured for named entity recognition with temperature=0.0 and 
         top_p=1.0 for deterministic output.
 """
@@ -39,7 +39,7 @@ from pydantic import Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["NAMED_ENTITY_RECOGNITION_TASK"]
+__all__ = ["NAMED_ENTITY_RECOGNITION"]
 
 
 class NamedEntity(BaseModel):
@@ -60,7 +60,7 @@ class NamedEntityRecognition(BaseModel):
     miscellaneous: List[NamedEntity] = Field(description="Other named entities")
 
 
-NAMED_ENTITY_RECOGNITION_TASK = PreparedTask(
+NAMED_ENTITY_RECOGNITION = PreparedTask(
     instructions="Identify and classify named entities in the following text. Extract persons, organizations, locations, dates, money, percentages, and other miscellaneous entities with their positions and confidence scores.",
     response_format=NamedEntityRecognition,
     temperature=0.0,

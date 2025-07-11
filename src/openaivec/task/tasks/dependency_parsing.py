@@ -15,7 +15,7 @@ Example:
     analyzer = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.DEPENDENCY_PARSING_TASK
+        task=task.DEPENDENCY_PARSING
     )
     
     texts = ["The cat sat on the mat.", "She quickly ran to the store."]
@@ -28,7 +28,7 @@ Example:
     ```
 
 Attributes:
-    DEPENDENCY_PARSING_TASK (PreparedTask): A prepared task instance 
+    DEPENDENCY_PARSING (PreparedTask): A prepared task instance 
         configured for dependency parsing with temperature=0.0 and 
         top_p=1.0 for deterministic output.
 """
@@ -38,7 +38,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["DEPENDENCY_PARSING_TASK"]
+__all__ = ["DEPENDENCY_PARSING"]
 
 
 class DependencyRelation(BaseModel):
@@ -56,7 +56,7 @@ class DependencyParsing(BaseModel):
     syntactic_structure: str = Field(description="Tree representation of the syntactic structure")
 
 
-DEPENDENCY_PARSING_TASK = PreparedTask(
+DEPENDENCY_PARSING = PreparedTask(
     instructions="Parse the syntactic dependencies in the following text. Identify dependency relations between words, determine the root word, and provide a tree representation of the syntactic structure.",
     response_format=DependencyParsing,
     temperature=0.0,

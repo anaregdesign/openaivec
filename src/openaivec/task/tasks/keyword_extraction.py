@@ -15,7 +15,7 @@ Example:
     analyzer = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.KEYWORD_EXTRACTION_TASK
+        task=task.KEYWORD_EXTRACTION
     )
     
     texts = ["Machine learning is transforming the technology industry.", 
@@ -29,7 +29,7 @@ Example:
     ```
 
 Attributes:
-    KEYWORD_EXTRACTION_TASK (PreparedTask): A prepared task instance 
+    KEYWORD_EXTRACTION (PreparedTask): A prepared task instance 
         configured for keyword extraction with temperature=0.0 and 
         top_p=1.0 for deterministic output.
 """
@@ -39,7 +39,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["KEYWORD_EXTRACTION_TASK"]
+__all__ = ["KEYWORD_EXTRACTION"]
 
 
 class Keyword(BaseModel):
@@ -56,7 +56,7 @@ class KeywordExtraction(BaseModel):
     summary: str = Field(description="Brief summary of the text content")
 
 
-KEYWORD_EXTRACTION_TASK = PreparedTask(
+KEYWORD_EXTRACTION = PreparedTask(
     instructions="Extract important keywords and phrases from the following text. Rank them by importance, provide frequency counts, identify main topics, and generate a brief summary.",
     response_format=KeywordExtraction,
     temperature=0.0,
