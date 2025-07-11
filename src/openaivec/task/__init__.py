@@ -6,7 +6,7 @@ such as multilingual translation and other AI-powered NLP tasks.
 Classes:
     PreparedTask: A model representing a prepared task with configuration.
 
-Constants:
+Attributes:
     MULTILINGUAL_TRANSLATION: Pre-configured task for multilingual translation.
     MORPHOLOGICAL_ANALYSIS: Pre-configured task for morphological analysis including
         tokenization, part-of-speech tagging, and lemmatization.

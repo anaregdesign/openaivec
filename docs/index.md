@@ -1,34 +1,49 @@
-# Getting Started
+# AI-Powered Data Processing for Pandas & Spark
 
-Welcome to **openaivec**! This library simplifies using [**OpenAI**](https://openai.com/)'s powerful models for text vectorization and processing directly within your [**Pandas**](https://pandas.pydata.org/) and [**Apache Spark**](https://spark.apache.org/) data workflows.
+Welcome to **openaivec** - Transform your data analysis with OpenAI's language models! This library enables seamless integration of AI text processing, sentiment analysis, NLP tasks, and embeddings into your [**Pandas**](https://pandas.pydata.org/) DataFrames and [**Apache Spark**](https://spark.apache.org/) workflows for scalable data insights.
 
-## Example
+## 🚀 Quick Start Example
+
+Transform your data with AI in just one line:
+
 ```python
-fruits: pd.Series = pd.Series(["apple", "banana", "orange", "grape", "kiwi", "mango", "peach", "pear", "pineapple", "strawberry"])
-fruits.ai.responses("Translate this fruit name into French.") 
+import pandas as pd
+from openaivec import pandas_ext
+
+# AI-powered data processing
+fruits = pd.Series(["apple", "banana", "orange", "grape", "kiwi"])
+fruits.ai.responses("Translate this fruit name into French.")
+# Result: ['pomme', 'banane', 'orange', 'raisin', 'kiwi']
 ```
 
-## Install
-```bash
-pip install openaivec
-```
+Perfect for **data scientists**, **analysts**, and **ML engineers** who want to leverage AI for text processing at scale.
 
-If you want to use in the `uv` project, you can install it with:
-```bash
-uv add openaivec
-```
+## 📦 Installation
 
-Some functions about Apache Spark depend on `pyspark`. We can install its dependencies with extra `spark`:
+=== "pip"
+    ```bash
+    pip install openaivec
+    ```
 
-for pip:
-```bash
-pip install "openaivec[spark]"
-```
+=== "uv"
+    ```bash
+    uv add openaivec
+    ```
 
-for `uv`:
-```bash
-uv add "openaivec[spark]"
-```
+=== "With Spark Support"
+    ```bash
+    pip install "openaivec[spark]"
+    # or
+    uv add "openaivec[spark]"
+    ```
+
+## 🎯 Key Features
+
+- **🚀 Vectorized Processing**: Handle thousands of records in minutes, not hours
+- **💰 Cost Efficient**: Automatic deduplication reduces API costs by 50-90%
+- **🔗 Seamless Integration**: Works within existing pandas/Spark workflows
+- **📈 Enterprise Scale**: From 100s to millions of records
+- **🤖 Advanced NLP**: Pre-built tasks for sentiment analysis, translation, NER, and more
 
 ## Links
 - [GitHub Repository](https://github.com/anaregdesign/openaivec/)

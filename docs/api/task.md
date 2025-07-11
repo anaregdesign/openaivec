@@ -13,3 +13,7 @@
       show_docstring_parameters: true
       show_docstring_returns: true
       show_docstring_examples: true
+      group_by_category: true
+      show_category_heading: true
+      show_symbol_type_heading: true
+      show_symbol_type_toc: true
