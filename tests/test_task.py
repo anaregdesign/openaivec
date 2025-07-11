@@ -1,6 +1,5 @@
 import unittest
 from dataclasses import FrozenInstanceError
-from typing import Type
 
 from pydantic import BaseModel, Field
 
