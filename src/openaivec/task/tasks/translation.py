@@ -1,7 +1,7 @@
 from openai import BaseModel
 from pydantic import Field
 
-from ..model import PreparedTask
+from openaivec.task.model import PreparedTask
 
 __all__ = ["MULTILINGUAL_TRANSLATION_TASK"]
 

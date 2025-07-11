@@ -8,6 +8,7 @@ from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
 from openaivec.log import observe
+from openaivec.task.model import PreparedTask
 from openaivec.util import backoff, backoff_async, map, map_async
 
 __all__ = [
@@ -142,6 +143,18 @@ class BatchResponses(Generic[T]):
     _vectorized_system_message: str = field(init=False)
     _model_json_schema: dict = field(init=False)
 
+    @classmethod
+    def of_task(cls, client: OpenAI, model_name: str, task: PreparedTask, temperature: float = 0.0, top_p: float = 1.0) -> "BatchResponses":
+        """Create a BatchResponses instance from a PreparedTask."""
+        return cls(
+            client=client,
+            model_name=model_name,
+            system_message=task.instructions,
+            temperature=temperature,
+            top_p=top_p,
+            response_format=task.response_format,
+        )
+
     def __post_init__(self):
         object.__setattr__(
             self,
@@ -275,6 +288,19 @@ class AsyncBatchResponses(Generic[T]):
     _vectorized_system_message: str = field(init=False)
     _model_json_schema: dict = field(init=False)
     _semaphore: asyncio.Semaphore = field(init=False, repr=False)
+
+    @classmethod
+    def of_task(cls, client: AsyncOpenAI, model_name: str, task: PreparedTask, temperature: float = 0.0, top_p: float = 1.0, max_concurrency: int = 8) -> "AsyncBatchResponses":
+        """Create an AsyncBatchResponses instance from a PreparedTask."""
+        return cls(
+            client=client,
+            model_name=model_name,
+            system_message=task.instructions,
+            temperature=temperature,
+            top_p=top_p,
+            response_format=task.response_format,
+            max_concurrency=max_concurrency,
+        )
 
     def __post_init__(self):
         object.__setattr__(
