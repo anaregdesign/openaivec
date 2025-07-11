@@ -45,6 +45,7 @@ import tiktoken
 
 from openaivec.embeddings import AsyncBatchEmbeddings, BatchEmbeddings
 from openaivec.responses import AsyncBatchResponses, BatchResponses
+from openaivec.task.model import PreparedTask
 
 __all__ = [
     "use",
@@ -297,6 +298,48 @@ class OpenAIVecSeriesAccessor:
             index=self._obj.index,
             name=self._obj.name,
         )
+    
+    def task(self, task: PreparedTask, batch_size: int = 128) -> pd.Series:
+        """Execute a prepared task on every Series element.
+
+        This method applies a pre-configured task to each element in the Series,
+        using the task's instructions and response format to generate structured
+        responses from the language model.
+
+        Example:
+            ```python
+            from openaivec.task.model import PreparedTask
+            
+            # Assume you have a prepared task for sentiment analysis
+            sentiment_task = PreparedTask(...)
+            
+            reviews = pd.Series(["Great product!", "Not satisfied", "Amazing quality"])
+            results = reviews.ai.task(sentiment_task)
+            ```
+            This method returns a Series containing the task results for each
+            corresponding input element, following the task's defined structure.
+
+        Args:
+            task (PreparedTask): A pre-configured task containing instructions,
+                response format, and other parameters for processing the inputs.
+            batch_size (int, optional): Number of prompts grouped into a single
+                request to optimize API usage. Defaults to 128.
+
+        Returns:
+            pandas.Series: Series whose values are instances of the task's
+                response format, aligned with the original Series index.
+        """
+        client = BatchResponses.of_task(
+            client=_get_openai_client(),
+            model_name=_RESPONSES_MODEL_NAME,
+            task=task
+        )
+
+        return pd.Series(
+            client.parse(self._obj.tolist(), batch_size=batch_size),
+            index=self._obj.index,
+            name=self._obj.name,
+        )
 
     def embeddings(self, batch_size: int = 128) -> pd.Series:
         """Compute OpenAI embeddings for every Series element.
@@ -466,6 +509,49 @@ class OpenAIVecDataFrameAccessor:
             )
         )
 
+    def task(self, task: PreparedTask, batch_size: int = 128) -> pd.Series:
+        """Execute a prepared task on each DataFrame row after serialising it to JSON.
+
+        This method applies a pre-configured task to each row in the DataFrame,
+        using the task's instructions and response format to generate structured
+        responses from the language model. Each row is serialised to JSON before
+        being processed by the task.
+
+        Example:
+            ```python
+            from openaivec.task.model import PreparedTask
+            
+            # Assume you have a prepared task for data analysis
+            analysis_task = PreparedTask(...)
+            
+            df = pd.DataFrame([
+                {"name": "cat", "legs": 4},
+                {"name": "dog", "legs": 4},
+                {"name": "elephant", "legs": 4},
+            ])
+            results = df.ai.task(analysis_task)
+            ```
+            This method returns a Series containing the task results for each
+            corresponding row, following the task's defined structure.
+
+        Args:
+            task (PreparedTask): A pre-configured task containing instructions,
+                response format, and other parameters for processing the inputs.
+            batch_size (int, optional): Number of requests sent in one batch
+                to optimize API usage. Defaults to 128.
+
+        Returns:
+            pandas.Series: Series whose values are instances of the task's
+                response format, aligned with the DataFrame's original index.
+        """
+        return self._obj.pipe(
+            lambda df: (
+                df.pipe(lambda df: pd.Series(df.to_dict(orient="records"), index=df.index, name="record"))
+                .map(lambda x: json.dumps(x, ensure_ascii=False))
+                .ai.task(task=task, batch_size=batch_size)
+            )
+        )
+
     def similarity(self, col1: str, col2: str) -> pd.Series:
         return self._obj.apply(
             lambda row: np.dot(row[col1], row[col2]) / (np.linalg.norm(row[col1]) * np.linalg.norm(row[col2])),
@@ -580,6 +666,58 @@ class AsyncOpenAIVecSeriesAccessor:
             name=self._obj.name,
         )
 
+    async def task(self, task: PreparedTask, batch_size: int = 128, max_concurrency: int = 8) -> pd.Series:
+        """Execute a prepared task on every Series element (asynchronously).
+
+        This method applies a pre-configured task to each element in the Series,
+        using the task's instructions and response format to generate structured
+        responses from the language model.
+
+        Example:
+            ```python
+            from openaivec.task.model import PreparedTask
+            
+            # Assume you have a prepared task for sentiment analysis
+            sentiment_task = PreparedTask(...)
+            
+            reviews = pd.Series(["Great product!", "Not satisfied", "Amazing quality"])
+            # Must be awaited
+            results = await reviews.aio.task(sentiment_task)
+            ```
+            This method returns a Series containing the task results for each
+            corresponding input element, following the task's defined structure.
+
+        Args:
+            task (PreparedTask): A pre-configured task containing instructions,
+                response format, and other parameters for processing the inputs.
+            batch_size (int, optional): Number of prompts grouped into a single
+                request to optimize API usage. Defaults to 128.
+            max_concurrency (int, optional): Maximum number of concurrent
+                requests. Defaults to 8.
+
+        Returns:
+            pandas.Series: Series whose values are instances of the task's
+                response format, aligned with the original Series index.
+
+        Note:
+            This is an asynchronous method and must be awaited.
+        """
+        client = AsyncBatchResponses.of_task(
+            client=_get_async_openai_client(),
+            model_name=_RESPONSES_MODEL_NAME,
+            task=task,
+            max_concurrency=max_concurrency,
+        )
+
+        # Await the async operation
+        results = await client.parse(self._obj.tolist(), batch_size=batch_size)
+
+        return pd.Series(
+            results,
+            index=self._obj.index,
+            name=self._obj.name,
+        )
+
 
 @pd.api.extensions.register_dataframe_accessor("aio")
 class AsyncOpenAIVecDataFrameAccessor:
@@ -646,6 +784,61 @@ class AsyncOpenAIVecDataFrameAccessor:
             batch_size=batch_size,
             temperature=temperature,
             top_p=top_p,
+            max_concurrency=max_concurrency,
+        )
+
+    async def task(self, task: PreparedTask, batch_size: int = 128, max_concurrency: int = 8) -> pd.Series:
+        """Execute a prepared task on each DataFrame row after serialising it to JSON (asynchronously).
+
+        This method applies a pre-configured task to each row in the DataFrame,
+        using the task's instructions and response format to generate structured
+        responses from the language model. Each row is serialised to JSON before
+        being processed by the task.
+
+        Example:
+            ```python
+            from openaivec.task.model import PreparedTask
+            
+            # Assume you have a prepared task for data analysis
+            analysis_task = PreparedTask(...)
+            
+            df = pd.DataFrame([
+                {"name": "cat", "legs": 4},
+                {"name": "dog", "legs": 4},
+                {"name": "elephant", "legs": 4},
+            ])
+            # Must be awaited
+            results = await df.aio.task(analysis_task)
+            ```
+            This method returns a Series containing the task results for each
+            corresponding row, following the task's defined structure.
+
+        Args:
+            task (PreparedTask): A pre-configured task containing instructions,
+                response format, and other parameters for processing the inputs.
+            batch_size (int, optional): Number of requests sent in one batch
+                to optimize API usage. Defaults to 128.
+            max_concurrency (int, optional): Maximum number of concurrent
+                requests. Defaults to 8.
+
+        Returns:
+            pandas.Series: Series whose values are instances of the task's
+                response format, aligned with the DataFrame's original index.
+
+        Note:
+            This is an asynchronous method and must be awaited.
+        """
+        series_of_json = self._obj.pipe(
+            lambda df: (
+                pd.Series(df.to_dict(orient="records"), index=df.index, name="record").map(
+                    lambda x: json.dumps(x, ensure_ascii=False)
+                )
+            )
+        )
+        # Await the call to the async Series method using .aio
+        return await series_of_json.aio.task(
+            task=task,
+            batch_size=batch_size,
             max_concurrency=max_concurrency,
         )
 
