@@ -15,7 +15,7 @@ Example:
     analyzer = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.SENTIMENT_ANALYSIS_TASK
+        task=task.SENTIMENT_ANALYSIS
     )
     
     texts = ["I love this product!", "This is terrible and disappointing."]
@@ -28,7 +28,7 @@ Example:
     ```
 
 Attributes:
-    SENTIMENT_ANALYSIS_TASK (PreparedTask): A prepared task instance 
+    SENTIMENT_ANALYSIS (PreparedTask): A prepared task instance 
         configured for sentiment analysis with temperature=0.0 and 
         top_p=1.0 for deterministic output.
 """
@@ -38,7 +38,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["SENTIMENT_ANALYSIS_TASK"]
+__all__ = ["SENTIMENT_ANALYSIS"]
 
 
 class SentimentAnalysis(BaseModel):
@@ -50,7 +50,7 @@ class SentimentAnalysis(BaseModel):
     subjectivity: float = Field(description="Subjectivity score from 0.0 (objective) to 1.0 (subjective)")
 
 
-SENTIMENT_ANALYSIS_TASK = PreparedTask(
+SENTIMENT_ANALYSIS = PreparedTask(
     instructions="Analyze the sentiment and emotions in the following text. Provide overall sentiment classification, confidence scores, detected emotions, polarity, and subjectivity measures.",
     response_format=SentimentAnalysis,
     temperature=0.0,
