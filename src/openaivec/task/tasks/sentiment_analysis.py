@@ -27,6 +27,20 @@ Example:
         print(f"Emotions: {analysis.emotions}")
     ```
 
+    With pandas integration:
+    
+    ```python
+    import pandas as pd
+    from openaivec import task
+    
+    df = pd.DataFrame({"text": ["I love this product!", "This is terrible and disappointing."]})
+    df["sentiment"] = df["text"].ai.task(task.SENTIMENT_ANALYSIS)
+    
+    # Extract sentiment components
+    extracted_df = df.ai.extract("sentiment")
+    print(extracted_df[["text", "sentiment_sentiment", "sentiment_confidence", "sentiment_polarity"]])
+    ```
+
 Attributes:
     SENTIMENT_ANALYSIS (PreparedTask): A prepared task instance 
         configured for sentiment analysis with temperature=0.0 and 

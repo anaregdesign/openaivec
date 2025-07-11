@@ -1,6 +1,6 @@
-# Pandas Extension
+# Translation Task
 
-::: openaivec.pandas_ext
+::: openaivec.task.tasks.translation
     options:
       show_source: true
       show_root_heading: true
