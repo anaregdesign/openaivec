@@ -195,3 +195,6 @@ ipython_config.py
 *.parquet
 *.csv
 *.tsv
+
+# Azurite database files
+__*__.json
