@@ -85,5 +85,7 @@ instructions = "Translate the following text into multiple languages. "
 
 MULTILINGUAL_TRANSLATION_TASK = PreparedTask(
     instructions=instructions,
-    response_format=TranslatedString
+    response_format=TranslatedString,
+    temperature=0.0,
+    top_p=1.0
 )
