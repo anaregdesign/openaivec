@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Type
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, Field, create_model
 
 __all__ = ["deserialize_base_model", "serialize_base_model"]
 
@@ -62,7 +62,11 @@ def deserialize_base_model(json_schema: Dict[str, Any]) -> Type[BaseModel]:
     for k, v in properties.items():
         if "enum" in v:
             dynamic_enum = Enum(v["title"], {x: x for x in v["enum"]})
-            fields[k] = (dynamic_enum, ...)
+            description = v.get("description")
+            field_info = Field(description=description) if description is not None else Field()
+            fields[k] = (dynamic_enum, field_info)
         else:
-            fields[k] = (parse_field(v), ...)
+            description = v.get("description")
+            field_info = Field(description=description) if description is not None else Field()
+            fields[k] = (parse_field(v), field_info)
     return create_model(json_schema["title"], **fields)
