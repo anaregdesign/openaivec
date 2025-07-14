@@ -86,7 +86,7 @@ def deserialize_base_model(json_schema: Dict[str, Any]) -> Type[BaseModel]:
                     literal_type = Literal[enum_values[0]]
                 else:
                     # Create Literal with multiple values
-                    literal_type = Literal[*enum_values]
+                    literal_type = Literal[tuple(enum_values)]
                 
                 description = v.get("description")
                 default_value = v.get("default")
