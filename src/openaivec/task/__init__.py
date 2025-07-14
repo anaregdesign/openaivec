@@ -19,7 +19,7 @@ Attributes:
     KEYWORD_EXTRACTION: Pre-configured task for keyword extraction that identifies
         important keywords and phrases from text.
 """
-from .tasks import (
+from .nlp import (
     MULTILINGUAL_TRANSLATION,
     MORPHOLOGICAL_ANALYSIS,
     NAMED_ENTITY_RECOGNITION,

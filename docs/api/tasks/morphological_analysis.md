@@ -1,6 +1,6 @@
 # Morphological Analysis Task
 
-::: openaivec.task.tasks.morphological_analysis
+::: openaivec.task.nlp.morphological_analysis
     options:
       show_source: true
       show_root_heading: true

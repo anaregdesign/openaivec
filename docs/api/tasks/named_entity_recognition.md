@@ -1,6 +1,6 @@
 # Named Entity Recognition Task
 
-::: openaivec.task.tasks.named_entity_recognition
+::: openaivec.task.nlp.named_entity_recognition
     options:
       show_source: true
       show_root_heading: true

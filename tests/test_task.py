@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 from pydantic import BaseModel, Field
 
 from openaivec.task import PreparedTask, MULTILINGUAL_TRANSLATION
-from openaivec.task.tasks.translation import TranslatedString
+from openaivec.task.nlp.translation import TranslatedString
 
 
 class SimpleResponse(BaseModel):

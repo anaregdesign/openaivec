@@ -1,6 +1,6 @@
 # Dependency Parsing Task
 
-::: openaivec.task.tasks.dependency_parsing
+::: openaivec.task.nlp.dependency_parsing
     options:
       show_source: true
       show_root_heading: true
