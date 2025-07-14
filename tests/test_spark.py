@@ -31,7 +31,13 @@ class TestUDFBuilder(TestCase):
             api_key=os.environ.get("OPENAI_API_KEY"),
             model_name="gpt-4.1-nano",
         )
-        self.spark: SparkSession = SparkSession.builder.getOrCreate()
+        self.spark: SparkSession = SparkSession.builder \
+            .appName("TestTaskUDF") \
+            .master("local[*]") \
+            .config("spark.driver.memory", "1g") \
+            .config("spark.executor.memory", "1g") \
+            .config("spark.sql.adaptive.enabled", "false") \
+            .getOrCreate()
         self.spark.sparkContext.setLogLevel("INFO")
 
     def tearDown(self):
@@ -121,6 +127,54 @@ class TestUDFBuilder(TestCase):
         )
         df_pandas = df.toPandas()
         assert df_pandas.shape == (3, 3)
+
+
+class TestTaskUDFBuilderUnit(TestCase):
+    """Unit tests for TaskUDFBuilder that don't require Spark execution."""
+    
+    def test_task_udf_builder_creation(self):
+        """Test TaskUDFBuilder can be created with various configurations."""
+        # Test OpenAI builder
+        openai_builder = TaskUDFBuilder.of_openai(
+            api_key="test-key",
+            model_name="gpt-4o-mini",
+        )
+        self.assertEqual(openai_builder.api_key, "test-key")
+        self.assertEqual(openai_builder.model_name, "gpt-4o-mini")
+        self.assertIsNone(openai_builder.endpoint)
+        self.assertIsNone(openai_builder.api_version)
+        
+        # Test Azure builder
+        azure_builder = TaskUDFBuilder.of_azure_openai(
+            api_key="azure-key",
+            endpoint="https://test.openai.azure.com",
+            api_version="2024-02-01",
+            model_name="gpt-4o-deployment",
+        )
+        self.assertEqual(azure_builder.api_key, "azure-key")
+        self.assertEqual(azure_builder.endpoint, "https://test.openai.azure.com")
+        self.assertEqual(azure_builder.api_version, "2024-02-01")
+        self.assertEqual(azure_builder.model_name, "gpt-4o-deployment")
+
+    def test_task_serialization_in_build(self):
+        """Test that PreparedTask is properly serialized within build method."""
+        from openaivec.task import nlp
+        from openaivec.serialize import serialize_base_model, deserialize_base_model
+        
+        # Test that we can serialize/deserialize the task's response format
+        task = nlp.SENTIMENT_ANALYSIS
+        serialized = serialize_base_model(task.response_format)
+        deserialized = deserialize_base_model(serialized)
+        
+        # Check that sentiment analysis fields are preserved
+        schema = deserialized.model_json_schema()
+        self.assertIn('sentiment', schema['properties'])
+        self.assertIn('confidence', schema['properties'])
+        self.assertIn('emotions', schema['properties'])
+        
+        # Check descriptions are preserved
+        self.assertIsNotNone(schema['properties']['sentiment'].get('description'))
+        self.assertIsNotNone(schema['properties']['confidence'].get('description'))
 
 
 class TestMappingFunctions(TestCase):
