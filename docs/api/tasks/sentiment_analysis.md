@@ -1,6 +1,6 @@
 # Sentiment Analysis Task
 
-::: openaivec.task.tasks.sentiment_analysis
+::: openaivec.task.nlp.sentiment_analysis
     options:
       show_source: true
       show_root_heading: true

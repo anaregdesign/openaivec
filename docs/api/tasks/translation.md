@@ -1,6 +1,6 @@
 # Translation Task
 
-::: openaivec.task.tasks.translation
+::: openaivec.task.nlp.translation
     options:
       show_source: true
       show_root_heading: true

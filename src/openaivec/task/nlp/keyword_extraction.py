@@ -9,13 +9,13 @@ Example:
     ```python
     from openai import OpenAI
     from openaivec.responses import BatchResponses
-    from openaivec import task
+    from openaivec.task import nlp
     
     client = OpenAI()
     analyzer = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.KEYWORD_EXTRACTION
+        task=nlp.KEYWORD_EXTRACTION
     )
     
     texts = ["Machine learning is transforming the technology industry.", 
@@ -32,11 +32,12 @@ Example:
     
     ```python
     import pandas as pd
-    from openaivec import task
+    from openaivec import pandas_ext  # Required for .ai accessor
+    from openaivec.task import nlp
     
     df = pd.DataFrame({"text": ["Machine learning is transforming the technology industry.", 
                                "Climate change affects global weather patterns."]})
-    df["keywords"] = df["text"].ai.task(task.KEYWORD_EXTRACTION)
+    df["keywords"] = df["text"].ai.task(nlp.KEYWORD_EXTRACTION)
     
     # Extract keyword components
     extracted_df = df.ai.extract("keywords")
