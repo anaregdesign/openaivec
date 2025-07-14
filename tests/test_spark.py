@@ -9,10 +9,12 @@ from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, Str
 from openaivec.spark import (
     EmbeddingsUDFBuilder,
     ResponsesUDFBuilder,
+    TaskUDFBuilder,
     _pydantic_to_spark_schema,
     count_tokens_udf,
     similarity_udf,
 )
+from openaivec.task import nlp
 
 
 class TestUDFBuilder(TestCase):
@@ -24,6 +26,10 @@ class TestUDFBuilder(TestCase):
         self.embeddings = EmbeddingsUDFBuilder.of_openai(
             api_key=os.environ.get("OPENAI_API_KEY"),
             model_name="text-embedding-3-small",
+        )
+        self.task_builder = TaskUDFBuilder.of_openai(
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            model_name="gpt-4.1-nano",
         )
         self.spark: SparkSession = SparkSession.builder.getOrCreate()
         self.spark.sparkContext.setLogLevel("INFO")
@@ -92,6 +98,29 @@ class TestUDFBuilder(TestCase):
 
         df_pandas = df.toPandas()
         assert df_pandas.shape == (31, 2)
+
+    def test_task_sentiment_analysis(self):
+        self.spark.udf.register(
+            "analyze_sentiment",
+            self.task_builder.build(task=nlp.SENTIMENT_ANALYSIS),
+        )
+        
+        text_data = [
+            ("I love this product!",),
+            ("This is terrible and disappointing.",),
+            ("It's okay, nothing special.",),
+        ]
+        dummy_df = self.spark.createDataFrame(text_data, ["text"])
+        dummy_df.createOrReplaceTempView("reviews")
+
+        df = self.spark.sql(
+            """
+            with t as (SELECT analyze_sentiment(text) as sentiment from reviews)
+            select sentiment.sentiment, sentiment.confidence, sentiment.polarity from t
+            """
+        )
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (3, 3)
 
 
 class TestMappingFunctions(TestCase):
