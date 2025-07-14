@@ -14,13 +14,13 @@ Example:
     ```python
     from openai import OpenAI
     from openaivec.responses import BatchResponses
-    from openaivec import task
+    from openaivec.task import nlp
     
     client = OpenAI()
     translator = BatchResponses.of_task(
         client=client,
         model_name="gpt-4o-mini",
-        task=task.MULTILINGUAL_TRANSLATION
+        task=nlp.MULTILINGUAL_TRANSLATION
     )
     
     texts = ["Hello", "Good morning", "Thank you"]
@@ -36,10 +36,11 @@ Example:
     
     ```python
     import pandas as pd
-    from openaivec import task
+    from openaivec import pandas_ext  # Required for .ai accessor
+    from openaivec.task import nlp
     
     df = pd.DataFrame({"text": ["Hello", "Goodbye"]})
-    df["translations"] = df["text"].ai.task(task.MULTILINGUAL_TRANSLATION)
+    df["translations"] = df["text"].ai.task(nlp.MULTILINGUAL_TRANSLATION)
     
     # Extract specific languages
     extracted_df = df.ai.extract("translations")

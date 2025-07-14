@@ -9,13 +9,13 @@ Example:
     
     ```python
     from openai import OpenAI
-    from openaivec import task
+    from openaivec.task import nlp
     from openaivec.responses import BatchResponses
 
     translation_task: BatchResponses = BatchResponses.of_task(
         client=OpenAI(),
         model_name="gpt-4.1-mini",
-        task=task.MULTILINGUAL_TRANSLATION_TASK
+        task=nlp.MULTILINGUAL_TRANSLATION
     )
     ```
 
