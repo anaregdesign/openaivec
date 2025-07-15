@@ -9,7 +9,6 @@ from pyspark.sql.types import ArrayType, FloatType, IntegerType, StringType, Str
 from openaivec.spark import (
     EmbeddingsUDFBuilder,
     ResponsesUDFBuilder,
-    TaskUDFBuilder,
     _pydantic_to_spark_schema,
     count_tokens_udf,
     similarity_udf,
@@ -27,12 +26,8 @@ class TestUDFBuilder(TestCase):
             api_key=os.environ.get("OPENAI_API_KEY"),
             model_name="text-embedding-3-small",
         )
-        self.task_builder = TaskUDFBuilder.of_openai(
-            api_key=os.environ.get("OPENAI_API_KEY"),
-            model_name="gpt-4.1-nano",
-        )
         self.spark: SparkSession = SparkSession.builder \
-            .appName("TestTaskUDF") \
+            .appName("TestSparkUDF") \
             .master("local[*]") \
             .config("spark.driver.memory", "1g") \
             .config("spark.executor.memory", "1g") \
@@ -106,9 +101,10 @@ class TestUDFBuilder(TestCase):
         assert df_pandas.shape == (31, 2)
 
     def test_task_sentiment_analysis(self):
+        # Test using the build_from_task method with predefined tasks
         self.spark.udf.register(
             "analyze_sentiment",
-            self.task_builder.build(task=nlp.SENTIMENT_ANALYSIS),
+            self.responses.build_from_task(task=nlp.SENTIMENT_ANALYSIS),
         )
         
         text_data = [
@@ -128,53 +124,27 @@ class TestUDFBuilder(TestCase):
         df_pandas = df.toPandas()
         assert df_pandas.shape == (3, 3)
 
-
-class TestTaskUDFBuilderUnit(TestCase):
-    """Unit tests for TaskUDFBuilder that don't require Spark execution."""
-    
-    def test_task_udf_builder_creation(self):
-        """Test TaskUDFBuilder can be created with various configurations."""
-        # Test OpenAI builder
-        openai_builder = TaskUDFBuilder.of_openai(
-            api_key="test-key",
-            model_name="gpt-4o-mini",
+    def test_responses_build_from_task_method(self):
+        """Test the build_from_task method in ResponsesUDFBuilder."""
+        # Test that build_from_task works with predefined tasks
+        self.spark.udf.register(
+            "analyze_sentiment_new",
+            self.responses.build_from_task(task=nlp.SENTIMENT_ANALYSIS),
         )
-        self.assertEqual(openai_builder.api_key, "test-key")
-        self.assertEqual(openai_builder.model_name, "gpt-4o-mini")
-        self.assertIsNone(openai_builder.endpoint)
-        self.assertIsNone(openai_builder.api_version)
         
-        # Test Azure builder
-        azure_builder = TaskUDFBuilder.of_azure_openai(
-            api_key="azure-key",
-            endpoint="https://test.openai.azure.com",
-            api_version="2024-02-01",
-            model_name="gpt-4o-deployment",
-        )
-        self.assertEqual(azure_builder.api_key, "azure-key")
-        self.assertEqual(azure_builder.endpoint, "https://test.openai.azure.com")
-        self.assertEqual(azure_builder.api_version, "2024-02-01")
-        self.assertEqual(azure_builder.model_name, "gpt-4o-deployment")
+        text_data = [("This is a great product!",)]
+        dummy_df = self.spark.createDataFrame(text_data, ["text"])
+        dummy_df.createOrReplaceTempView("test_reviews")
 
-    def test_task_serialization_in_build(self):
-        """Test that PreparedTask is properly serialized within build method."""
-        from openaivec.task import nlp
-        from openaivec.serialize import serialize_base_model, deserialize_base_model
-        
-        # Test that we can serialize/deserialize the task's response format
-        task = nlp.SENTIMENT_ANALYSIS
-        serialized = serialize_base_model(task.response_format)
-        deserialized = deserialize_base_model(serialized)
-        
-        # Check that sentiment analysis fields are preserved
-        schema = deserialized.model_json_schema()
-        self.assertIn('sentiment', schema['properties'])
-        self.assertIn('confidence', schema['properties'])
-        self.assertIn('emotions', schema['properties'])
-        
-        # Check descriptions are preserved
-        self.assertIsNotNone(schema['properties']['sentiment'].get('description'))
-        self.assertIsNotNone(schema['properties']['confidence'].get('description'))
+        df = self.spark.sql(
+            """
+            with t as (SELECT analyze_sentiment_new(text) as sentiment from test_reviews)
+            select sentiment.sentiment, sentiment.confidence from t
+            """
+        )
+        df_pandas = df.toPandas()
+        assert df_pandas.shape == (1, 2)
+
 
 
 class TestMappingFunctions(TestCase):
