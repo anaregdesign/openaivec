@@ -65,10 +65,10 @@ spark.udf.register(
 )
 
 # Or use a predefined task with build_from_task method
-from openaivec.task import sentiment_analysis
+from openaivec.task import nlp
 spark.udf.register(
     "sentiment_async",
-    resp_builder.build_from_task(sentiment_analysis()),
+    resp_builder.build_from_task(nlp.SENTIMENT_ANALYSIS),
 )
 
 # Register the asynchronous embeddings UDF
@@ -368,15 +368,14 @@ class ResponsesUDFBuilder:
 
         Example:
             ```python
-            from openaivec.task import sentiment_analysis
+            from openaivec.task import nlp
             
             builder = ResponsesUDFBuilder.of_openai(
                 api_key="your-api-key",
                 model_name="gpt-4o-mini"
             )
             
-            sentiment_task = sentiment_analysis()
-            sentiment_udf = builder.build_from_task(sentiment_task)
+            sentiment_udf = builder.build_from_task(nlp.SENTIMENT_ANALYSIS)
             
             spark.udf.register("analyze_sentiment", sentiment_udf)
             ```

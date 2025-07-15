@@ -101,7 +101,7 @@ class TestUDFBuilder(TestCase):
         assert df_pandas.shape == (31, 2)
 
     def test_task_sentiment_analysis(self):
-        # Test using the new build_from_task method instead of TaskUDFBuilder
+        # Test using the build_from_task method with predefined tasks
         self.spark.udf.register(
             "analyze_sentiment",
             self.responses.build_from_task(task=nlp.SENTIMENT_ANALYSIS),
