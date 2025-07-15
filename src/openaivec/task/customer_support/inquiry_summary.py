@@ -64,7 +64,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["INQUIRY_SUMMARY"]
+__all__ = ["inquiry_summary"]
 
 
 class InquirySummary(BaseModel):
@@ -81,11 +81,40 @@ class InquirySummary(BaseModel):
     summary_confidence: float = Field(description="Confidence in summary accuracy (0.0-1.0)")
 
 
-INQUIRY_SUMMARY = PreparedTask(
-    instructions="""Create a comprehensive summary of the customer inquiry that captures all essential information for support agents and management.
+def inquiry_summary(
+    summary_length: str = "concise",
+    business_context: str = "general customer support",
+    language: str = "English",
+    temperature: float = 0.0,
+    top_p: float = 1.0
+) -> PreparedTask:
+    """Create a configurable inquiry summary task.
+    
+    Args:
+        summary_length: Length of summary (concise, detailed, bullet_points).
+        business_context: Business context for summary.
+        language: Language for analysis.
+        temperature: Sampling temperature (0.0-1.0).
+        top_p: Nucleus sampling parameter (0.0-1.0).
+        
+    Returns:
+        PreparedTask configured for inquiry summarization.
+    """
+    
+    length_instructions = {
+        "concise": "Write a concise 2-3 sentence summary that captures the essence of the inquiry",
+        "detailed": "Write a detailed 4-6 sentence summary that includes comprehensive context",
+        "bullet_points": "Create a bullet-point summary with key facts and actions"
+    }
+    
+    instructions = f"""Create a comprehensive summary of the customer inquiry that captures all essential information for support agents and management.
+
+Business Context: {business_context}
+Analysis Language: {language}
+Summary Style: {length_instructions.get(summary_length, length_instructions['concise'])}
 
 Summary Guidelines:
-1. Write a concise 2-3 sentence summary that captures the essence of the inquiry
+1. {length_instructions.get(summary_length, length_instructions['concise'])}
 2. Identify the primary issue or request clearly
 3. Note any secondary issues that may need attention
 4. Extract relevant customer background or context
@@ -125,8 +154,15 @@ Focus on:
 - Clear distinction between symptoms and root causes
 - Relevant background without unnecessary details
 
-Provide accurate, actionable summary that enables efficient support resolution.""",
-    response_format=InquirySummary,
-    temperature=0.0,
-    top_p=1.0
-)
+Provide accurate, actionable summary that enables efficient support resolution."""
+
+    return PreparedTask(
+        instructions=instructions,
+        response_format=InquirySummary,
+        temperature=temperature,
+        top_p=top_p
+    )
+
+
+# Backward compatibility - default configuration
+INQUIRY_SUMMARY = inquiry_summary()

@@ -62,7 +62,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["INTENT_ANALYSIS"]
+__all__ = ["intent_analysis"]
 
 
 class IntentAnalysis(BaseModel):
@@ -78,8 +78,28 @@ class IntentAnalysis(BaseModel):
     resolution_complexity: str = Field(description="Complexity of resolution: simple, moderate, complex, very_complex")
 
 
-INTENT_ANALYSIS = PreparedTask(
-    instructions="""Analyze customer intent to understand their goals, needs, and how to best assist them.
+def intent_analysis(
+    business_context: str = "general customer support",
+    language: str = "English",
+    temperature: float = 0.0,
+    top_p: float = 1.0
+) -> PreparedTask:
+    """Create a configurable intent analysis task.
+    
+    Args:
+        business_context: Business context for intent analysis.
+        language: Language for analysis.
+        temperature: Sampling temperature (0.0-1.0).
+        top_p: Nucleus sampling parameter (0.0-1.0).
+        
+    Returns:
+        PreparedTask configured for intent analysis.
+    """
+    
+    instructions = f"""Analyze customer intent to understand their goals, needs, and how to best assist them.
+
+Business Context: {business_context}
+Analysis Language: {language}
 
 Primary Intent Categories:
 - get_help: Seeking assistance with existing product or service
@@ -126,8 +146,15 @@ Pay attention to:
 - Urgency indicators: Time pressure affects resolution approach
 - Previous interactions: References to prior support contacts
 
-Provide comprehensive intent analysis with actionable recommendations.""",
-    response_format=IntentAnalysis,
-    temperature=0.0,
-    top_p=1.0
-)
+Provide comprehensive intent analysis with actionable recommendations."""
+
+    return PreparedTask(
+        instructions=instructions,
+        response_format=IntentAnalysis,
+        temperature=temperature,
+        top_p=top_p
+    )
+
+
+# Backward compatibility - default configuration
+INTENT_ANALYSIS = intent_analysis()

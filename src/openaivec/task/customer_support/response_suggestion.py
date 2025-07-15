@@ -62,7 +62,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["RESPONSE_SUGGESTION"]
+__all__ = ["response_suggestion"]
 
 
 class ResponseSuggestion(BaseModel):
@@ -79,8 +79,41 @@ class ResponseSuggestion(BaseModel):
     personalization_notes: str = Field(description="Suggestions for personalizing the response")
 
 
-RESPONSE_SUGGESTION = PreparedTask(
-    instructions="""Generate a professional, helpful response suggestion for the customer inquiry that addresses their needs effectively.
+def response_suggestion(
+    response_style: str = "professional",
+    company_name: str = "our company",
+    business_context: str = "general customer support",
+    language: str = "English",
+    temperature: float = 0.0,
+    top_p: float = 1.0
+) -> PreparedTask:
+    """Create a configurable response suggestion task.
+    
+    Args:
+        response_style: Style of response (professional, friendly, empathetic, formal).
+        company_name: Name of the company for personalization.
+        business_context: Business context for responses.
+        language: Language for responses.
+        temperature: Sampling temperature (0.0-1.0).
+        top_p: Nucleus sampling parameter (0.0-1.0).
+        
+    Returns:
+        PreparedTask configured for response suggestions.
+    """
+    
+    style_instructions = {
+        "professional": "Maintain professional tone with clear, direct communication",
+        "friendly": "Use warm, approachable language while remaining professional",
+        "empathetic": "Show understanding and compassion for customer concerns",
+        "formal": "Use formal business language appropriate for official communications"
+    }
+    
+    instructions = f"""Generate a professional, helpful response suggestion for the customer inquiry that addresses their needs effectively.
+
+Business Context: {business_context}
+Company Name: {company_name}
+Response Style: {style_instructions.get(response_style, style_instructions['professional'])}
+Response Language: {language}
 
 Response Guidelines:
 1. Address the customer's main concern directly
@@ -141,8 +174,15 @@ Avoid:
 - Dismissing customer concerns
 - Lengthy responses that don't address the main issue
 
-Generate helpful, professional response that moves toward resolution while maintaining positive customer relationship.""",
-    response_format=ResponseSuggestion,
-    temperature=0.0,
-    top_p=1.0
-)
+Generate helpful, professional response that moves toward resolution while maintaining positive customer relationship."""
+
+    return PreparedTask(
+        instructions=instructions,
+        response_format=ResponseSuggestion,
+        temperature=temperature,
+        top_p=top_p
+    )
+
+
+# Backward compatibility - default configuration
+RESPONSE_SUGGESTION = response_suggestion()

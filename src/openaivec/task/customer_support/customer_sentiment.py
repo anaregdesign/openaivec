@@ -63,7 +63,7 @@ from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
 
-__all__ = ["CUSTOMER_SENTIMENT"]
+__all__ = ["customer_sentiment"]
 
 
 class CustomerSentiment(BaseModel):
@@ -79,8 +79,28 @@ class CustomerSentiment(BaseModel):
     response_approach: str = Field(description="Recommended response approach: empathetic, professional, solution_focused, escalation_required")
 
 
-CUSTOMER_SENTIMENT = PreparedTask(
-    instructions="""Analyze customer sentiment in the context of support interactions, focusing on satisfaction, emotional state, and business implications.
+def customer_sentiment(
+    business_context: str = "general customer support",
+    language: str = "English",
+    temperature: float = 0.0,
+    top_p: float = 1.0
+) -> PreparedTask:
+    """Create a configurable customer sentiment analysis task.
+    
+    Args:
+        business_context: Business context for sentiment analysis.
+        language: Language for analysis.
+        temperature: Sampling temperature (0.0-1.0).
+        top_p: Nucleus sampling parameter (0.0-1.0).
+        
+    Returns:
+        PreparedTask configured for customer sentiment analysis.
+    """
+    
+    instructions = f"""Analyze customer sentiment in the context of support interactions, focusing on satisfaction, emotional state, and business implications.
+
+Business Context: {business_context}
+Analysis Language: {language}
 
 Sentiment Categories:
 - positive: Customer is happy, satisfied, or grateful
@@ -129,8 +149,15 @@ Analyze tone indicators like:
 - Urgency: "urgent", "immediately", "ASAP", "critical"
 - Threat: "cancel", "switch", "competitor", "lawyer", "report"
 
-Provide comprehensive sentiment analysis with business context and recommended response strategy.""",
-    response_format=CustomerSentiment,
-    temperature=0.0,
-    top_p=1.0
-)
+Provide comprehensive sentiment analysis with business context and recommended response strategy."""
+
+    return PreparedTask(
+        instructions=instructions,
+        response_format=CustomerSentiment,
+        temperature=temperature,
+        top_p=top_p
+    )
+
+
+# Backward compatibility - default configuration
+CUSTOMER_SENTIMENT = customer_sentiment()
