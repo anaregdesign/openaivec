@@ -64,6 +64,13 @@ spark.udf.register(
     ),
 )
 
+# Or use a predefined task with build_from_task method
+from openaivec.task import sentiment_analysis
+spark.udf.register(
+    "sentiment_async",
+    resp_builder.build_from_task(sentiment_analysis()),
+)
+
 # Register the asynchronous embeddings UDF
 spark.udf.register(
     "embed_async",
@@ -77,6 +84,7 @@ You can now invoke the UDFs from Spark SQL:
 SELECT
     text,
     translate_async(text) AS translation,
+    sentiment_async(text) AS sentiment,
     embed_async(text) AS embedding
 FROM your_table;
 ```
@@ -104,9 +112,9 @@ from openaivec.task.model import PreparedTask
 __all__ = [
     "ResponsesUDFBuilder",
     "EmbeddingsUDFBuilder",
-    "TaskUDFBuilder",
     "split_to_chunks_udf",
     "count_tokens_udf",
+    "similarity_udf",
 ]
 
 ResponseFormat = BaseModel | Type[str]
@@ -212,6 +220,10 @@ class ResponsesUDFBuilder:
     Configures and builds UDFs that leverage `pandas_ext.aio.responses`
     to generate text or structured responses from OpenAI models asynchronously.
     An instance stores authentication parameters and the model name.
+
+    This builder supports two main methods:
+    - `build()`: Creates UDFs with custom instructions and response formats
+    - `build_from_task()`: Creates UDFs from predefined tasks (e.g., sentiment analysis)
 
     Attributes:
         api_key (str): OpenAI or Azure API key.
@@ -332,6 +344,73 @@ class ResponsesUDFBuilder:
         else:
             raise ValueError(f"Unsupported response_format: {response_format}")
 
+    def build_from_task(
+        self,
+        task: PreparedTask,
+        batch_size: int = 128,
+        max_concurrency: int = 8,
+    ) -> UserDefinedFunction:
+        """Builds the asynchronous pandas UDF from a predefined task.
+
+        This method allows users to create UDFs from predefined tasks such as sentiment analysis,
+        translation, or other common NLP operations defined in the openaivec.task module.
+
+        Args:
+            task (PreparedTask): A predefined task configuration containing instructions,
+                response format, temperature, and top_p settings.
+            batch_size (int): Number of rows per async batch request passed to the underlying
+                `pandas_ext` function. Defaults to 128.
+            max_concurrency (int): Maximum number of concurrent requests. Defaults to 8.
+
+        Returns:
+            UserDefinedFunction: A Spark pandas UDF configured to execute the specified task
+                asynchronously, returning a struct derived from the task's response format.
+
+        Example:
+            ```python
+            from openaivec.task import sentiment_analysis
+            
+            builder = ResponsesUDFBuilder.of_openai(
+                api_key="your-api-key",
+                model_name="gpt-4o-mini"
+            )
+            
+            sentiment_task = sentiment_analysis()
+            sentiment_udf = builder.build_from_task(sentiment_task)
+            
+            spark.udf.register("analyze_sentiment", sentiment_udf)
+            ```
+        """
+        # Serialize task parameters for Spark serialization compatibility
+        task_instructions = task.instructions
+        task_response_format_json = serialize_base_model(task.response_format)
+        task_temperature = task.temperature
+        task_top_p = task.top_p
+
+        # Deserialize the response format from JSON
+        response_format = deserialize_base_model(task_response_format_json)
+        spark_schema = _pydantic_to_spark_schema(response_format)
+
+        @pandas_udf(returnType=spark_schema)
+        def task_udf(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
+            _initialize(self.api_key, self.endpoint, self.api_version)
+            pandas_ext.responses_model(self.model_name)
+
+            for part in col:
+                predictions: pd.Series = asyncio.run(
+                    part.aio.responses(
+                        instructions=task_instructions,
+                        response_format=response_format,
+                        batch_size=batch_size,
+                        temperature=task_temperature,
+                        top_p=task_top_p,
+                        max_concurrency=max_concurrency,
+                    )
+                )
+                yield pd.DataFrame(predictions.map(_safe_dump).tolist())
+
+        return task_udf
+
 
 @dataclass(frozen=True)
 class EmbeddingsUDFBuilder:
@@ -409,118 +488,6 @@ class EmbeddingsUDFBuilder:
 
         return embeddings_udf
 
-
-@dataclass(frozen=True)
-class TaskUDFBuilder:
-    """Builder for asynchronous Spark pandas UDFs using predefined tasks.
-
-    Configures and builds UDFs that leverage predefined `PreparedTask` instances
-    to generate responses from OpenAI models asynchronously. This builder provides
-    a convenient interface for common NLP tasks while maintaining serialization
-    compatibility for Spark's distributed processing.
-
-    Attributes:
-        api_key (str): OpenAI or Azure API key.
-        endpoint (Optional[str]): Azure endpoint base URL. None for public OpenAI.
-        api_version (Optional[str]): Azure API version. Ignored for public OpenAI.
-        model_name (str): Deployment name (Azure) or model name (OpenAI) for responses.
-    """
-
-    # Params for OpenAI SDK
-    api_key: str
-    endpoint: str | None
-    api_version: str | None
-
-    # Params for Responses API
-    model_name: str
-
-    @classmethod
-    def of_openai(cls, api_key: str, model_name: str) -> "TaskUDFBuilder":
-        """Creates a builder configured for the public OpenAI API.
-
-        Args:
-            api_key (str): The OpenAI API key.
-            model_name (str): The OpenAI model name for responses (e.g., "gpt-4o-mini").
-
-        Returns:
-            TaskUDFBuilder: A builder instance configured for OpenAI.
-        """
-        return cls(
-            api_key=api_key,
-            endpoint=None,
-            api_version=None,
-            model_name=model_name,
-        )
-
-    @classmethod
-    def of_azure_openai(
-        cls, api_key: str, endpoint: str, api_version: str, model_name: str
-    ) -> "TaskUDFBuilder":
-        """Creates a builder configured for Azure OpenAI.
-
-        Args:
-            api_key (str): The Azure OpenAI API key.
-            endpoint (str): The Azure OpenAI endpoint URL.
-            api_version (str): The Azure OpenAI API version (e.g., "2024-02-01").
-            model_name (str): The Azure OpenAI deployment name for responses.
-
-        Returns:
-            TaskUDFBuilder: A builder instance configured for Azure OpenAI.
-        """
-        return cls(
-            api_key=api_key,
-            endpoint=endpoint,
-            api_version=api_version,
-            model_name=model_name,
-        )
-
-    def build(
-        self,
-        task: PreparedTask,
-        batch_size: int = 128,
-        max_concurrency: int = 8,
-    ) -> UserDefinedFunction:
-        """Builds the asynchronous pandas UDF for the specified task.
-
-        Args:
-            task (PreparedTask): A predefined task configuration.
-            batch_size (int): Number of rows per async batch request passed to the underlying
-                `pandas_ext` function. Defaults to 128.
-            max_concurrency (int): Maximum number of concurrent requests. Defaults to 8.
-
-        Returns:
-            UserDefinedFunction: A Spark pandas UDF configured to execute the specified task
-                asynchronously, returning a struct derived from the task's response format.
-        """
-        # Serialize task parameters for Spark serialization compatibility
-        task_instructions = task.instructions
-        task_response_format_json = serialize_base_model(task.response_format)
-        task_temperature = task.temperature
-        task_top_p = task.top_p
-
-        # Deserialize the response format from JSON
-        response_format = deserialize_base_model(task_response_format_json)
-        spark_schema = _pydantic_to_spark_schema(response_format)
-
-        @pandas_udf(returnType=spark_schema)
-        def task_udf(col: Iterator[pd.Series]) -> Iterator[pd.DataFrame]:
-            _initialize(self.api_key, self.endpoint, self.api_version)
-            pandas_ext.responses_model(self.model_name)
-
-            for part in col:
-                predictions: pd.Series = asyncio.run(
-                    part.aio.responses(
-                        instructions=task_instructions,
-                        response_format=response_format,
-                        batch_size=batch_size,
-                        temperature=task_temperature,
-                        top_p=task_top_p,
-                        max_concurrency=max_concurrency,
-                    )
-                )
-                yield pd.DataFrame(predictions.map(_safe_dump).tolist())
-
-        return task_udf
 
 
 def split_to_chunks_udf(model_name: str, max_tokens: int, sep: List[str]) -> UserDefinedFunction:
