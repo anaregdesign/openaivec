@@ -102,10 +102,10 @@ spark.udf.register(
 )
 
 # Use in Spark SQL
-df = spark.sql("""
+df = spark.sql(\"\"\"
     SELECT text, analyze_sentiment(text) as sentiment 
     FROM customer_feedback
-""")
+\"\"\")
 ```
 
 ## Task Architecture
