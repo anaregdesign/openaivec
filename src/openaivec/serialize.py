@@ -55,7 +55,7 @@ def serialize_base_model(obj: Type[BaseModel]) -> Dict[str, Any]:
     return obj.model_json_schema()
 
 
-def dereference_json_schema(json_schema: Dict["str", Any]) -> Dict["str", Any]:
+def dereference_json_schema(json_schema: Dict[str, Any]) -> Dict[str, Any]:
     """Dereference JSON schema by resolving $ref pointers.
     
     This function resolves all $ref references in a JSON schema by replacing
