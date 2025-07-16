@@ -173,7 +173,7 @@ def inquiry_classification(
     # Build routing section
     routing_text = "Routing options:\n"
     for category, routing in routing_rules.items():
-        categories_text += f"- {routing}: {category.replace('_', ' ').title()} issues\n"
+        routing_text += f"- {routing}: {category.replace('_', ' ').title()} issues\n"
     
     # Build priority section
     priority_text = "Priority levels:\n"
