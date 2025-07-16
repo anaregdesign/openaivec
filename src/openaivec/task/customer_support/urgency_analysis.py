@@ -125,7 +125,6 @@ def urgency_analysis(
     business_context: str = "general customer support",
     business_hours: str = "24/7 support",
     sla_rules: Optional[Dict[str, str]] = None,
-    language: str = "English",
     temperature: float = 0.0,
     top_p: float = 1.0
 ) -> PreparedTask:
@@ -140,7 +139,6 @@ def urgency_analysis(
         business_context: Description of the business context.
         business_hours: Description of business hours for response time calculation.
         sla_rules: Dictionary mapping customer tiers to SLA requirements.
-        language: Language for analysis (default: English).
         temperature: Sampling temperature (0.0-1.0).
         top_p: Nucleus sampling parameter (0.0-1.0).
         
@@ -236,7 +234,6 @@ def urgency_analysis(
 
 Business Context: {business_context}
 Business Hours: {business_hours}
-Analysis Language: {language}
 
 {urgency_text}
 
@@ -271,6 +268,8 @@ Consider:
 - Previous escalation language
 - Revenue or operational impact
 - Compliance or legal implications
+
+IMPORTANT: Provide analysis responses in the same language as the input text, except for the predefined categorical fields (urgency_level, response_time, business_impact, customer_tier) which must use the exact English values specified above. For example, if the input is in French, provide urgency_indicators and reasoning in French, but use English values like "critical" for urgency_level.
 
 Provide detailed analysis with clear reasoning for urgency level and response time recommendations."""
 

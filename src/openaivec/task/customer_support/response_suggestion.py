@@ -83,7 +83,6 @@ def response_suggestion(
     response_style: str = "professional",
     company_name: str = "our company",
     business_context: str = "general customer support",
-    language: str = "English",
     temperature: float = 0.0,
     top_p: float = 1.0
 ) -> PreparedTask:
@@ -93,7 +92,6 @@ def response_suggestion(
         response_style: Style of response (professional, friendly, empathetic, formal).
         company_name: Name of the company for personalization.
         business_context: Business context for responses.
-        language: Language for responses.
         temperature: Sampling temperature (0.0-1.0).
         top_p: Nucleus sampling parameter (0.0-1.0).
         
@@ -113,7 +111,6 @@ def response_suggestion(
 Business Context: {business_context}
 Company Name: {company_name}
 Response Style: {style_instructions.get(response_style, style_instructions['professional'])}
-Response Language: {language}
 
 Response Guidelines:
 1. Address the customer's main concern directly
@@ -173,6 +170,8 @@ Avoid:
 - Making promises that can't be kept
 - Dismissing customer concerns
 - Lengthy responses that don't address the main issue
+
+IMPORTANT: Generate responses in the same language as the input text, except for the predefined categorical fields (tone, priority, response_type, estimated_resolution_time) which must use the exact English values specified above. For example, if the input is in Italian, provide suggested_response, key_points, alternative_responses, and personalization_notes in Italian, but use English values like "empathetic" for tone.
 
 Generate helpful, professional response that moves toward resolution while maintaining positive customer relationship."""
 

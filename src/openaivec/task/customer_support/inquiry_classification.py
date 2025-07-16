@@ -113,7 +113,6 @@ def inquiry_classification(
     priority_rules: Optional[Dict[str, str]] = None,
     business_context: str = "general customer support",
     custom_keywords: Optional[Dict[str, List[str]]] = None,
-    language: str = "English",
     temperature: float = 0.0,
     top_p: float = 1.0
 ) -> PreparedTask:
@@ -128,7 +127,6 @@ def inquiry_classification(
             Default uses standard priority indicators.
         business_context: Description of the business context to help with classification.
         custom_keywords: Dictionary mapping categories to relevant keywords.
-        language: Language for analysis (default: English).
         temperature: Sampling temperature (0.0-1.0).
         top_p: Nucleus sampling parameter (0.0-1.0).
         
@@ -192,7 +190,6 @@ def inquiry_classification(
     instructions = f"""Classify the customer inquiry into the appropriate category and subcategory based on the configured categories and business context.
 
 Business Context: {business_context}
-Analysis Language: {language}
 
 {categories_text}
 
@@ -218,6 +215,8 @@ Consider:
 - Technical complexity
 - Business impact
 - Customer type indicators
+
+IMPORTANT: Provide analysis responses in the same language as the input text, except for the predefined categorical fields (priority) which must use the exact English values specified above. Category, subcategory, routing, and keywords should reflect the content and can be in the input language where appropriate, but priority must use English values like "high".
 
 Provide accurate classification with detailed reasoning."""
 

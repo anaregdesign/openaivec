@@ -81,7 +81,6 @@ class CustomerSentiment(BaseModel):
 
 def customer_sentiment(
     business_context: str = "general customer support",
-    language: str = "English",
     temperature: float = 0.0,
     top_p: float = 1.0
 ) -> PreparedTask:
@@ -89,7 +88,6 @@ def customer_sentiment(
     
     Args:
         business_context: Business context for sentiment analysis.
-        language: Language for analysis.
         temperature: Sampling temperature (0.0-1.0).
         top_p: Nucleus sampling parameter (0.0-1.0).
         
@@ -100,7 +98,6 @@ def customer_sentiment(
     instructions = f"""Analyze customer sentiment in the context of support interactions, focusing on satisfaction, emotional state, and business implications.
 
 Business Context: {business_context}
-Analysis Language: {language}
 
 Sentiment Categories:
 - positive: Customer is happy, satisfied, or grateful
@@ -148,6 +145,8 @@ Analyze tone indicators like:
 - Negative: "terrible", "disappointed", "frustrated", "awful", "horrible"
 - Urgency: "urgent", "immediately", "ASAP", "critical"
 - Threat: "cancel", "switch", "competitor", "lawyer", "report"
+
+IMPORTANT: Provide analysis responses in the same language as the input text, except for the predefined categorical fields (sentiment, satisfaction_level, emotional_state, churn_risk, relationship_status, response_approach) which must use the exact English values specified above. For example, if the input is in Spanish, provide tone_indicators in Spanish, but use English values like "positive" for sentiment.
 
 Provide comprehensive sentiment analysis with business context and recommended response strategy."""
 

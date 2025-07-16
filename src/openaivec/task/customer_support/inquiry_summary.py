@@ -84,7 +84,6 @@ class InquirySummary(BaseModel):
 def inquiry_summary(
     summary_length: str = "concise",
     business_context: str = "general customer support",
-    language: str = "English",
     temperature: float = 0.0,
     top_p: float = 1.0
 ) -> PreparedTask:
@@ -93,7 +92,6 @@ def inquiry_summary(
     Args:
         summary_length: Length of summary (concise, detailed, bullet_points).
         business_context: Business context for summary.
-        language: Language for analysis.
         temperature: Sampling temperature (0.0-1.0).
         top_p: Nucleus sampling parameter (0.0-1.0).
         
@@ -110,7 +108,6 @@ def inquiry_summary(
     instructions = f"""Create a comprehensive summary of the customer inquiry that captures all essential information for support agents and management.
 
 Business Context: {business_context}
-Analysis Language: {language}
 Summary Style: {length_instructions.get(summary_length, length_instructions['concise'])}
 
 Summary Guidelines:
@@ -153,6 +150,8 @@ Focus on:
 - Context that aids in prioritization
 - Clear distinction between symptoms and root causes
 - Relevant background without unnecessary details
+
+IMPORTANT: Provide summary responses in the same language as the input text, except for the predefined categorical field (resolution_status) which must use the exact English values specified above (not_started, in_progress, needs_escalation, resolved). For example, if the input is in German, provide all summary content in German, but use English values like "in_progress" for resolution_status.
 
 Provide accurate, actionable summary that enables efficient support resolution."""
 

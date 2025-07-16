@@ -80,7 +80,6 @@ class IntentAnalysis(BaseModel):
 
 def intent_analysis(
     business_context: str = "general customer support",
-    language: str = "English",
     temperature: float = 0.0,
     top_p: float = 1.0
 ) -> PreparedTask:
@@ -88,7 +87,6 @@ def intent_analysis(
     
     Args:
         business_context: Business context for intent analysis.
-        language: Language for analysis.
         temperature: Sampling temperature (0.0-1.0).
         top_p: Nucleus sampling parameter (0.0-1.0).
         
@@ -99,7 +97,6 @@ def intent_analysis(
     instructions = f"""Analyze customer intent to understand their goals, needs, and how to best assist them.
 
 Business Context: {business_context}
-Analysis Language: {language}
 
 Primary Intent Categories:
 - get_help: Seeking assistance with existing product or service
@@ -145,6 +142,8 @@ Pay attention to:
 - Emotional context: Frustration may indicate deeper issues beyond stated problem
 - Urgency indicators: Time pressure affects resolution approach
 - Previous interactions: References to prior support contacts
+
+IMPORTANT: Provide analysis responses in the same language as the input text, except for the predefined categorical fields (primary_intent, action_required, success_likelihood, resolution_complexity) which must use the exact English values specified above. For example, if the input is in Japanese, provide customer_goal, implicit_needs, blocking_factors, next_steps, and reasoning in Japanese, but use English values like "get_help" for primary_intent.
 
 Provide comprehensive intent analysis with actionable recommendations."""
 
