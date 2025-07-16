@@ -177,8 +177,8 @@ class TestDeserialize(TestCase):
             priority="high",
             category="development"
         )
-        self.assertEqual(instance.status.value, "pending")
-        self.assertEqual(instance.priority.value, "high")
+        self.assertEqual(instance.status, "pending")
+        self.assertEqual(instance.priority, "high")
         self.assertEqual(instance.category, "development")
         
         # Test validation with invalid values
@@ -225,8 +225,8 @@ class TestDeserialize(TestCase):
             numeric_level=3,
             mixed_values="default"
         )
-        # String-only literals become Enums for compatibility
-        self.assertEqual(instance.text_status.value, "active")
+        # String-only literals are stored as Literal values
+        self.assertEqual(instance.text_status, "active")
         # Numeric and mixed types use Literal, so values are stored directly
         self.assertEqual(instance.numeric_level, 3)
         self.assertEqual(instance.mixed_values, "default")
@@ -239,10 +239,10 @@ class TestDeserialize(TestCase):
             mixed_values=42,
             optional_literal="yes"
         )
-        self.assertEqual(instance2.text_status.value, "inactive")
+        self.assertEqual(instance2.text_status, "inactive")
         self.assertEqual(instance2.numeric_level, 5)
         self.assertEqual(instance2.mixed_values, 42)
-        self.assertEqual(instance2.optional_literal.value, "yes")
+        self.assertEqual(instance2.optional_literal, "yes")
 
     def test_nested_literal_models(self):
         """Test serialization/deserialization of nested models containing Literal types."""
@@ -271,8 +271,8 @@ class TestDeserialize(TestCase):
             metadata={"version": "1.0"}
         )
         
-        self.assertEqual(instance.config.status.value, "completed")
-        self.assertEqual(instance.config.priority.value, "medium")
+        self.assertEqual(instance.config.status, "completed")
+        self.assertEqual(instance.config.priority, "medium")
         self.assertEqual(instance.config.category, "testing")
         # For list of literals, they are stored directly as values
         self.assertEqual(instance.settings, ["debug", "info"])
@@ -299,8 +299,8 @@ class TestDeserialize(TestCase):
                         priority="high",
                         category="test"
                     )
-                    self.assertEqual(instance.status.value, "pending")
-                    self.assertEqual(instance.priority.value, "high")
+                    self.assertEqual(instance.status, "pending")
+                    self.assertEqual(instance.priority, "high")
                     self.assertEqual(instance.category, "test")
                     
                     # Test validation
@@ -318,7 +318,7 @@ class TestDeserialize(TestCase):
                         numeric_level=3,
                         mixed_values="default"
                     )
-                    self.assertEqual(instance.text_status.value, "active")
+                    self.assertEqual(instance.text_status, "active")
                     self.assertEqual(instance.numeric_level, 3)
                     self.assertEqual(instance.mixed_values, "default")
                     

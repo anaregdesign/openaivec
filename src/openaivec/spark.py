@@ -95,6 +95,8 @@ Note: This module provides asynchronous support through the pandas extensions.
 import asyncio
 from dataclasses import dataclass
 from typing import Dict, Iterator, List, Type, TypeVar, Union, get_args, get_origin, Optional
+from typing_extensions import Literal
+from enum import Enum
 import logging
 from pyspark.sql.pandas.functions import pandas_udf
 from pyspark.sql.udf import UserDefinedFunction
@@ -162,6 +164,14 @@ def _python_type_to_spark(python_type):
             return _python_type_to_spark(non_none_args[0])
         else:
             raise ValueError(f"Unsupported Union type with multiple non-None types: {python_type}")
+
+    # For Literal types - treat as StringType since Spark doesn't have enum types
+    elif origin is Literal:
+        return StringType()
+
+    # For Enum types - also treat as StringType since Spark doesn't have enum types
+    elif hasattr(python_type, '__bases__') and Enum in python_type.__bases__:
+        return StringType()
 
     # For nested Pydantic models (to be treated as Structs)
     elif isinstance(python_type, type) and issubclass(python_type, BaseModel):

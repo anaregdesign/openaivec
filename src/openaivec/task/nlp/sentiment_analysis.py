@@ -48,7 +48,7 @@ Attributes:
         top_p=1.0 for deterministic output.
 """
 
-from typing import List
+from typing import List, Literal
 from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
@@ -57,16 +57,16 @@ __all__ = ["SENTIMENT_ANALYSIS"]
 
 
 class SentimentAnalysis(BaseModel):
-    sentiment: str = Field(description="Overall sentiment: positive, negative, or neutral")
+    sentiment: Literal["positive", "negative", "neutral"] = Field(description="Overall sentiment (positive, negative, neutral)")
     confidence: float = Field(description="Confidence score for sentiment (0.0-1.0)")
-    emotions: List[str] = Field(description="Detected emotions (joy, sadness, anger, fear, surprise, disgust)")
+    emotions: List[Literal["joy", "sadness", "anger", "fear", "surprise", "disgust"]] = Field(description="Detected emotions (joy, sadness, anger, fear, surprise, disgust)")
     emotion_scores: List[float] = Field(description="Confidence scores for each emotion (0.0-1.0)")
     polarity: float = Field(description="Polarity score from -1.0 (negative) to 1.0 (positive)")
     subjectivity: float = Field(description="Subjectivity score from 0.0 (objective) to 1.0 (subjective)")
 
 
 SENTIMENT_ANALYSIS = PreparedTask(
-    instructions="Analyze the sentiment and emotions in the following text. Provide overall sentiment classification, confidence scores, detected emotions, polarity, and subjectivity measures.",
+    instructions="Analyze the sentiment and emotions in the following text. Provide overall sentiment classification, confidence scores, detected emotions, polarity, and subjectivity measures.\n\nIMPORTANT: Provide all analysis in the same language as the input text, except for the predefined categorical fields (sentiment, emotions) which must use the exact English values specified (positive/negative/neutral for sentiment, and joy/sadness/anger/fear/surprise/disgust for emotions).",
     response_format=SentimentAnalysis,
     temperature=0.0,
     top_p=1.0
