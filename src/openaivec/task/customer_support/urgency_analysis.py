@@ -96,7 +96,7 @@ Example:
     ```
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
@@ -105,13 +105,13 @@ __all__ = ["urgency_analysis"]
 
 
 class UrgencyAnalysis(BaseModel):
-    urgency_level: str = Field(description="Urgency level from configured levels")
+    urgency_level: Literal["critical", "high", "medium", "low"] = Field(description="Urgency level from configured levels (critical, high, medium, low)")
     urgency_score: float = Field(description="Urgency score from 0.0 (not urgent) to 1.0 (extremely urgent)")
-    response_time: str = Field(description="Recommended response time from configured times")
+    response_time: Literal["immediate", "within_1_hour", "within_4_hours", "within_24_hours"] = Field(description="Recommended response time from configured times (immediate, within_1_hour, within_4_hours, within_24_hours)")
     escalation_required: bool = Field(description="Whether this inquiry requires escalation to management")
     urgency_indicators: List[str] = Field(description="Specific words or phrases that indicate urgency")
-    business_impact: str = Field(description="Potential business impact: none, low, medium, high, critical")
-    customer_tier: str = Field(description="Inferred customer tier from configured tiers")
+    business_impact: Literal["none", "low", "medium", "high", "critical"] = Field(description="Potential business impact (none, low, medium, high, critical)")
+    customer_tier: Literal["enterprise", "premium", "standard", "basic"] = Field(description="Inferred customer tier from configured tiers (enterprise, premium, standard, basic)")
     reasoning: str = Field(description="Brief explanation of urgency assessment")
     sla_compliance: bool = Field(description="Whether response time aligns with SLA requirements")
 

@@ -58,7 +58,7 @@ Attributes:
         top_p=1.0 for deterministic output.
 """
 
-from typing import List
+from typing import List, Literal
 from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
@@ -67,16 +67,16 @@ __all__ = ["customer_sentiment"]
 
 
 class CustomerSentiment(BaseModel):
-    sentiment: str = Field(description="Overall sentiment: positive, negative, neutral, mixed")
-    satisfaction_level: str = Field(description="Customer satisfaction: very_satisfied, satisfied, neutral, dissatisfied, very_dissatisfied")
-    emotional_state: str = Field(description="Primary emotional state: happy, frustrated, angry, disappointed, confused, grateful, worried")
+    sentiment: Literal["positive", "negative", "neutral", "mixed"] = Field(description="Overall sentiment (positive, negative, neutral, mixed)")
+    satisfaction_level: Literal["very_satisfied", "satisfied", "neutral", "dissatisfied", "very_dissatisfied"] = Field(description="Customer satisfaction (very_satisfied, satisfied, neutral, dissatisfied, very_dissatisfied)")
+    emotional_state: Literal["happy", "frustrated", "angry", "disappointed", "confused", "grateful", "worried"] = Field(description="Primary emotional state (happy, frustrated, angry, disappointed, confused, grateful, worried)")
     confidence: float = Field(description="Confidence score for sentiment analysis (0.0-1.0)")
-    churn_risk: str = Field(description="Risk of customer churn: low, medium, high, critical")
+    churn_risk: Literal["low", "medium", "high", "critical"] = Field(description="Risk of customer churn (low, medium, high, critical)")
     sentiment_intensity: float = Field(description="Intensity of sentiment from 0.0 (mild) to 1.0 (extreme)")
     polarity_score: float = Field(description="Polarity score from -1.0 (very negative) to 1.0 (very positive)")
     tone_indicators: List[str] = Field(description="Specific words or phrases indicating tone")
-    relationship_status: str = Field(description="Customer relationship status: new, loyal, at_risk, detractor, advocate")
-    response_approach: str = Field(description="Recommended response approach: empathetic, professional, solution_focused, escalation_required")
+    relationship_status: Literal["new", "loyal", "at_risk", "detractor", "advocate"] = Field(description="Customer relationship status (new, loyal, at_risk, detractor, advocate)")
+    response_approach: Literal["empathetic", "professional", "solution_focused", "escalation_required"] = Field(description="Recommended response approach (empathetic, professional, solution_focused, escalation_required)")
 
 
 def customer_sentiment(

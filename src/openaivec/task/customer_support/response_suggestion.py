@@ -57,7 +57,7 @@ Attributes:
         top_p=1.0 for deterministic output.
 """
 
-from typing import List
+from typing import List, Literal
 from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
@@ -67,14 +67,14 @@ __all__ = ["response_suggestion"]
 
 class ResponseSuggestion(BaseModel):
     suggested_response: str = Field(description="Professional response draft for the customer inquiry")
-    tone: str = Field(description="Recommended tone: empathetic, professional, friendly, apologetic, solution_focused")
-    priority: str = Field(description="Response priority: immediate, high, medium, low")
-    response_type: str = Field(description="Type of response: acknowledgment, solution, escalation, information_request, closure")
+    tone: Literal["empathetic", "professional", "friendly", "apologetic", "solution_focused"] = Field(description="Recommended tone (empathetic, professional, friendly, apologetic, solution_focused)")
+    priority: Literal["immediate", "high", "medium", "low"] = Field(description="Response priority (immediate, high, medium, low)")
+    response_type: Literal["acknowledgment", "solution", "escalation", "information_request", "closure"] = Field(description="Type of response (acknowledgment, solution, escalation, information_request, closure)")
     key_points: List[str] = Field(description="Main points that must be addressed in the response")
     follow_up_required: bool = Field(description="Whether follow-up communication is needed")
     escalation_suggested: bool = Field(description="Whether escalation to management is recommended")
     resources_needed: List[str] = Field(description="Additional resources or information required")
-    estimated_resolution_time: str = Field(description="Estimated time to resolution: immediate, hours, days, weeks")
+    estimated_resolution_time: Literal["immediate", "hours", "days", "weeks"] = Field(description="Estimated time to resolution (immediate, hours, days, weeks)")
     alternative_responses: List[str] = Field(description="Alternative response options for different scenarios")
     personalization_notes: str = Field(description="Suggestions for personalizing the response")
 

@@ -89,7 +89,7 @@ Example:
     ```
 """
 
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
@@ -103,7 +103,7 @@ class InquiryClassification(BaseModel):
     confidence: float = Field(description="Confidence score for classification (0.0-1.0)")
     routing: str = Field(description="Recommended routing destination")
     keywords: List[str] = Field(description="Key terms that influenced the classification")
-    priority: str = Field(description="Suggested priority level: low, medium, high, urgent")
+    priority: Literal["low", "medium", "high", "urgent"] = Field(description="Suggested priority level (low, medium, high, urgent)")
     business_context_match: bool = Field(description="Whether the inquiry matches the business context")
 
 

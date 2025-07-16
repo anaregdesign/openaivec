@@ -59,7 +59,7 @@ Attributes:
         top_p=1.0 for deterministic output.
 """
 
-from typing import List
+from typing import List, Literal
 from pydantic import BaseModel, Field
 
 from openaivec.task.model import PreparedTask
@@ -75,7 +75,7 @@ class InquirySummary(BaseModel):
     actions_taken: List[str] = Field(description="Steps the customer has already attempted")
     timeline: str = Field(description="Timeline of events or when the issue started")
     impact_description: str = Field(description="How the issue affects the customer")
-    resolution_status: str = Field(description="Current status: not_started, in_progress, needs_escalation, resolved")
+    resolution_status: Literal["not_started", "in_progress", "needs_escalation", "resolved"] = Field(description="Current status (not_started, in_progress, needs_escalation, resolved)")
     key_details: List[str] = Field(description="Important technical details, error messages, or specifics")
     follow_up_needed: bool = Field(description="Whether follow-up communication is required")
     summary_confidence: float = Field(description="Confidence in summary accuracy (0.0-1.0)")
