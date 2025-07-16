@@ -1,6 +1,6 @@
 site_name: openaivec - AI-Powered Data Processing for Pandas & Spark
 site_url: https://openaivec.anareg.design
-site_description: Transform your data analysis with OpenAI's language models. Seamlessly integrate AI text processing, sentiment analysis, NLP tasks, and embeddings into pandas DataFrames and Apache Spark workflows for scalable data insights.
+site_description: Transform your data analysis with OpenAI's language models. Comprehensive task domains including NLP, customer support, and future business domains. Seamlessly integrate structured AI processing, multilingual analysis, and automated workflows into pandas DataFrames and Apache Spark for scalable enterprise insights.
 site_author: anaregdesign
 repo_url: https://github.com/anaregdesign/openaivec
 repo_name: anaregdesign/openaivec
@@ -68,13 +68,21 @@ nav:
       - responses: api/responses.md
       - embeddings: api/embeddings.md
       - task: api/task.md
-  - NLP Tasks:
-      - Translation: api/tasks/translation.md
-      - Morphological Analysis: api/tasks/morphological_analysis.md
-      - Named Entity Recognition: api/tasks/named_entity_recognition.md
-      - Sentiment Analysis: api/tasks/sentiment_analysis.md
-      - Dependency Parsing: api/tasks/dependency_parsing.md
-      - Keyword Extraction: api/tasks/keyword_extraction.md
+  - Task Domains:
+      - Natural Language Processing:
+          - Translation: api/tasks/nlp/translation.md
+          - Sentiment Analysis: api/tasks/nlp/sentiment_analysis.md
+          - Named Entity Recognition: api/tasks/nlp/named_entity_recognition.md
+          - Morphological Analysis: api/tasks/nlp/morphological_analysis.md
+          - Dependency Parsing: api/tasks/nlp/dependency_parsing.md
+          - Keyword Extraction: api/tasks/nlp/keyword_extraction.md
+      - Customer Support:
+          - Intent Analysis: api/tasks/customer_support/intent_analysis.md
+          - Customer Sentiment: api/tasks/customer_support/customer_sentiment.md
+          - Urgency Analysis: api/tasks/customer_support/urgency_analysis.md
+          - Inquiry Classification: api/tasks/customer_support/inquiry_classification.md
+          - Inquiry Summary: api/tasks/customer_support/inquiry_summary.md
+          - Response Suggestion: api/tasks/customer_support/response_suggestion.md
 
 extra:
   tags:
@@ -85,6 +93,8 @@ extra:
     - vectorization
     - embeddings
     - NLP
+    - customer support
+    - task domains
     - data science
     - machine learning
     - AI
@@ -92,7 +102,16 @@ extra:
     - sentiment analysis
     - named entity recognition
     - translation
+    - intent analysis
+    - urgency analysis
+    - inquiry classification
+    - response automation
+    - multilingual support
+    - batch processing
+    - structured outputs
     - data analysis
+    - business automation
+    - scalable AI
   analytics:
     provider: google
     property: G-J7N4M1XMRZ
