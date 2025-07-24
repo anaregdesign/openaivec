@@ -92,7 +92,7 @@ Example:
 from typing import List, Dict, Optional, Literal
 from pydantic import BaseModel, Field
 
-from openaivec.task.model import PreparedTask
+from ..model import PreparedTask
 
 __all__ = ["inquiry_classification"]
 

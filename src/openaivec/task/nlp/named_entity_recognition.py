@@ -52,7 +52,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from pydantic import Field
 
-from openaivec.task.model import PreparedTask
+from ..model import PreparedTask
 
 __all__ = ["NAMED_ENTITY_RECOGNITION"]
 

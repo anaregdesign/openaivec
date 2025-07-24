@@ -7,8 +7,8 @@ import numpy as np
 from numpy.typing import NDArray
 from openai import AsyncOpenAI, OpenAI, RateLimitError
 
-from openaivec.log import observe
-from openaivec.util import backoff, backoff_async, map, map_async
+from .log import observe
+from .util import backoff, backoff_async, map, map_async
 
 __all__ = [
     "BatchEmbeddings",

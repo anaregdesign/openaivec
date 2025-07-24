@@ -60,7 +60,7 @@ Attributes:
 from typing import List, Literal
 from pydantic import BaseModel, Field
 
-from openaivec.task.model import PreparedTask
+from ..model import PreparedTask
 
 __all__ = ["response_suggestion"]
 

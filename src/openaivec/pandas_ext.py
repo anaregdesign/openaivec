@@ -43,9 +43,9 @@ from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-from openaivec.embeddings import AsyncBatchEmbeddings, BatchEmbeddings
-from openaivec.responses import AsyncBatchResponses, BatchResponses
-from openaivec.task.model import PreparedTask
+from .embeddings import AsyncBatchEmbeddings, BatchEmbeddings
+from .responses import AsyncBatchResponses, BatchResponses
+from .task.model import PreparedTask
 
 __all__ = [
     "use",
