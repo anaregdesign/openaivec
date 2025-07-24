@@ -308,7 +308,7 @@ class OpenAIVecSeriesAccessor:
 
         Example:
             ```python
-            from .task.model import PreparedTask
+            from openaivec.task.model import PreparedTask
             
             # Assume you have a prepared task for sentiment analysis
             sentiment_task = PreparedTask(...)
@@ -519,7 +519,7 @@ class OpenAIVecDataFrameAccessor:
 
         Example:
             ```python
-            from .task.model import PreparedTask
+            from openaivec.task.model import PreparedTask
             
             # Assume you have a prepared task for data analysis
             analysis_task = PreparedTask(...)
@@ -675,7 +675,7 @@ class AsyncOpenAIVecSeriesAccessor:
 
         Example:
             ```python
-            from .task.model import PreparedTask
+            from openaivec.task.model import PreparedTask
             
             # Assume you have a prepared task for sentiment analysis
             sentiment_task = PreparedTask(...)
@@ -797,7 +797,7 @@ class AsyncOpenAIVecDataFrameAccessor:
 
         Example:
             ```python
-            from .task.model import PreparedTask
+            from openaivec.task.model import PreparedTask
             
             # Assume you have a prepared task for data analysis
             analysis_task = PreparedTask(...)
