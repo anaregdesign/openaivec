@@ -33,7 +33,7 @@ Specialized tasks for customer service operations:
 ```python
 from openai import OpenAI
 from openaivec.responses import BatchResponses
-from . import nlp, customer_support
+from openaivec.task import nlp, customer_support
 
 client = OpenAI()
 
@@ -53,7 +53,7 @@ intent_analyzer = BatchResponses.of_task(
 
 ### Customized Task Configuration
 ```python
-from .customer_support import urgency_analysis
+from openaivec.task.customer_support import urgency_analysis
 
 # Create customized urgency analysis
 custom_urgency = urgency_analysis(
