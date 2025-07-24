@@ -32,7 +32,7 @@ Specialized tasks for customer service operations:
 ### Quick Start with Default Tasks
 ```python
 from openai import OpenAI
-from ..responses import BatchResponses
+from openaivec.responses import BatchResponses
 from . import nlp, customer_support
 
 client = OpenAI()
@@ -76,7 +76,7 @@ analyzer = BatchResponses.of_task(
 ### Pandas Integration
 ```python
 import pandas as pd
-from .. import pandas_ext
+from openaivec import pandas_ext
 
 df = pd.DataFrame({"text": ["I love this!", "This is terrible."]})
 
@@ -90,7 +90,7 @@ results_df = df.ai.extract("sentiment")
 
 ### Spark Integration  
 ```python
-from ..spark import ResponsesUDFBuilder
+from openaivec.spark import ResponsesUDFBuilder
 
 # Register UDF for large-scale processing
 spark.udf.register(

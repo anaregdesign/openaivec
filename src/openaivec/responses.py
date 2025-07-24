@@ -246,7 +246,7 @@ class AsyncBatchResponses(Generic[T]):
         ```python
         import asyncio
         from openai import AsyncOpenAI
-        from .aio.responses import AsyncBatchResponses
+        from openaivec.aio.responses import AsyncBatchResponses
 
         # Assuming openai_async_client is an initialized AsyncOpenAI client
         openai_async_client = AsyncOpenAI() # Replace with your actual client initialization
