@@ -7,9 +7,9 @@ from openai import AsyncOpenAI, OpenAI, RateLimitError
 from openai.types.responses import ParsedResponse
 from pydantic import BaseModel
 
-from openaivec.log import observe
-from openaivec.task.model import PreparedTask
-from openaivec.util import backoff, backoff_async, map, map_async
+from .log import observe
+from .task.model import PreparedTask
+from .util import backoff, backoff_async, map, map_async
 
 __all__ = [
     "BatchResponses",
@@ -246,7 +246,7 @@ class AsyncBatchResponses(Generic[T]):
         ```python
         import asyncio
         from openai import AsyncOpenAI
-        from openaivec.aio.responses import AsyncBatchResponses
+        from .aio.responses import AsyncBatchResponses
 
         # Assuming openai_async_client is an initialized AsyncOpenAI client
         openai_async_client = AsyncOpenAI() # Replace with your actual client initialization

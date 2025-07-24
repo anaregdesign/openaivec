@@ -53,7 +53,7 @@ Attributes:
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-from openaivec.task.model import PreparedTask
+from ..model import PreparedTask
 
 __all__ = ["KEYWORD_EXTRACTION"]
 

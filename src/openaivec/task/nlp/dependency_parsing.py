@@ -51,7 +51,7 @@ Attributes:
 from typing import List
 from pydantic import BaseModel, Field
 
-from openaivec.task.model import PreparedTask
+from ..model import PreparedTask
 
 __all__ = ["DEPENDENCY_PARSING"]
 

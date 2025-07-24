@@ -43,9 +43,9 @@ from openai import AsyncAzureOpenAI, AsyncOpenAI, AzureOpenAI, OpenAI
 from pydantic import BaseModel
 import tiktoken
 
-from openaivec.embeddings import AsyncBatchEmbeddings, BatchEmbeddings
-from openaivec.responses import AsyncBatchResponses, BatchResponses
-from openaivec.task.model import PreparedTask
+from .embeddings import AsyncBatchEmbeddings, BatchEmbeddings
+from .responses import AsyncBatchResponses, BatchResponses
+from .task.model import PreparedTask
 
 __all__ = [
     "use",
@@ -308,7 +308,7 @@ class OpenAIVecSeriesAccessor:
 
         Example:
             ```python
-            from openaivec.task.model import PreparedTask
+            from .task.model import PreparedTask
             
             # Assume you have a prepared task for sentiment analysis
             sentiment_task = PreparedTask(...)
@@ -519,7 +519,7 @@ class OpenAIVecDataFrameAccessor:
 
         Example:
             ```python
-            from openaivec.task.model import PreparedTask
+            from .task.model import PreparedTask
             
             # Assume you have a prepared task for data analysis
             analysis_task = PreparedTask(...)
@@ -675,7 +675,7 @@ class AsyncOpenAIVecSeriesAccessor:
 
         Example:
             ```python
-            from openaivec.task.model import PreparedTask
+            from .task.model import PreparedTask
             
             # Assume you have a prepared task for sentiment analysis
             sentiment_task = PreparedTask(...)
@@ -797,7 +797,7 @@ class AsyncOpenAIVecDataFrameAccessor:
 
         Example:
             ```python
-            from openaivec.task.model import PreparedTask
+            from .task.model import PreparedTask
             
             # Assume you have a prepared task for data analysis
             analysis_task = PreparedTask(...)

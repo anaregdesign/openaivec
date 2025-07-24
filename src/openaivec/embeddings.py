@@ -7,8 +7,8 @@ import numpy as np
 from numpy.typing import NDArray
 from openai import AsyncOpenAI, OpenAI, RateLimitError
 
-from openaivec.log import observe
-from openaivec.util import backoff, backoff_async, map, map_async
+from .log import observe
+from .util import backoff, backoff_async, map, map_async
 
 __all__ = [
     "BatchEmbeddings",
@@ -85,7 +85,7 @@ class AsyncBatchEmbeddings:
         import asyncio
         import numpy as np
         from openai import AsyncOpenAI
-        from openaivec.aio.embeddings import AsyncBatchEmbeddings
+        from .aio.embeddings import AsyncBatchEmbeddings
 
         # Assuming openai_async_client is an initialized AsyncOpenAI client
         openai_async_client = AsyncOpenAI() # Replace with your actual client initialization

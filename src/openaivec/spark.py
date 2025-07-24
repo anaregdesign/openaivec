@@ -103,13 +103,13 @@ from pyspark.sql.udf import UserDefinedFunction
 from pyspark.sql.types import BooleanType, IntegerType, StringType, ArrayType, FloatType, StructField, StructType
 from openai import AsyncOpenAI, AsyncAzureOpenAI
 import tiktoken
-from openaivec import pandas_ext
+from . import pandas_ext
 import pandas as pd
 from pydantic import BaseModel
 
-from openaivec.serialize import deserialize_base_model, serialize_base_model
-from openaivec.util import TextChunker
-from openaivec.task.model import PreparedTask
+from .serialize import deserialize_base_model, serialize_base_model
+from .util import TextChunker
+from .task.model import PreparedTask
 
 __all__ = [
     "ResponsesUDFBuilder",
