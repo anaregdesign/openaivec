@@ -1,3 +1,14 @@
+# ⚠️ Repository Archived – Project Moved
+
+This repository (`anaregdesign/openaivec`) has been **archived** and is no longer maintained here.
+
+The project has been **officially transferred to [microsoft/openaivec](https://github.com/microsoft/openaivec)** and all future development, issue tracking, and releases will take place there.
+
+👉 **Please update your bookmarks and references accordingly.**  
+👉 **New contributions should be made to the [microsoft/openaivec](https://github.com/microsoft/openaivec) repository.**
+
+We appreciate your interest and support!
+---
 # openaivec
 
 **Transform your data analysis with AI-powered text processing at scale.**
